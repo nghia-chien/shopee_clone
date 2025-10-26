@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id          String     @id @default(cuid())
+  email       String     @unique
+  phoneNumber String?    @unique
+  password    String
+  name        String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Quan hệ
+  orders      Order[]
+  cartItems   CartItem[]
+}
+
+model Product {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  price       Decimal       @db.Decimal(10, 2)
+  stock       Int           @default(0)
+  images      String[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Các trường mới
+  discount      Decimal?     @db.Decimal(10,2)  @default(0)
+  rating        Float?       @default(0)
+  reviews_count Int?         @default(0)
+  tags          String[]
+  status        String?      @default("active")
+  weight        Float?
+  dimensions    Json?
+  brand         String?
+
+  // Quan hệ
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+}
+
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+
+  // Quan hệ
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  total     Decimal     @db.Decimal(10, 2)
+  status    String      @default("pending")
+  createdAt DateTime    @default(now())
+
+  // Quan hệ
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  price     Decimal  @db.Decimal(10, 2)
+  quantity  Int      @default(1)
+
+  // Quan hệ
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
