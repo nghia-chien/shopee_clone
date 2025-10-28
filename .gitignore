@@ -7,18 +7,31 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies (không push)
+node_modules/
 
-# Editor directories and files
-.vscode/*
+# Build output
+dist/
+dist-ssr/
+build/
+out/
+.parcel-cache/
+
+# Sensitive credentials (bắt buộc ignore)
+backend/firebaseServiceAccount.json
+.env
+
+# Editor / OS
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Local env
+*.local

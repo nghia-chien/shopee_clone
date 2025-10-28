@@ -7,8 +7,7 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+  color: rgb(0, 0, 0);
   background-color: #F9FAFB;
 
   font-synthesis: none;
@@ -56,6 +55,7 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
 /* Tạo class bg-gradient cho gradient tĩnh */
 .bg-gradient {
   background: linear-gradient(to bottom,#FF5722, #FF7043, #FF8A50);
@@ -77,7 +77,7 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    color: #2e92ea;
     background-color: #ffffff;
   }
   a:hover {

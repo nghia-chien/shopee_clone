@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../api/client';
+import { api } from '../../api/client';
 import { Link } from 'react-router-dom';
-import { HomeLayout } from '../components/layout/HomeLayout';
-import { useAuthStore } from '../store/auth';
-import { HeaderLayout } from '../components/layout/HeaderLayout';
+import { HomeLayout } from '../../components/layout/HomeLayout';
+import { useAuthStore } from '../../store/auth';
+import { HeaderLayout } from '../../components/layout/HeaderLayout';
 
 export function HomePage() {
   const { user } = useAuthStore();

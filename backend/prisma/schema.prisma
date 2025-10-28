@@ -9,78 +9,139 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(cuid())
-  email       String     @unique
-  phoneNumber String?    @unique
-  password    String
-  name        String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id          String    @id @default(cuid()) @map("id")
+  email       String    @unique @map("email")
+  phoneNumber String?   @unique @db.VarChar(20) @map("phone_number")
+  password    String    @map("password")
+  name        String?   @map("name")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  // Quan hệ
-  orders      Order[]
-  cartItems   CartItem[]
+  orders      Orders[]   @relation("user_orders")
+  cartItems   CartItem[] @relation("user_cart_items")
+
+  @@map("user")
+}
+
+model Seller {
+  id           String   @id @default(cuid()) @map("id")
+  name         String   @map("name")
+  email        String   @unique @map("email")
+  phoneNumber  String?   @unique @db.VarChar(20) @map("phone_number")
+  password     String    @map("password")
+  address      Json?    @map("address")
+  rating       Float?   @default(0) @map("rating")
+  status       String   @default("active") @map("status")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  products               Product[]
+  payoutSettings         SellerPayoutSettings[]
+  shippingPreferences    SellerShippingPreferences[]
+
+  @@map("seller")
+}
+
+model SellerPayoutSettings {
+  id              String   @id @default(cuid()) @map("id")
+  sellerId        String   @map("seller_id")
+  payoutMethod    String   @map("payout_method")
+  accountNumber   String   @map("account_number")
+  bankName        String?  @map("bank_name")
+  currency        String   @default("VND") @map("currency")
+  minPayoutAmount Decimal  @db.Decimal(10,2) @default(0) @map("min_payout_amount")
+  payoutFrequency String   @default("weekly") @map("payout_frequency")
+  status          String   @default("active") @map("status")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  seller Seller @relation(fields: [sellerId], references: [id])
+
+  @@map("seller_payout_settings")
+  @@index([sellerId], map: "idx_seller_payout_settings_seller_id")
+}
+
+model SellerShippingPreferences {
+  id                String   @id @default(cuid()) @map("id")
+  sellerId          String   @map("seller_id")
+  shippingMethods   Json     @map("shipping_methods")
+  shippingRates     Json     @map("shipping_rates")
+  freeShippingThreshold Decimal @db.Decimal(10,2) @default(0) @map("free_shipping_threshold")
+  defaultWarehouse  String?  @map("default_warehouse")
+  regionsCovered    Json?    @map("regions_covered")
+  status            String   @default("active") @map("status")
+  isDefault         Boolean  @default(true) @map("is_default")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  seller Seller @relation(fields: [sellerId], references: [id])
+
+  @@map("seller_shipping_preferences")
+  @@index([sellerId], map: "idx_seller_shipping_preferences_seller_id")
 }
 
 model Product {
-  id          String       @id @default(cuid())
-  title       String
-  description String?
-  price       Decimal       @db.Decimal(10, 2)
-  stock       Int           @default(0)
-  images      String[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           String      @id @default(cuid()) @map("id")
+  title        String      @map("title")
+  description  String?     @map("description")
+  price        Decimal     @db.Decimal(10, 2) @map("price")
+  stock        Int         @default(0) @map("stock")
+  images       String[]    @map("images")
+  sellerId     String      @map("seller_id")
+  seller       Seller      @relation(fields: [sellerId], references: [id])
+  dimensions   Json?       @map("dimensions")
+  discount     Decimal?    @db.Decimal(10,2) @default(0) @map("discount")
+  rating       Float?      @default(0) @map("rating")
+  reviewsCount Int?        @default(0) @map("reviews_count")
+  tags         String[]    @map("tags")
+  status       String?     @default("active") @map("status")
+  weight       Float?      @map("weight")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
-  // Các trường mới
-  discount      Decimal?     @db.Decimal(10,2)  @default(0)
-  rating        Float?       @default(0)
-  reviews_count Int?         @default(0)
-  tags          String[]
-  status        String?      @default("active")
-  weight        Float?
-  dimensions    Json?
-  brand         String?
+  cartItems    CartItem[]  @relation("product_cart_items")
+  orderItems   OrderItem[] @relation("product_order_items")
 
-  // Quan hệ
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
+  @@map("product")
+  @@index([sellerId], map: "idx_product_seller_id")
 }
 
 
 model CartItem {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  quantity  Int      @default(1)
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  quantity  Int      @default(1) @map("quantity")
 
-  // Quan hệ
-  user      User     @relation(fields: [userId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], name: "user_cart_items")
+  product   Product  @relation(fields: [productId], references: [id], name: "product_cart_items")
 
-  @@unique([userId, productId])
+  @@unique([userId, productId], map: "cart_item_user_product_key")
+  @@map("cart_item")
 }
 
-model Order {
-  id        String      @id @default(cuid())
-  userId    String
-  total     Decimal     @db.Decimal(10, 2)
-  status    String      @default("pending")
-  createdAt DateTime    @default(now())
+model Orders {
+  id        String      @id @default(cuid()) @map("id")
+  userId    String      @map("user_id")
+  total     Decimal     @db.Decimal(10, 2) @map("total")
+  status    String      @default("pending") @map("status")
+  createdAt DateTime    @default(now()) @map("created_at")
 
-  // Quan hệ
-  user      User        @relation(fields: [userId], references: [id])
-  items     OrderItem[]
+  user      User        @relation(fields: [userId], references: [id], name: "user_orders")
+  items     OrderItem[] @relation("order_items")
+
+  @@map("orders")  // dùng 'orders' thay vì 'order' để tránh quoting
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  price     Decimal  @db.Decimal(10, 2)
-  quantity  Int      @default(1)
+  id        String   @id @default(cuid()) @map("id")
+  orderId   String   @map("order_id")
+  productId String   @map("product_id")
+  price     Decimal  @db.Decimal(10, 2) @map("price")
+  quantity  Int      @default(1) @map("quantity")
 
-  // Quan hệ
-  order     Order    @relation(fields: [orderId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  orders     Orders    @relation(fields: [orderId], references: [id], name: "order_items")
+  product   Product  @relation(fields: [productId], references: [id], name: "product_order_items")
+
+  @@map("order_item")
 }

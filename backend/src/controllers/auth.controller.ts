@@ -5,28 +5,28 @@ import { z } from 'zod';
 import { prisma } from '../utils/prisma';
 import { AuthRequest } from '../middlewares/auth';
 
-// ✅ Schema xác thực đầu vào
-const authSchema = z.object({
+// === ZOD SCHEMAS =================================================
+const baseUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-const registerSchema = z.object({
-  email: z.string().email(),
-  phoneNumber: z.string().min(10).max(15),
-  password: z.string().min(6),
+const registerSchema = baseUserSchema.extend({
+  phoneNumber: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
   name: z.string().optional(),
 });
 
-// ✅ Hàm tạo JWT
+// === TOKEN HELPER ===============================================
 function signToken(user: { id: string; email: string; phoneNumber?: string }) {
   const secret = process.env.JWT_SECRET ?? 'dev-secret';
-  return jwt.sign({ id: user.id, email: user.email, phoneNumber: user.phoneNumber }, secret, { expiresIn: '7d' });
+  return jwt.sign(
+    { id: user.id, email: user.email, phoneNumber: user.phoneNumber ?? undefined },
+    secret,
+    { expiresIn: '7d' }
+  );
 }
 
-/**
- * 🧾 Đăng ký tài khoản
- */
+// === REGISTER ====================================================
 export async function registerController(req: Request, res: Response) {
   try {
     const parsed = registerSchema.safeParse(req.body);
@@ -34,78 +34,59 @@ export async function registerController(req: Request, res: Response) {
 
     const { email, phoneNumber, password, name } = parsed.data;
 
-    // Kiểm tra email đã tồn tại
-    const existingUserByEmail = await prisma.user.findUnique({ where: { email } });
-    if (existingUserByEmail) return res.status(400).json({ message: 'Email already registered' });
+    const existingUser = await prisma.user.findFirst({
+      where: { OR: [{ email }, { phoneNumber }] },
+    });
+    if (existingUser) return res.status(400).json({ message: 'Email or phone already registered' });
 
-    // Kiểm tra phoneNumber đã tồn tại
-    const existingUserByPhone = await prisma.user.findUnique({ where: { phoneNumber } });
-    if (existingUserByPhone) return res.status(400).json({ message: 'Phone number already registered' });
-
-    // Băm mật khẩu
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Tạo user
     const user = await prisma.user.create({
-      data: { 
-        email, 
-        phoneNumber, 
-        password: hashedPassword, 
-        name: name || null 
+      data: {
+        email,
+        phoneNumber,
+        password: await bcrypt.hash(password, 10),
+        name: name || null,
       },
     });
 
-    const token = signToken(user);
-    return res.status(201).json({ 
-      token, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
+    return res.status(201).json({
+      token: signToken({ ...user, phoneNumber: user.phoneNumber || undefined }),
+      user: {
+        id: user.id,
+        email: user.email,
         phoneNumber: user.phoneNumber,
-        name: user.name 
-      } 
+        name: user.name,
+      },
     });
-  } catch (error) {
-    console.error('❌ registerController error:', error);
+  } catch (err) {
+    console.error('❌ registerController error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
-/**
- * 🔐 Đăng nhập
- */
+// === LOGIN =======================================================
 export async function loginController(req: Request, res: Response) {
   try {
-    const parsed = authSchema.safeParse(req.body);
+    const parsed = baseUserSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: 'Invalid credentials' });
 
     const { email, password } = parsed.data;
-
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!user || !(await bcrypt.compare(password, user.password)))
+      return res.status(401).json({ message: 'Invalid email or password' });
 
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) return res.status(401).json({ message: 'Invalid email or password' });
-
-    const token = signToken(user);
-    return res.json({ 
-      token, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
+    return res.json({
+      token: signToken({ ...user, phoneNumber: user.phoneNumber || undefined }),
+      user: {
+        id: user.id,
+        email: user.email,
         phoneNumber: user.phoneNumber,
-        name: user.name 
-      } 
+        name: user.name,
+      },
     });
-  } catch (error) {
-    console.error('❌ loginController error:', error);
+  } catch (err) {
+    console.error('❌ loginController error:', err);
     return res.status(500).json({ message: 'Internal server error' });
-  }
-}
-
-/**
- * 👤 Lấy thông tin user hiện tại
- */
+  }}
 export async function meController(req: AuthRequest, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });

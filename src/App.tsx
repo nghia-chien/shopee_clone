@@ -1,6 +1,6 @@
 import './App.css';
 import { AppProviders } from './providers/AppProviders';
-import { AppRoutes } from './routes';
+import { AppRoutes } from './routes/AppRoutes';
 import { HeaderLayout } from "./components/layout/HeaderLayout";
 import { Footer } from "./components/layout/Footer";
 

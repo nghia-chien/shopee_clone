@@ -10,9 +10,11 @@ const app = express();
 
 // ✅ Cấu hình CORS — đảm bảo frontend có thể gọi API
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') ?? '*',
+  origin: true,            // ✅ Tự động cho phép domain đang gửi request (devtunnel, localhost, v.v)
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // ✅ tránh preflight bị fail
 }));
+
 
 // ✅ Bảo mật cơ bản
 app.use(helmet());

@@ -1,6 +1,6 @@
 import React from 'react';
-import { AuthLayout } from '../components/auth/AuthLayout';
-import { RegisterForm } from '../components/auth/RegisterForm';
+import { AuthLayout } from '../../components/auth/AuthLayout';
+import { RegisterForm } from '../../components/auth/RegisterForm';
 
 export function RegisterPage() {
   return (

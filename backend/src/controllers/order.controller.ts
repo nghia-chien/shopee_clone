@@ -15,7 +15,7 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const orders = await prisma.order.findMany({
+    const orders = await prisma.orders.findMany({
       where: { userId: req.user.id },
       include: {
         items: {
@@ -58,7 +58,7 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
     }, 0);
 
     // ✅ Tạo đơn hàng + OrderItems
-    const order = await prisma.order.create({
+    const order = await prisma.orders.create({
       data: {
         userId: req.user.id,
         total,
@@ -97,7 +97,7 @@ export async function getOrderController(req: AuthenticatedRequest, res: Respons
 
     const { id } = req.params;
 
-    const order = await prisma.order.findFirst({
+    const order = await prisma.orders.findFirst({
       where: { id, userId: req.user.id },
       include: {
         items: { include: { product: true } },
