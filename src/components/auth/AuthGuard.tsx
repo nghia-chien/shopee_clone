@@ -20,7 +20,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     // Kiểm tra token với backend
-    fetch('http://localhost:4000/api/auth/me', {
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {

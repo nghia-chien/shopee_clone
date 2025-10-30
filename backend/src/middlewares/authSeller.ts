@@ -1,21 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_here";
-
 export interface SellerRequest extends Request {
-  seller?: any;
+  seller?: { id: string; email?: string };
 }
 
-export const authSeller = (req: SellerRequest, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
-
+export const requireAuthSeller = (req: SellerRequest, res: Response, next: NextFunction) => {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) return res.status(401).json({ message: 'Unauthorized middlewares/autheSeller.ts' });
+  const token = header.slice('Bearer '.length);
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.seller = decoded;
+    const secret = process.env.JWT_SECRET ?? 'dev-secret';
+    const decoded = jwt.verify(token, secret)as { id: string; email?: string };
+    req.seller = { id: decoded.id, email: decoded.email };
     next();
   } catch {
-    res.status(401).json({ error: "Invalid token" });
+    res.status(401).json({ error: "Invalid token ở middlewares" });
   }
 };

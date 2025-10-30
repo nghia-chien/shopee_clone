@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware';
 interface SellerAuthState {
   token: string | null;
   seller: {
+    status: string;
+    rating: number;
     id: string;
     email: string;
     phoneNumber?: string;
@@ -14,6 +16,8 @@ interface SellerAuthState {
     email: string;
     phoneNumber?: string;
     name?: string;
+    status: string;
+    rating: number;
   }) => void;
   logout: () => void;
 }
@@ -26,6 +30,6 @@ export const useSellerAuthStore = create<SellerAuthState>()(
       setAuth: (token, seller) => set({ token, seller }),
       logout: () => set({ token: null, seller: null }),
     }),
-    { name: 'seller-auth' } // lưu riêng key cho seller
+    { name: 'seller-auth' }
   )
 );

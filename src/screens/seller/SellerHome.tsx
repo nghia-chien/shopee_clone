@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSellerAuthStore } from "../../store/SellerAuth";
 
-interface SellerInfo {
-  id: string;
-  name: string;
-  email: string;
-  rating?: number;
-  status: string;
-}
 
 export const SellerHome = () => {
-  const [seller, setSeller] = useState<SellerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { seller, token, setAuth, logout } = useSellerAuthStore();
 
   useEffect(() => {
     const fetchSeller = async () => {
-      const token = localStorage.getItem("sellerToken");
-      if (!token) {
+      // Dùng token từ store trước
+      const storedToken = token || localStorage.getItem("seller-auth");
+      if (!storedToken) {
         navigate("/seller/login");
         return;
       }
@@ -25,21 +20,24 @@ export const SellerHome = () => {
       try {
         const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
         const res = await fetch(`${baseUrl}/seller/auth/me`, {
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${storedToken}`,
           },
         });
 
         if (!res.ok) {
+          logout(); // xóa store nếu token hết hạn
           navigate("/seller/login");
           return;
         }
 
         const data = await res.json();
-        setSeller(data.seller || data); // tùy backend trả về
+        // Cập nhật store luôn
+        setAuth(storedToken, data.seller || data);
       } catch (err) {
         console.error("Fetch seller failed:", err);
+        logout();
         navigate("/seller/login");
       } finally {
         setLoading(false);
@@ -47,10 +45,15 @@ export const SellerHome = () => {
     };
 
     fetchSeller();
-  }, [navigate]);
+  }, [navigate, token, logout, setAuth]);
 
   if (loading) return <p>Loading...</p>;
   if (!seller) return <p>Không tìm thấy thông tin seller</p>;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/seller/login");
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -72,6 +75,12 @@ export const SellerHome = () => {
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
           >
             Upload Product
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+          >
+            Logout
           </button>
         </div>
       </div>

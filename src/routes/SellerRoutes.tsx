@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { SellerRegister } from "../components/seller/SellerRegister";
-import  SellerLogin  from '../components/seller/SellerLogin';
+import  {SellerLogin}  from '../components/seller/SellerLogin';
 import { SellerDashboard } from "../screens/seller/SellerDashboard";
 import { SellerHome } from "../screens/seller/SellerHome";
 import { SellerUploadPage } from "../screens/seller/SellerUploadPage";

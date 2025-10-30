@@ -1,11 +1,70 @@
 import { Request, Response } from "express";
 import { getSellerById } from "../../services/seller/auth.service";
+import { prisma } from "../../utils/prisma";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { z } from 'zod';
+
+// === ZOD SCHEMAS =================================================
+const baseUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+const registerSchema = baseUserSchema.extend({
+  phoneNumber: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
+  name: z.string().optional(),
+});
+
+export const sellerRegisterController = async (req:any , res: Response)=>{
+  try {
+    const { name, email, password, phoneNumber, address } = req.body;
+    if (!name || !email || !password)
+      return res.status(400).json({ error: "Name, email, password required" });
+
+    const exist_email = await prisma.seller.findUnique({ where: { email } });
+    if (exist_email) return res.status(400).json({ error: "Email already registered" });
+    const exist_phone = await prisma.seller.findUnique({ where: { phoneNumber } });
+    if (exist_phone) return res.status(400).json({ error: "Phone number already registered" });
+    
+    const hashed = await bcrypt.hash(password, 10);
+    const seller = await prisma.seller.create({
+      data: { name, email, password: hashed, phoneNumber, address },
+    });
+
+    const token = jwt.sign({ id: seller.id, email: seller.email, phoneNumber: seller.phoneNumber }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
+
+    res.json({ seller: { id: seller.id, email: seller.email, name: seller.name }, token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error  sellerRegisterController seller/auth.controller" });
+  }
+}
+export const sellerLoginController = async (req:any , res: Response)=>{
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+
+    const seller = await prisma.seller.findUnique({ where: { email } });
+    if (!seller) return res.status(400).json({ error: "Seller not found" });
+
+    const match = await bcrypt.compare(password, seller.password);
+    if (!match) return res.status(400).json({ error: "Invalid password" });
+
+    const token = jwt.sign({ id: seller.id, email: seller.email, phoneNumber: seller.phoneNumber }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
+
+    res.json({ seller: { id: seller.id, email: seller.email, name: seller.name }, token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error sellerLoginController seller/auth.controller" });
+  }
+}
 
 export const sellerMeController = async (req: any, res: Response) => {
   try {
     const sellerId = req.seller?.id;
     if (!sellerId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized seller/auth.controller " });
     }
 
     const seller = await getSellerById(sellerId);
@@ -16,6 +75,6 @@ export const sellerMeController = async (req: any, res: Response) => {
     res.json({ seller });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error sellerMeController seller/auth.controller" });
   }
 };

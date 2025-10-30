@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/errorHandler';
+import sellerRouter from './sellerRoutes';
 
 const app = express();
 
@@ -32,6 +33,8 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // ✅ Gắn router chính
 app.use('/api', apiRouter);
+
+app.use('/api/seller', sellerRouter);
 
 // ✅ Xử lý 404
 app.use((_req: Request, res: Response) => {

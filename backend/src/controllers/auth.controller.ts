@@ -87,6 +87,9 @@ export async function loginController(req: Request, res: Response) {
     console.error('❌ loginController error:', err);
     return res.status(500).json({ message: 'Internal server error' });
   }}
+
+
+//==Me=================================================================
 export async function meController(req: AuthRequest, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });

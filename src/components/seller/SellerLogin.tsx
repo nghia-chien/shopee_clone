@@ -3,7 +3,7 @@ import { Eye, EyeOff, Mail, Lock, ShoppingBag } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSellerAuthStore } from "../../store/SellerAuth"; 
 
-export default function SellerLogin() {
+export const SellerLogin = () => {
   const navigate = useNavigate();
   const setAuth = useSellerAuthStore((s) => s.setAuth);
 
@@ -18,7 +18,7 @@ export default function SellerLogin() {
     setError("");
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:4000/api/seller/auth/login", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/seller/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
