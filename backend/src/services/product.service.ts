@@ -13,7 +13,6 @@ export const getProductById = async (req: Request, res: Response) => {
             id: true,
             name: true,
             email: true,
-            phoneNumber: true,
           },
         },
       },

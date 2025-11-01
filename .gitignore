@@ -18,7 +18,6 @@ out/
 .parcel-cache/
 
 # Sensitive credentials (bắt buộc ignore)
-backend/firebaseServiceAccount.json
 .env
 
 # Editor / OS

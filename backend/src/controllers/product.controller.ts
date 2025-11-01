@@ -11,20 +11,7 @@ export async function listProductsController(_req: Request, res: Response) {
   }
 }
 
-export async function getProductController(req: Request, res: Response) {
-  try {
-    const id = req.params.id;
-    const product = await prisma.product.findUnique({ where: { id } });
-
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    return res.json(product);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-}
-
-export const getProductById = async (req: Request, res: Response) => {
+export const getProductController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -42,13 +29,11 @@ export const getProductById = async (req: Request, res: Response) => {
       },
     });
 
-    if (!product) {
-      return res.status(404).json({ error: "Product not found" });
-    }
+    if (!product) return res.status(404).json({ error: "Product not found" });
 
     res.json(product);
   } catch (err) {
-    console.error("getProductById error:", err);
+    console.error("getProductController error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };

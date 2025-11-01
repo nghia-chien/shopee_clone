@@ -3,7 +3,6 @@ import { HomePage } from "../screens/client/HomePage";
 import { ProductPage } from "../screens/client/ProductPage";
 import { LoginPage } from "../screens/client/LoginPage";
 import { RegisterPage } from "../screens/client/RegisterPage";
-import { TestPage } from "../screens/client/TestPage";
 import { AdminApp } from "../admin/AdminApp";
 import { AuthGuard } from "../components/auth/AuthGuard";
 import { SellerRoutes } from "./SellerRoutes"; // import routes riêng cho seller
@@ -13,7 +12,6 @@ export function AppRoutes() {
     <BrowserRouter>
       <Routes>
         {/* Client routes */}
-        <Route path="/test" element={<TestPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<AuthGuard><HomePage /></AuthGuard>} />

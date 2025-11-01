@@ -1,6 +1,27 @@
 #root {
   max-width: 1280px;
   text-align: center;
+  background:#fff;
+}
+.button{
+  background-color: #ff5722;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.container {
+  max-width: 1280px;
+  margin-left:  auto;
+  margin-right: auto;
+  padding: 0 1rem;
 }
 
 .logo {

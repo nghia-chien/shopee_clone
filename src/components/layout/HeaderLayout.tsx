@@ -174,19 +174,7 @@ export function HeaderLayout({ children }: HomeLayoutProps) {
                                     
         </div>
       </header>
-      
-      
-      
-      
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6"></main>
-
-
-
-
-
-
-
-
       <footer className="bg-white border-t mt-12">
     <div className="max-w-7xl mx-auto px-4 py-8">
             {/* ========================================================================

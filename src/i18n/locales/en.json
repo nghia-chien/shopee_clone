@@ -1,0 +1,37 @@
+{
+  "home":{ 
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "seller_channel": "Seller Center",
+    "download_app": "Download",
+    "connect": "Follw us on",
+    "notification": "Notifications",
+    "support": "Help",
+    "search_placeholder": "Search for products, brands and shops",
+    "keyword_shirt": "Men's T-Shirt",
+    "keyword_phone": "Samsung Phone",
+    "keyword_shoes": "Sneakers",
+    "keyword_bag": "Women's Bag",
+    "keyword_headphones": "Bluetooth Headphones",
+    "keyword_watch": "Smart Watch",
+    "keyword_dress": "Office Dress",
+    "my_account": "My Account",
+    "my_orders": "My Purchase",
+    "see_more": "See more",
+    "recently_notification":"Recently Received Notification"
+  } 
+  ,
+  
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "loginButton": "Login",
+    "registerButton": "Register",
+    "name": "Full Name"
+  }
+
+}

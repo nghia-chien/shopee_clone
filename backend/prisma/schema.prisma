@@ -3,41 +3,38 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id          String    @id @default(cuid()) @map("id")
-  email       String    @unique @map("email")
-  phoneNumber String?   @unique @db.VarChar(20) @map("phone_number")
-  password    String    @map("password")
-  name        String?   @map("name")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  orders      Orders[]   @relation("user_orders")
+  id          String     @id @default(cuid()) @map("id")
+  email       String     @unique @map("email")
+  phoneNumber String?    @unique @map("phone_number") @db.VarChar(20)
+  password    String     @map("password")
+  name        String?    @map("name")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
   cartItems   CartItem[] @relation("user_cart_items")
+  orders      Orders[]   @relation("user_orders")
 
   @@map("user")
 }
 
 model Seller {
-  id           String   @id @default(cuid()) @map("id")
-  name         String   @map("name")
-  email        String   @unique @map("email")
-  phoneNumber  String?   @unique @db.VarChar(20) @map("phone_number")
-  password     String    @map("password")
-  address      Json?    @map("address")
-  rating       Float?   @default(0) @map("rating")
-  status       String   @default("active") @map("status")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  products               Product[]
-  payoutSettings         SellerPayoutSettings[]
-  shippingPreferences    SellerShippingPreferences[]
+  id                  String                      @id @default(cuid()) @map("id")
+  name                String                      @map("name")
+  email               String                      @unique @map("email")
+  phoneNumber         String?                     @unique @map("phone_number") @db.VarChar(20)
+  address             Json?                       @map("address")
+  rating              Float?                      @default(0) @map("rating")
+  status              String                      @default("active") @map("status")
+  createdAt           DateTime                    @default(now()) @map("created_at")
+  updatedAt           DateTime                    @updatedAt @map("updated_at")
+  password            String                      @map("password")
+  products            Product[]
+  payoutSettings      SellerPayoutSettings[]
+  shippingPreferences SellerShippingPreferences[]
 
   @@map("seller")
 }
@@ -49,48 +46,45 @@ model SellerPayoutSettings {
   accountNumber   String   @map("account_number")
   bankName        String?  @map("bank_name")
   currency        String   @default("VND") @map("currency")
-  minPayoutAmount Decimal  @db.Decimal(10,2) @default(0) @map("min_payout_amount")
+  minPayoutAmount Decimal  @default(0) @map("min_payout_amount") @db.Decimal(10, 2)
   payoutFrequency String   @default("weekly") @map("payout_frequency")
   status          String   @default("active") @map("status")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  seller          Seller   @relation(fields: [sellerId], references: [id])
 
-  seller Seller @relation(fields: [sellerId], references: [id])
-
-  @@map("seller_payout_settings")
   @@index([sellerId], map: "idx_seller_payout_settings_seller_id")
+  @@map("seller_payout_settings")
 }
 
 model SellerShippingPreferences {
-  id                String   @id @default(cuid()) @map("id")
-  sellerId          String   @map("seller_id")
-  shippingMethods   Json     @map("shipping_methods")
-  shippingRates     Json     @map("shipping_rates")
-  freeShippingThreshold Decimal @db.Decimal(10,2) @default(0) @map("free_shipping_threshold")
-  defaultWarehouse  String?  @map("default_warehouse")
-  regionsCovered    Json?    @map("regions_covered")
-  status            String   @default("active") @map("status")
-  isDefault         Boolean  @default(true) @map("is_default")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                    String   @id @default(cuid()) @map("id")
+  sellerId              String   @map("seller_id")
+  shippingMethods       Json     @map("shipping_methods")
+  shippingRates         Json     @map("shipping_rates")
+  freeShippingThreshold Decimal  @default(0) @map("free_shipping_threshold") @db.Decimal(10, 2)
+  defaultWarehouse      String?  @map("default_warehouse")
+  regionsCovered        Json?    @map("regions_covered")
+  status                String   @default("active") @map("status")
+  isDefault             Boolean  @default(true) @map("is_default")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  seller                Seller   @relation(fields: [sellerId], references: [id])
 
-  seller Seller @relation(fields: [sellerId], references: [id])
-
-  @@map("seller_shipping_preferences")
   @@index([sellerId], map: "idx_seller_shipping_preferences_seller_id")
+  @@map("seller_shipping_preferences")
 }
 
 model Product {
   id           String      @id @default(cuid()) @map("id")
   title        String      @map("title")
   description  String?     @map("description")
-  price        Decimal     @db.Decimal(10, 2) @map("price")
+  price        Decimal     @map("price") @db.Decimal(10, 2)
   stock        Int         @default(0) @map("stock")
   images       String[]    @map("images")
   sellerId     String      @map("seller_id")
-  seller       Seller      @relation(fields: [sellerId], references: [id])
   dimensions   Json?       @map("dimensions")
-  discount     Decimal?    @db.Decimal(10,2) @default(0) @map("discount")
+  discount     Decimal?    @default(0) @map("discount") @db.Decimal(10, 2)
   rating       Float?      @default(0) @map("rating")
   reviewsCount Int?        @default(0) @map("reviews_count")
   tags         String[]    @map("tags")
@@ -98,23 +92,21 @@ model Product {
   weight       Float?      @map("weight")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
-
   cartItems    CartItem[]  @relation("product_cart_items")
   orderItems   OrderItem[] @relation("product_order_items")
+  seller       Seller      @relation(fields: [sellerId], references: [id])
 
-  @@map("product")
   @@index([sellerId], map: "idx_product_seller_id")
+  @@map("product")
 }
 
-
 model CartItem {
-  id        String   @id @default(cuid()) @map("id")
-  userId    String   @map("user_id")
-  productId String   @map("product_id")
-  quantity  Int      @default(1) @map("quantity")
-
-  user      User     @relation(fields: [userId], references: [id], name: "user_cart_items")
-  product   Product  @relation(fields: [productId], references: [id], name: "product_cart_items")
+  id        String  @id @default(cuid()) @map("id")
+  userId    String  @map("user_id")
+  productId String  @map("product_id")
+  quantity  Int     @default(1) @map("quantity")
+  product   Product @relation("product_cart_items", fields: [productId], references: [id])
+  user      User    @relation("user_cart_items", fields: [userId], references: [id])
 
   @@unique([userId, productId], map: "cart_item_user_product_key")
   @@map("cart_item")
@@ -123,25 +115,23 @@ model CartItem {
 model Orders {
   id        String      @id @default(cuid()) @map("id")
   userId    String      @map("user_id")
-  total     Decimal     @db.Decimal(10, 2) @map("total")
+  total     Decimal     @map("total") @db.Decimal(10, 2)
   status    String      @default("pending") @map("status")
   createdAt DateTime    @default(now()) @map("created_at")
-
-  user      User        @relation(fields: [userId], references: [id], name: "user_orders")
   items     OrderItem[] @relation("order_items")
+  user      User        @relation("user_orders", fields: [userId], references: [id])
 
-  @@map("orders")  // dùng 'orders' thay vì 'order' để tránh quoting
+  @@map("orders")
 }
 
 model OrderItem {
-  id        String   @id @default(cuid()) @map("id")
-  orderId   String   @map("order_id")
-  productId String   @map("product_id")
-  price     Decimal  @db.Decimal(10, 2) @map("price")
-  quantity  Int      @default(1) @map("quantity")
-
-  orders     Orders    @relation(fields: [orderId], references: [id], name: "order_items")
-  product   Product  @relation(fields: [productId], references: [id], name: "product_order_items")
+  id        String  @id @default(cuid()) @map("id")
+  orderId   String  @map("order_id")
+  productId String  @map("product_id")
+  price     Decimal @map("price") @db.Decimal(10, 2)
+  quantity  Int     @default(1) @map("quantity")
+  orders    Orders  @relation("order_items", fields: [orderId], references: [id])
+  product   Product @relation("product_order_items", fields: [productId], references: [id])
 
   @@map("order_item")
 }

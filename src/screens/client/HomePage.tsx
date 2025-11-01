@@ -31,17 +31,13 @@ export function HomePage() {
   }
 
   return (
-    
       <HomeLayout>
-
-
         {/* Products Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
   <h2 className="text-2xl font-bold mb-6">Sản phẩm nổi bật</h2>
-
   {/* Nếu data chưa có hoặc rỗng */}
   {(!data?.items || data.items.length === 0) ? (
-    <p className="text-gray-500 text-center py-8">Không có sản phẩm nào.</p>
+    <p className="text-gray-500 text-center py-8">Gợi ý hôm nay.</p>
   ) : (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {data.items.map((p) => (
