@@ -6,6 +6,9 @@ import { useSellerAuthStore } from "../../store/SellerAuth";
 export const SellerUploadPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [discount, setDiscount] = useState<number | "">("");
+  const [rating, setRating] = useState<number | "">("");
+  const [tags, setTags] = useState("");
   const [price, setPrice] = useState<number | "">("");
   const [stock, setStock] = useState<number | "">("");
   const [images, setImages] = useState<File[]>([]);
@@ -73,6 +76,9 @@ export const SellerUploadPage = () => {
             description,
             price,
             stock,
+            discount,
+            rating,
+            tags,
             images: imageUrls, // ✅ gửi mảng nhiều ảnh
           }),
         }
@@ -86,6 +92,9 @@ export const SellerUploadPage = () => {
         // Reset form
         setTitle("");
         setDescription("");
+        setRating("");
+        setTags("");
+        setDiscount("");
         setPrice("");
         setStock("");
         setImages([]);
@@ -117,6 +126,28 @@ export const SellerUploadPage = () => {
             placeholder="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            className="w-full p-2 border rounded"
+          />
+          <input
+            type="number"
+            placeholder="discount"
+            value={discount}
+            onChange={(e) => setDiscount(Number(e.target.value))}
+            className="w-full p-2 border rounded"
+            required
+          />
+          <input
+            type="number"
+            placeholder="rating"
+            value={rating}
+            onChange={(e) => setRating(Number(e.target.value))}
+            className="w-full p-2 border rounded"
+            required
+          />
+          <textarea
+            placeholder="tags"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
             className="w-full p-2 border rounded"
           />
           <input

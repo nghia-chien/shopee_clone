@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { useSellerAuthStore } from "../../store/SellerAuth";
 
 interface UploadImageProps {
-  productId: string; // nếu là sản phẩm mới, có thể là "new"
+  product_id: string; // nếu là sản phẩm mới, có thể là "new"
   onUpload?: (url: string) => void;
 }
 
-export const UploadImage: React.FC<UploadImageProps> = ({ productId, onUpload }) => {
+export const UploadImage: React.FC<UploadImageProps> = ({ product_id, onUpload }) => {
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [uploading, setUploading] = useState(false);

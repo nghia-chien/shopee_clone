@@ -1,11 +1,11 @@
-export async function getCart(userId: string) {
-	return { userId, items: [] };
+export async function getCart(user_id: string) {
+	return { user_id, items: [] };
 }
 
-export async function addToCart(userId: string, productId: string, quantity: number) {
-	return { userId, productId, quantity };
+export async function addToCart(user_id: string, product_id: string, quantity: number) {
+	return { user_id, product_id, quantity };
 }
 
-export async function removeFromCart(userId: string, productId: string) {
-	return { userId, productId };
+export async function removeFromCart(user_id: string, product_id: string) {
+	return { user_id, product_id };
 }

@@ -127,9 +127,9 @@ export function HomeLayout({ children }: HomeLayoutProps) {
     navigate(`/category/${category}`);
   };
 
-  const handleProductClick = (productId: string) => {
+  const handleProductClick = (product_id: string) => {
     // TODO: Navigate to product detail page
-    navigate(`/product/${productId}`);
+    navigate(`/product/${product_id}`);
   };
 
   const handleShopClick = (shopId: string) => {
@@ -392,104 +392,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
           </div>
         </section>
 
-        {/* ======================================================================
-            TRENDING PRODUCTS SECTION (Gợi Ý Hôm Nay)
-            TODO:
-            - Implement infinite scroll or pagination
-            - Add sorting options (price, rating, sales)
-            - Add filtering sidebar
-            - Add product quick view modal
-            - Add "Add to cart" button on hover
-            - Implement lazy loading for images
-        ====================================================================== */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-gray-600 text-lg uppercase font-bold">
-              Gợi Ý Hôm Nay
-            </h2>
-            {/* TODO: Add filter/sort dropdown */}
-          </div>
-          
-          {/* Products Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
-            {trendingProducts.map((product) => (
-              <div 
-                key={product.id}
-                className="bg-white rounded-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
-                onClick={() => handleProductClick(product.id)}
-              >
-                {/* Product Image */}
-                <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100">
-                  {/* TODO: Add real product images */}
-                  
-                  {/* Discount badge if applicable */}
-                  {product.discount > 0 && (
-                    <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-bl">
-                      -{product.discount}%
-                    </div>
-                  )}
-                  
-                  {/* Free ship badge */}
-                  {product.freeShip && (
-                    <div className="absolute bottom-0 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded-tr">
-                      Freeship
-                    </div>
-                  )}
-                </div>
-                
-                {/* Product Info */}
-                <div className="p-2">
-                  {/* Product Name */}
-                  <div className="text-sm text-gray-800 line-clamp-2 mb-2 h-10">
-                    {product.name} - {product.description}
-                  </div>
-                  
-                  {/* Price and Sold */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1">
-                      <span className="text-orange-500 font-bold text-base">
-                        ₫{formatPrice(product.price)}
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      Đã bán {formatSold(product.sold)}
-                    </span>
-                  </div>
-                  
-                  {/* Rating Stars */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                        </svg>
-                      ))}
-                    </div>
-                    {product.ratingCount > 0 && (
-                      <span className="text-xs text-gray-500">
-                        ({formatSold(product.ratingCount)})
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Location */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{product.location}</span>
-                    {/* TODO: Add wishlist/favorite button */}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Load More Button */}
-          {/* TODO: Replace with infinite scroll or proper pagination */}
-          <div className="flex justify-center mt-6">
-            <button className="px-8 py-3 border border-gray-300 rounded-sm hover:bg-gray-50 hover:border-orange-500 transition font-medium">
-              Xem thêm
-            </button>
-          </div>
-        </section>
+        
 
         {/* ======================================================================
             ADDITIONAL SECTIONS (Can be added as needed)
@@ -546,9 +449,12 @@ export function HomeLayout({ children }: HomeLayoutProps) {
         className="fixed bottom-6 right-6 w-12 h-12 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 transition flex items-center justify-center z-50"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
-        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+        {/* <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd"/>
-        </svg>
+        </svg> */}
+        <span className="material-symbols-outlined">
+          keyboard_control_key
+        </span>
       </button>
 
       {/* Live Chat Button */}

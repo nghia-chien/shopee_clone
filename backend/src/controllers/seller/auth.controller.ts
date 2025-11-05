@@ -12,27 +12,27 @@ const baseUserSchema = z.object({
 });
 
 const registerSchema = baseUserSchema.extend({
-  phoneNumber: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
+  phone_number: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
   name: z.string().optional(),
 });
 
 export const sellerRegisterController = async (req:any , res: Response)=>{
   try {
-    const { name, email, password, phoneNumber, address } = req.body;
+    const { name, email, password, phone_number, address } = req.body;
     if (!name || !email || !password)
       return res.status(400).json({ error: "Name, email, password required" });
 
     const exist_email = await prisma.seller.findUnique({ where: { email } });
     if (exist_email) return res.status(400).json({ error: "Email already registered" });
-    const exist_phone = await prisma.seller.findUnique({ where: { phoneNumber } });
+    const exist_phone = await prisma.seller.findUnique({ where: { phone_number } });
     if (exist_phone) return res.status(400).json({ error: "Phone number already registered" });
     
     const hashed = await bcrypt.hash(password, 10);
     const seller = await prisma.seller.create({
-      data: { name, email, password: hashed, phoneNumber, address },
+      data: { name, email, password: hashed, phone_number, address ,updated_at: new Date() },
     });
 
-    const token = jwt.sign({ id: seller.id, email: seller.email, phoneNumber: seller.phoneNumber }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
+    const token = jwt.sign({ id: seller.id, email: seller.email, phone_number: seller.phone_number }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
 
     res.json({ seller: { id: seller.id, email: seller.email, name: seller.name }, token });
   } catch (err) {
@@ -51,7 +51,7 @@ export const sellerLoginController = async (req:any , res: Response)=>{
     const match = await bcrypt.compare(password, seller.password);
     if (!match) return res.status(400).json({ error: "Invalid password" });
 
-    const token = jwt.sign({ id: seller.id, email: seller.email, phoneNumber: seller.phoneNumber }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
+    const token = jwt.sign({ id: seller.id, email: seller.email, phone_number: seller.phone_number }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
 
     res.json({ seller: { id: seller.id, email: seller.email, name: seller.name }, token });
   } catch (err) {
@@ -62,12 +62,12 @@ export const sellerLoginController = async (req:any , res: Response)=>{
 
 export const sellerMeController = async (req: any, res: Response) => {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ error: "Unauthorized seller/auth.controller " });
     }
 
-    const seller = await getSellerById(sellerId);
+    const seller = await getSellerById(seller_id);
     if (!seller) {
       return res.status(404).json({ error: "Seller not found" });
     }

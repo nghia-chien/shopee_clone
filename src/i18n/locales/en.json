@@ -32,6 +32,24 @@
     "loginButton": "Login",
     "registerButton": "Register",
     "name": "Full Name"
+  },
+  "product":{
+    "loading": "Loading...",
+    "sold": "Sold",
+    "voucher": "Voucher",
+    "shipping": "Shipping",
+    "quantity": "Quantity",
+    "add_to_cart": "Add to Cart",
+    "buy_now": "Buy Now",
+    "chat_now": "Chat Now",
+    "view_shop": "View Shop",
+    "product_details": "Product Details",
+    "stock": "In Stock",
+    "seller_address": "Seller Address",
+    "description": "Description",
+    "reviews": "Product Reviews",
+    "updating": "Updating...",
+    "other_products_by_shop": "Other Products from this Shop",
+    "you_may_also_like": "You May Also Like"
   }
-
 }

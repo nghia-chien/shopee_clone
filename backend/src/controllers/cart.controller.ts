@@ -2,11 +2,11 @@ import { Request, Response } from 'express';
 import { prisma } from '../utils/prisma'; // đường dẫn có thể tùy theo cấu trúc project của bạn
 
 // 🧾 Lấy toàn bộ giỏ hàng của người dùng
-export async function listCartItemsController(req: Request & { user?: { id: string } }, res: Response) {
+export async function listcart_itemsController(req: Request & { user?: { id: string } }, res: Response) {
 	try {
-		const userId = req.user?.id; // yêu cầu middleware auth gán req.user
-		const items = await prisma.cartItem.findMany({
-			where: { userId },
+		const user_id = req.user?.id; // yêu cầu middleware auth gán req.user
+		const items = await prisma.cart_item.findMany({
+			where: { user_id },
 			include: { product: true },
 		});
 
@@ -20,42 +20,42 @@ export async function listCartItemsController(req: Request & { user?: { id: stri
 // ➕ Thêm sản phẩm vào giỏ hàng
 export async function addToCartController(req: Request & { user?: { id: string } }, res: Response) {
 	try {
-		const userId = req.user?.id;
-		const { productId, quantity } = req.body;
+		const user_id = req.user?.id;
+		const { product_id, quantity } = req.body;
 
-		if (!productId || !quantity || isNaN(Number(quantity))) {
+		if (!product_id || !quantity || isNaN(Number(quantity))) {
 			return res.status(400).json({ message: 'Invalid input data' });
 		}
 
-		const existingItem = await prisma.cartItem.findUnique({
+		const existingItem = await prisma.cart_item.findUnique({
 			where: {
-				userId_productId: {
-					userId: userId ?? '',
-					productId,
+				user_id_product_id: {
+					user_id: user_id ?? '',
+					product_id,
 				},
 			},
 		});
 
-		let cartItem;
+		let cart_item;
 
 		if (existingItem) {
 			// Nếu sản phẩm đã có, cộng thêm số lượng
-			cartItem = await prisma.cartItem.update({
+			cart_item = await prisma.cart_item.update({
 				where: { id: existingItem.id },
 				data: { quantity: existingItem.quantity + Number(quantity) },
 			});
 		} else {
 			// Nếu chưa có, tạo mới
-			cartItem = await prisma.cartItem.create({
+			cart_item = await prisma.cart_item.create({
 				data: {
-					userId: userId ?? '',
-					productId,
+					user_id: user_id ?? '',
+					product_id,
 					quantity: Number(quantity),
 				},
 			});
 		}
 
-		return res.json(cartItem);
+		return res.json(cart_item);
 	} catch (error) {
 		console.error('Error adding to cart:', error);
 		return res.status(500).json({ message: 'Internal server error' });
@@ -63,30 +63,30 @@ export async function addToCartController(req: Request & { user?: { id: string }
 }
 
 // ✏️ Cập nhật số lượng sản phẩm trong giỏ
-export async function updateCartItemController(req: Request & { user?: { id: string } }, res: Response) {
+export async function updatecart_itemController(req: Request & { user?: { id: string } }, res: Response) {
 	try {
-		const userId = req.user?.id;
-		const { productId, quantity } = req.body;
+		const user_id = req.user?.id;
+		const { product_id, quantity } = req.body;
 
-		if (!productId || isNaN(Number(quantity))) {
+		if (!product_id || isNaN(Number(quantity))) {
 			return res.status(400).json({ message: 'Invalid input data' });
 		}
 
-		const cartItem = await prisma.cartItem.findUnique({
+		const cart_item = await prisma.cart_item.findUnique({
 			where: {
-				userId_productId: {
-					userId: userId ?? '',
-					productId,
+				user_id_product_id: {
+					user_id: user_id ?? '',
+					product_id,
 				},
 			},
 		});
 
-		if (!cartItem) {
+		if (!cart_item) {
 			return res.status(404).json({ message: 'Item not found in cart' });
 		}
 
-		const updated = await prisma.cartItem.update({
-			where: { id: cartItem.id },
+		const updated = await prisma.cart_item.update({
+			where: { id: cart_item.id },
 			data: { quantity: Number(quantity) },
 		});
 
@@ -98,25 +98,25 @@ export async function updateCartItemController(req: Request & { user?: { id: str
 }
 
 // 🗑️ Xóa sản phẩm khỏi giỏ hàng
-export async function removeCartItemController(req: Request & { user?: { id: string } }, res: Response) {
+export async function removecart_itemController(req: Request & { user?: { id: string } }, res: Response) {
 	try {
-		const userId = req.user?.id;
-		const { productId } = req.params;
+		const user_id = req.user?.id;
+		const { product_id } = req.params;
 
-		const cartItem = await prisma.cartItem.findUnique({
+		const cart_item = await prisma.cart_item.findUnique({
 			where: {
-				userId_productId: {
-					userId: userId ?? '',
-					productId,
+				user_id_product_id: {
+					user_id: user_id ?? '',
+					product_id,
 				},
 			},
 		});
 
-		if (!cartItem) {
+		if (!cart_item) {
 			return res.status(404).json({ message: 'Item not found in cart' });
 		}
 
-		await prisma.cartItem.delete({ where: { id: cartItem.id } });
+		await prisma.cart_item.delete({ where: { id: cart_item.id } });
 
 		return res.json({ message: 'Item removed from cart' });
 	} catch (error) {
