@@ -20,7 +20,7 @@ export const createSellerProduct = async (req: Request, res: Response) => {
 // 🟡 READ ALL
 export const getSellerProducts = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.Id;
+    const sellerId = (req as any).seller?.id;
     const products = await SellerProductService.getAll(sellerId);
     res.json({ products });
   } catch (err) {
@@ -32,7 +32,7 @@ export const getSellerProducts = async (req: Request, res: Response) => {
 // 🟣 READ ONE
 export const getSellerProductById = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.Id;
+    const sellerId = (req as any).seller?.id;
     const { id } = req.params;
     const product = await SellerProductService.getById(sellerId, id);
     if (!product) return res.status(404).json({ error: "Product not found" });
@@ -46,7 +46,7 @@ export const getSellerProductById = async (req: Request, res: Response) => {
 // 🔵 UPDATE
 export const updateSellerProduct = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.Id;
+    const sellerId = (req as any).seller?.id;
     const { id } = req.params;
     const updated = await SellerProductService.update(sellerId, id, req.body);
     if (!updated) return res.status(404).json({ error: "Product not found or not yours" });
@@ -60,7 +60,7 @@ export const updateSellerProduct = async (req: Request, res: Response) => {
 // 🔴 DELETE
 export const deleteSellerProduct = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.Id;
+    const sellerId = (req as any).seller?.id;
     const { id } = req.params;
     const deleted = await SellerProductService.remove(sellerId, id);
     if (!deleted) return res.status(404).json({ error: "Product not found or not yours" });

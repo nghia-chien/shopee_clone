@@ -4,7 +4,7 @@ import { prisma } from "../../utils/prisma";
 export const SellerProductService = {
   async create(sellerId: string, data: any) {
     try {
-      const { title, description, price, stock, images, tags, weight, dimensions } = data;
+      const { title, description, price, stock, images, tags, weight, dimensions, categoryId, attributes } = data;
 
       if (!title || !price || !stock)
         throw new Error("Thiếu dữ liệu cần thiết");
@@ -21,6 +21,8 @@ export const SellerProductService = {
           tags,
           weight,
           dimensions,
+          categoryId: categoryId ?? null,
+          attributes: attributes ?? undefined,
           sellerId,
         },
       });

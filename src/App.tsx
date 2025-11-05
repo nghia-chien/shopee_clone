@@ -8,12 +8,12 @@ function App() {
   return (
 
     <AppProviders>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
         {/* HEADER */}
         
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 w-full">
+        <main className="flex-1 w-full overflow-x-hidden">
           <AppRoutes />
         </main>
 

@@ -14,8 +14,9 @@ export function AppRoutes() {
         {/* Client routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/" element={<AuthGuard><HomePage /></AuthGuard>} />
-        <Route path="/products/:id" element={<AuthGuard><ProductPage /></AuthGuard>} />
+        {/* Public pages */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/products/:id" element={<ProductPage />} />
         <Route path="/admin/*" element={<AdminApp />} />
 
         {/* Seller routes */}

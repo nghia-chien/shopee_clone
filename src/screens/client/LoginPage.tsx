@@ -145,12 +145,16 @@ export function LoginPage() {
 
 
 
-      {/* Register Link */}
+      {/* Register / Seller Link */}
       <div className="mt-6 text-center text-sm">
         <span className="text-gray-600">Bạn mới biết đến Shopee? </span>
         <Link to="/register" className="text-orange-500 hover:text-orange-600 font-medium">
           Đăng ký
         </Link>
+        <div className="mt-2 text-gray-600">
+          <span>Bạn là người bán? </span>
+          <Link to="/seller/login" className="text-orange-500 hover:text-orange-600 font-medium">Đăng nhập người bán</Link>
+        </div>
       </div>
     </div>
     </AuthLayout>

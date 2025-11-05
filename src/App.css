@@ -1,5 +1,6 @@
 #root {
-  max-width: 1280px;
+  width: 100%;
+  max-width: 100%;
   text-align: center;
   background:#fff;
 }
@@ -22,6 +23,7 @@
   margin-left:  auto;
   margin-right: auto;
   padding: 0 1rem;
+  width: 100%;
 }
 
 .logo {
@@ -107,13 +109,15 @@
   .v6jyyY {
       display: flex;
       justify-content: center;
-      min-width: 1200px
+      max-width: 100%;
+      width: 100%;
   }
 
   .SzWtpW {
       display: flex;
       height: 235px;
-      width: 1200px
+      max-width: 100%;
+      width: 100%;
   }
 
   .Z0mD0k {

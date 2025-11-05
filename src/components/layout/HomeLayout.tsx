@@ -152,83 +152,81 @@ export function HomeLayout({ children }: HomeLayoutProps) {
   // ============================================================================
 
   return (
-    <div className="bg-gray-50 ">  <Header></Header>
+    <div className="bg-gray-50 w-full overflow-visible">  <Header></Header>
    
 
       {/* ========================================================================
           MAIN CONTENT AREA
       ======================================================================== */}
         {/* ======================================================================
-            BANNER CAROUSEL SECTION
-            TODO: 
-            - Implement auto-slide with react-slick or swiper
-            - Add navigation dots
-            - Add prev/next buttons
-            - Lazy load images
-            - Add click tracking analytics
+            BANNER CAROUSEL SECTION (container)
         ====================================================================== */}
         <section className="bg-white rounded-sm shadow-sm mt-4">
-          
-          {/* banner chính  */}
-          <section className="flex gap-2 justify-center max-w-[1200px] mx-auto mt-4">
-          {/* Main Banner Slider */}
-          <div className="flex-2 h-[235px] w-[800px] rounded-sm overflow-hidden relative shadow-sm">
-            <Slider {...settings}>
-              {mainBanners.map((banner) => (
-                <a key={banner.id} href={banner.link}>
-                  <img
-                    src={banner.image}
-                    alt={banner.alt}
-                    className="w-full h-[235px] object-cover rounded-sm"
-                  />
-                </a>
-              ))}
-            </Slider>
-          </div>
-
-          {/* Sub Banners (cố định bên cạnh) */}
-          <div className="flex-1 flex flex-col gap-2 h-[235px]">
-            {subBanners.map((banner) => (
-              <a
-                key={banner.id}
-                href={banner.link}
-                className="flex-1 relative overflow-hidden rounded-sm shadow-sm"
-              >
-                <img
-                  src={banner.image}
-                  alt={banner.alt}
-                  className="w-full h-full object-cover rounded-sm"
-                />
-              </a>
-            ))}
-          </div>
-        </section>
-
-
-
-          {/* ======================================================================
-              QUICK ACTIONS SECTION
-              TODO: Add icons, make items clickable with proper routing
-          ====================================================================== */}
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 mt-4">
-            {quickActions.map((action) => (
-              <div
-                key={action.name}
-                className="flex flex-col items-center gap-2 cursor-pointer group"
-                onClick={() => navigate(action.link)}
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-pink-100 rounded-lg flex items-center justify-center group-hover:shadow-md group-hover:scale-105 transition-all">
-                  <span className="text-2xl">{action.icon}</span>
-                </div>
-                <span className="text-xs text-center text-gray-700 group-hover:text-orange-500 transition">
-                  {action.name}
-                </span>
+          <div className="max-w-[1200px] mx-auto px-4">
+          {/* banner chính: bố cục như mẫu, giữ slider hoạt động */}
+          <section className="py-4">
+            <div className="grid gap-2 md:grid-cols-[800px_1fr]">
+              {/* Main Banner (slider) */}
+              <div className="rounded-sm overflow-hidden shadow-sm h-[200px] sm:h-[220px] md:h-[235px]">
+                <Slider {...settings}>
+                  {mainBanners.map((banner) => (
+                    <a key={banner.id} href={banner.link}>
+                      <img
+                        src={banner.image}
+                        alt={banner.alt}
+                        className="w-full h-full object-cover rounded-sm"
+                      />
+                    </a>
+                  ))}
+                </Slider>
               </div>
-            ))}
+
+              {/* Sub Banners stacked to match total height */}
+              <div className="hidden md:flex flex-col gap-2 h-[235px]">
+                {subBanners.map((banner) => (
+                  <a
+                    key={banner.id}
+                    href={banner.link}
+                    className="flex-1 rounded-sm overflow-hidden shadow-sm"
+                  >
+                    <img
+                      src={banner.image}
+                      alt={banner.alt}
+                      className="w-full h-full object-cover rounded-sm"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </section>
           </div>
         </section>
 
-        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* ======================================================================
+            QUICK ACTIONS SECTION (separate card)
+        ====================================================================== */}
+        <section className="bg-white rounded-sm shadow-sm mt-3">
+          <div className="max-w-[1200px] mx-auto px-4 py-4">
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-4">
+              {quickActions.map((action) => (
+                <div
+                  key={action.name}
+                  className="flex flex-col items-center gap-2 cursor-pointer group"
+                  onClick={() => navigate(action.link)}
+                >
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-pink-100 rounded-lg flex items-center justify-center group-hover:shadow-md group-hover:scale-105 transition-all">
+                    <span className="text-2xl">{action.icon}</span>
+                  </div>
+                  <span className="text-xs text-center text-gray-700 group-hover:text-orange-500 transition">
+                    {action.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 w-full overflow-x-hidden">
         {/* ======================================================================
             CATEGORIES SECTION
             TODO: 
@@ -237,7 +235,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
             - Implement category filtering
             - Add breadcrumb navigation on category pages
         ====================================================================== */}
-        <section className="bg-white rounded-sm p-6 shadow-sm">
+        <section className="bg-white rounded-sm p-6 shadow-sm max-w-[1200px] mx-auto">
           <h2 className="text-gray-500 text-sm mb-4 uppercase font-semibold">Danh Mục</h2>
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-4">
             {categories.map((cat, i) => (

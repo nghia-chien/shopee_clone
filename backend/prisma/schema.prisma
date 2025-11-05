@@ -17,6 +17,8 @@ model User {
   updatedAt   DateTime   @updatedAt @map("updated_at")
   cartItems   CartItem[] @relation("user_cart_items")
   orders      Orders[]   @relation("user_orders")
+  // back-reference 1-1 tới Seller (nếu user này là seller)
+  seller      Seller?
 
   @@map("user")
 }
@@ -35,6 +37,9 @@ model Seller {
   products            Product[]
   payoutSettings      SellerPayoutSettings[]
   shippingPreferences SellerShippingPreferences[]
+  // Liên kết 1-1 (hoặc 1-n trong các mở rộng) với User để xác định danh tính buyer
+  userId              String?                     @unique @map("user_id")
+  user                User?                       @relation(fields: [userId], references: [id])
 
   @@map("seller")
 }
@@ -83,11 +88,13 @@ model Product {
   stock        Int         @default(0) @map("stock")
   images       String[]    @map("images")
   sellerId     String      @map("seller_id")
+  categoryId   String?     @map("category_id")
   dimensions   Json?       @map("dimensions")
   discount     Decimal?    @default(0) @map("discount") @db.Decimal(10, 2)
   rating       Float?      @default(0) @map("rating")
   reviewsCount Int?        @default(0) @map("reviews_count")
   tags         String[]    @map("tags")
+  attributes   Json?       @map("attributes")
   status       String?     @default("active") @map("status")
   weight       Float?      @map("weight")
   createdAt    DateTime    @default(now()) @map("created_at")
@@ -95,9 +102,27 @@ model Product {
   cartItems    CartItem[]  @relation("product_cart_items")
   orderItems   OrderItem[] @relation("product_order_items")
   seller       Seller      @relation(fields: [sellerId], references: [id])
+  category     Category?   @relation(fields: [categoryId], references: [id])
 
   @@index([sellerId], map: "idx_product_seller_id")
+  @@index([categoryId], map: "idx_product_category_id")
   @@map("product")
+}
+
+model Category {
+  id       String     @id @default(cuid()) @map("id")
+  name     String     @map("name")
+  slug     String     @unique @map("slug")
+  parentId String?    @map("parent_id")
+  level    Int        @default(1) @map("level")
+  path     String[]   @map("path")
+  products Product[]
+
+  parent   Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryToCategory")
+
+  @@index([parentId], map: "idx_category_parent_id")
+  @@map("category")
 }
 
 model CartItem {
@@ -114,10 +139,11 @@ model CartItem {
 
 model Orders {
   id        String      @id @default(cuid()) @map("id")
-  userId    String      @map("user_id")
+  userId    String      @map("user_id") // Buyer luôn là User
   total     Decimal     @map("total") @db.Decimal(10, 2)
   status    String      @default("pending") @map("status")
   createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
   items     OrderItem[] @relation("order_items")
   user      User        @relation("user_orders", fields: [userId], references: [id])
 

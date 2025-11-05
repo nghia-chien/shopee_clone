@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, ShoppingBag } from 'lucide-react';
+import { Mail, Lock, ShoppingBag, ShieldCheck, Truck, Store } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSellerAuthStore } from "../../store/SellerAuth"; 
 
@@ -9,7 +9,6 @@ export const SellerLogin = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,111 +38,102 @@ export const SellerLogin = () => {
       setError(err.message || "Lỗi đăng nhập server");
     }
   };
-   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Brand Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mb-4">
-            <ShoppingBag className="w-8 h-8 text-white" />
+  return (
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+      {/* Left brand panel */}
+      <div className="hidden lg:flex flex-col justify-center bg-gradient-to-br from-[#ffede5] via-[#fff5f2] to-white border-r px-16">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-[#ffe3da] flex items-center justify-center">
+            <img src="/shopee_icon_o.png" alt="logo" className="w-7 h-7" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Seller Portal</h1>
-          <p className="text-gray-600">Welcome back! Please login to your account</p>
+          <div>
+            <h2 className="text-2xl font-bold text-[#ee4d2d]">Shopee Seller Center</h2>
+            <p className="text-sm text-gray-600">Đồng hành phát triển cùng nhà bán</p>
+          </div>
         </div>
+        <ul className="space-y-4 text-gray-700">
+          <li className="flex items-center gap-3"><Store className="w-5 h-5 text-[#ee4d2d]" /> Quản lý sản phẩm, kho hàng dễ dàng</li>
+          <li className="flex items-center gap-3"><Truck className="w-5 h-5 text-[#ee4d2d]" /> Đồng bộ vận chuyển nhanh chóng</li>
+          <li className="flex items-center gap-3"><ShieldCheck className="w-5 h-5 text-[#ee4d2d]" /> Bảo mật và an toàn giao dịch</li>
+        </ul>
+      </div>
 
-        {/* Login Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="space-y-6 text-left">
+      {/* Right form panel */}
+      <div className="flex items-center justify-center bg-[#f5f5f5] p-6">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-xl border shadow-sm p-8">
+            <div className="flex items-center gap-2 mb-6 lg:hidden">
+              <img src="/shopee_icon_o.png" className="w-6 h-6" />
+              <span className="text-[#ee4d2d] font-semibold">Seller Center</span>
+            </div>
+
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Đăng nhập</h1>
+
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
                 {error}
               </div>
             )}
 
-            {/* Email Input */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-[#ee4d2d] focus:border-transparent"
+                    placeholder="seller@example.com"
+                    required
+                  />
                 </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition outline-none"
-                  placeholder="seller@example.com"
-                  required
-                />
               </div>
-            </div>
 
-            {/* Password Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  placeholder="Min. 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-[#ee4d2d] focus:border-transparent"
+                    placeholder="Ít nhất 6 ký tự"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Remember & Forgot */}
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-gray-600">Remember me</span>
-              </label>
-              <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                Forgot password?
-              </a>
-            </div>
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center">
+                  <input type="checkbox" className="w-4 h-4 border-gray-300 rounded" />
+                  <span className="ml-2 text-gray-600">Ghi nhớ đăng nhập</span>
+                </label>
+                <a className="text-[#ee4d2d] hover:underline" href="#">Quên mật khẩu?</a>
+              </div>
 
-            {/* Login Button */}
-            <button
-              onClick={handleLogin}
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Logging in...
-                </span>
-              ) : (
-                'Login '
-              )}
-            </button>
+              <button
+                onClick={handleLogin}
+                disabled={isLoading}
+                className="w-full bg-[#ee4d2d] hover:bg-[#d63d20] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+              >
+                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+              </button>
+
+              <p className="text-sm text-gray-600 text-center">
+                Chưa có tài khoản? {""}
+                <Link to="/seller/register" className="text-[#ee4d2d] hover:underline font-medium">Đăng ký</Link>
+              </p>
+              <p className="text-xs text-gray-500 text-center">
+                Bạn là người mua? {""}
+                <Link to="/login" className="text-[#ee4d2d] hover:underline">Đăng nhập người mua</Link>
+              </p>
+            </div>
           </div>
 
-          {/* Sign Up Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/seller/register" className="text-orange-500 hover:text-orange-600 font-medium">
-              Register
-              </Link>
-            </p>
-          </div>
+          <p className="text-center text-xs text-gray-500 mt-6">© 2025 Shopee Seller Center</p>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-8">
-          © 2025 Seller Portal. All rights reserved.
-        </p>
       </div>
     </div>
   );

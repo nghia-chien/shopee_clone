@@ -30,7 +30,10 @@ function signToken(user: { id: string; email: string; phoneNumber?: string }) {
 export async function registerController(req: Request, res: Response) {
   try {
     const parsed = registerSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
+    if (!parsed.success) {
+      const issues = parsed.error.issues?.map((i) => i.message).join(', ');
+      return res.status(400).json({ message: issues || 'Invalid payload' });
+    }
 
     const { email, phoneNumber, password, name } = parsed.data;
 
@@ -48,6 +51,9 @@ export async function registerController(req: Request, res: Response) {
       },
     });
 
+    // Check if this user is already linked to a seller account (should be none on register)
+    const linkedSeller = await prisma.seller.findUnique({ where: { userId: user.id } });
+
     return res.status(201).json({
       token: signToken({ ...user, phoneNumber: user.phoneNumber || undefined }),
       user: {
@@ -55,6 +61,8 @@ export async function registerController(req: Request, res: Response) {
         email: user.email,
         phoneNumber: user.phoneNumber,
         name: user.name,
+        isSeller: Boolean(linkedSeller),
+        sellerId: linkedSeller?.id || null,
       },
     });
   } catch (err) {
@@ -74,6 +82,9 @@ export async function loginController(req: Request, res: Response) {
     if (!user || !(await bcrypt.compare(password, user.password)))
       return res.status(401).json({ message: 'Invalid email or password' });
 
+    // Check seller link
+    const linkedSeller = await prisma.seller.findUnique({ where: { userId: user.id } });
+
     return res.json({
       token: signToken({ ...user, phoneNumber: user.phoneNumber || undefined }),
       user: {
@@ -81,6 +92,8 @@ export async function loginController(req: Request, res: Response) {
         email: user.email,
         phoneNumber: user.phoneNumber,
         name: user.name,
+        isSeller: Boolean(linkedSeller),
+        sellerId: linkedSeller?.id || null,
       },
     });
   } catch (err) {
@@ -101,13 +114,18 @@ export async function meController(req: AuthRequest, res: Response) {
         email: true, 
         phoneNumber: true,
         name: true,
-        createdAt: true 
+        createdAt: true,
+        seller: { select: { id: true } },
       },
     });
 
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    return res.json(user);
+    return res.json({
+      ...user,
+      isSeller: Boolean(user.seller),
+      sellerId: user.seller?.id || null,
+    });
   } catch (error) {
     console.error('❌ meController error:', error);
     return res.status(500).json({ message: 'Internal server error' });

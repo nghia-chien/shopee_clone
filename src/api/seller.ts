@@ -22,6 +22,18 @@ export async function loginSeller(email: string, password: string) {
   });
   return res.json() as Promise<SellerAuthResponse>;
 }
+
+// Exchange buyer token -> seller token using current buyer auth header
+export async function exchangeSellerToken(buyerToken: string) {
+  const res = await fetch(`${API_URL}/seller/auth/exchange`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${buyerToken}`,
+    },
+  });
+  return res.json() as Promise<{ token: string; seller: SellerAuthData; error?: any }>;
+}
 import axios from "axios";
 
 const axiosClient = axios.create({
