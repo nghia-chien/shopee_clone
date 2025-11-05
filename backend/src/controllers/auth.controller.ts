@@ -12,7 +12,7 @@ const baseUserSchema = z.object({
 });
 
 const registerSchema = baseUserSchema.extend({
-  phone_number: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
+  phone_number : z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
   name: z.string().optional(),
 });
 
@@ -20,7 +20,7 @@ const registerSchema = baseUserSchema.extend({
 function signToken(user: { id: string; email: string; phone_number?: string }) {
   const secret = process.env.JWT_SECRET ?? 'dev-secret';
   return jwt.sign(
-    { id: user.id, email: user.email, phone_number: user.phone_number ?? undefined },
+    { id: user.id, email: user.email, phone_number : user.phone_number ?? undefined },
     secret,
     { expiresIn: '7d' }
   );
@@ -30,38 +30,86 @@ function signToken(user: { id: string; email: string; phone_number?: string }) {
 export async function registerController(req: Request, res: Response) {
   try {
     const parsed = registerSchema.safeParse(req.body);
-    if (!parsed.success) {
-      const issues = parsed.error.issues?.map((i) => i.message).join(', ');
-      return res.status(400).json({ message: issues || 'Invalid payload' });
-    }
+    if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
 
-    const { email, phone_number, password, name } = parsed.data;
+    const { email, phone_number , password, name } = parsed.data;
 
     const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { phone_number }] },
+      where: { OR: [{ email }, { phone_number  }] },
     });
     if (existingUser) return res.status(400).json({ message: 'Email or phone already registered' });
 
     const user = await prisma.user.create({
       data: {
         email,
-        phone_number,
+        phone_number ,
         password: await bcrypt.hash(password, 10),
         name: name || null,
       },
     });
 
     return res.status(201).json({
-      token: signToken({ ...user, phone_number: user.phone_number || undefined }),
+      token: signToken({ ...user, phone_number : user.phone_number  || undefined }),
       user: {
         id: user.id,
         email: user.email,
-        phone_number: user.phone_number,
+        phone_number : user.phone_number ,
         name: user.name,
       },
     });
   } catch (err) {
     console.error('❌ registerController error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+// === LOGIN =======================================================
+export async function loginController(req: Request, res: Response) {
+  try {
+    const parsed = baseUserSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const { email, password } = parsed.data;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !(await bcrypt.compare(password, user.password)))
+      return res.status(401).json({ message: 'Invalid email or password' });
+
+    return res.json({
+      token: signToken({ ...user, phone_number : user.phone_number  || undefined }),
+      user: {
+        id: user.id,
+        email: user.email,
+        phone_number : user.phone_number ,
+        name: user.name,
+      },
+    });
+  } catch (err) {
+    console.error('❌ loginController error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }}
+
+
+//==Me=================================================================
+export async function meController(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { 
+        id: true, 
+        email: true, 
+        phone_number : true,
+        name: true,
+        created_at: true 
+      },
+    });
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    return res.json(user);
+  } catch (error) {
+    console.error('❌ meController error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
