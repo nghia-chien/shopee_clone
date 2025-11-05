@@ -4,7 +4,7 @@ import productRouter from './modules/product.routes';
 import cartRouter from './modules/cart.routes';
 import orderRouter from './modules/order.routes';
 import sellerRoutes from '../sellerRoutes/index';
-import categoryRoutes from './category.routes';
+import categoryRoutes from './modules/category.routes';
 
 const router = Router();
 
