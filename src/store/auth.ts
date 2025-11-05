@@ -6,13 +6,13 @@ interface AuthState {
 	user: { 
 		id: string; 
 		email: string; 
-		phoneNumber?: string;
+		phone_number?: string;
 		name?: string;
 	} | null;
 	setAuth: (token: string, user: { 
 		id: string; 
 		email: string; 
-		phoneNumber?: string;
+		phone_number?: string;
 		name?: string;
 	}) => void;
 	logout: () => void;

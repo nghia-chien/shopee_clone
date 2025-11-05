@@ -26,7 +26,7 @@ export const SellerDashboard = () => {
 
       <section>
         <h2>Upload New Product</h2>
-        <UploadImage productId="new" />
+        <UploadImage product_id="new" />
       </section>
 
       <section>

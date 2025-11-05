@@ -12,15 +12,15 @@ const baseUserSchema = z.object({
 });
 
 const registerSchema = baseUserSchema.extend({
-  phoneNumber: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
+  phone_number : z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number'),
   name: z.string().optional(),
 });
 
 // === TOKEN HELPER ===============================================
-function signToken(user: { id: string; email: string; phoneNumber?: string }) {
+function signToken(user: { id: string; email: string; phone_number?: string }) {
   const secret = process.env.JWT_SECRET ?? 'dev-secret';
   return jwt.sign(
-    { id: user.id, email: user.email, phoneNumber: user.phoneNumber ?? undefined },
+    { id: user.id, email: user.email, phone_number : user.phone_number ?? undefined },
     secret,
     { expiresIn: '7d' }
   );
@@ -32,28 +32,28 @@ export async function registerController(req: Request, res: Response) {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: 'Invalid payload' });
 
-    const { email, phoneNumber, password, name } = parsed.data;
+    const { email, phone_number , password, name } = parsed.data;
 
     const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { phoneNumber }] },
+      where: { OR: [{ email }, { phone_number  }] },
     });
     if (existingUser) return res.status(400).json({ message: 'Email or phone already registered' });
 
     const user = await prisma.user.create({
       data: {
         email,
-        phoneNumber,
+        phone_number ,
         password: await bcrypt.hash(password, 10),
         name: name || null,
       },
     });
 
     return res.status(201).json({
-      token: signToken({ ...user, phoneNumber: user.phoneNumber || undefined }),
+      token: signToken({ ...user, phone_number : user.phone_number  || undefined }),
       user: {
         id: user.id,
         email: user.email,
-        phoneNumber: user.phoneNumber,
+        phone_number : user.phone_number ,
         name: user.name,
       },
     });
@@ -75,11 +75,11 @@ export async function loginController(req: Request, res: Response) {
       return res.status(401).json({ message: 'Invalid email or password' });
 
     return res.json({
-      token: signToken({ ...user, phoneNumber: user.phoneNumber || undefined }),
+      token: signToken({ ...user, phone_number : user.phone_number  || undefined }),
       user: {
         id: user.id,
         email: user.email,
-        phoneNumber: user.phoneNumber,
+        phone_number : user.phone_number ,
         name: user.name,
       },
     });
@@ -99,9 +99,9 @@ export async function meController(req: AuthRequest, res: Response) {
       select: { 
         id: true, 
         email: true, 
-        phoneNumber: true,
+        phone_number : true,
         name: true,
-        createdAt: true 
+        created_at: true 
       },
     });
 

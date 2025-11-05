@@ -2,9 +2,9 @@ import { prisma } from "../../utils/prisma";
 
 
 export const SellerProductService = {
-  async create(sellerId: string, data: any) {
+  async create(seller_id: string, data: any) {
     try {
-      const { title, description, price, stock, images, tags, weight, dimensions } = data;
+      const { title, description, price, stock, images,rating,discount, tags, weight, dimensions } = data;
 
       if (!title || !price || !stock)
         throw new Error("Thiếu dữ liệu cần thiết");
@@ -18,15 +18,19 @@ export const SellerProductService = {
           price: parseFloat(price),
           stock: parseInt(stock),
           images: cleanImages,
-          tags,
+          tags: tags ? tags.split(",").map((tag: string) => tag.trim()) : [],
+          discount: parseFloat(discount),
+          rating: parseFloat(rating),
           weight,
           dimensions,
-          sellerId,
+          seller_id,
         },
       });
+      
       return product;
     } catch (err) {
       console.error("Service createSellerProduct error:", err);
+      
       throw err;
     }
   },
@@ -34,18 +38,18 @@ export const SellerProductService = {
 
 
   // 🟡 READ ALL
-  async getAll(sellerId: string) {
-    return prisma.product.findMany({ where: { sellerId } });
+  async getAll(seller_id: string) {
+    return prisma.product.findMany({ where: { seller_id } });
   },
 
   // 🟣 READ ONE
-  async getById(sellerId: string, id: string) {
-    return prisma.product.findFirst({ where: { id, sellerId } });
+  async getById(seller_id: string, id: string) {
+    return prisma.product.findFirst({ where: { id, seller_id } });
   },
 
   // 🔵 UPDATE
-  async update(sellerId: string, id: string, data: any) {
-    const existing = await prisma.product.findFirst({ where: { id, sellerId } });
+  async update(seller_id: string, id: string, data: any) {
+    const existing = await prisma.product.findFirst({ where: { id, seller_id } });
     if (!existing) return null;
 
     return prisma.product.update({
@@ -55,8 +59,8 @@ export const SellerProductService = {
   },
 
   // 🔴 DELETE
-  async remove(sellerId: string, id: string) {
-    const existing = await prisma.product.findFirst({ where: { id, sellerId } });
+  async remove(seller_id: string, id: string) {
+    const existing = await prisma.product.findFirst({ where: { id, seller_id } });
     if (!existing) return null;
 
     await prisma.product.delete({ where: { id } });

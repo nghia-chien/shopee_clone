@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 export function RegisterPage() {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phone_number, setphone_number] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -23,7 +23,7 @@ export function RegisterPage() {
         },
         body: JSON.stringify({
           email,
-          phoneNumber,
+          phone_number,
           password,
           name: name || undefined,
         }),
@@ -82,8 +82,8 @@ export function RegisterPage() {
         <div>
           <input
             type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            value={phone_number}
+            onChange={(e) => setphone_number(e.target.value)}
             placeholder="Số điện thoại"
             className="text-black w-full px-4 py-3 bg-white border border-black focus:ring-2 focus:ring-black focus:border-black outline-none"
             required
