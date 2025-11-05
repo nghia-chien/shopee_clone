@@ -4,19 +4,19 @@ import { SellerRequest } from '../../middlewares/authSeller';
 
 export async function updateSellerProfileController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) return res.status(401).json({ message: 'Unauthorized' });
+    const seller_id = req.seller?.id;
+    if (!seller_id) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { name, phoneNumber, address } = req.body as { name?: string; phoneNumber?: string; address?: any };
+    const { name, phone_number, address } = req.body as { name?: string; phone_number?: string; address?: any };
 
     const updated = await prisma.seller.update({
-      where: { id: sellerId },
+      where: { id: seller_id },
       data: {
         name: name ?? undefined,
-        phoneNumber: phoneNumber ?? undefined,
+        phone_number: phone_number ?? undefined,
         address: address ?? undefined,
       },
-      select: { id: true, name: true, email: true, phoneNumber: true, address: true, rating: true, status: true },
+      select: { id: true, name: true, email: true, phone_number: true, address: true, rating: true, status: true },
     });
 
     return res.json({ seller: updated });
@@ -28,12 +28,12 @@ export async function updateSellerProfileController(req: SellerRequest, res: Res
 
 export async function updateSellerPaymentController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) return res.status(401).json({ message: 'Unauthorized' });
+    const seller_id = req.seller?.id;
+    if (!seller_id) return res.status(401).json({ message: 'Unauthorized' });
 
     const { payment } = req.body as { payment?: any };
 
-    const seller = await prisma.seller.findUnique({ where: { id: sellerId } });
+    const seller = await prisma.seller.findUnique({ where: { id: seller_id } });
     if (!seller) return res.status(404).json({ message: 'Seller not found' });
 
     const newAddress = {
@@ -42,7 +42,7 @@ export async function updateSellerPaymentController(req: SellerRequest, res: Res
     };
 
     const updated = await prisma.seller.update({
-      where: { id: sellerId },
+      where: { id: seller_id },
       data: { address: newAddress },
       select: { id: true, address: true },
     });
@@ -56,12 +56,12 @@ export async function updateSellerPaymentController(req: SellerRequest, res: Res
 
 export async function updateSellerShippingController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) return res.status(401).json({ message: 'Unauthorized' });
+    const seller_id = req.seller?.id;
+    if (!seller_id) return res.status(401).json({ message: 'Unauthorized' });
 
     const { shipping } = req.body as { shipping?: any };
 
-    const seller = await prisma.seller.findUnique({ where: { id: sellerId } });
+    const seller = await prisma.seller.findUnique({ where: { id: seller_id } });
     if (!seller) return res.status(404).json({ message: 'Seller not found' });
 
     const newAddress = {
@@ -70,7 +70,7 @@ export async function updateSellerShippingController(req: SellerRequest, res: Re
     };
 
     const updated = await prisma.seller.update({
-      where: { id: sellerId },
+      where: { id: seller_id },
       data: { address: newAddress },
       select: { id: true, address: true },
     });
@@ -84,13 +84,13 @@ export async function updateSellerShippingController(req: SellerRequest, res: Re
 
 export async function updateSellerPasswordController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) return res.status(401).json({ message: 'Unauthorized' });
+    const seller_id = req.seller?.id;
+    if (!seller_id) return res.status(401).json({ message: 'Unauthorized' });
 
     const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
     if (!newPassword || newPassword.length < 6) return res.status(400).json({ message: 'Password too short' });
 
-    const seller = await prisma.seller.findUnique({ where: { id: sellerId } });
+    const seller = await prisma.seller.findUnique({ where: { id: seller_id } });
     if (!seller) return res.status(404).json({ message: 'Seller not found' });
 
     // NOTE: Assuming passwords are stored hashed; compare properly in real app
@@ -100,7 +100,7 @@ export async function updateSellerPasswordController(req: SellerRequest, res: Re
     }
 
     const updated = await prisma.seller.update({
-      where: { id: sellerId },
+      where: { id: seller_id },
       data: { password: newPassword },
       select: { id: true },
     });

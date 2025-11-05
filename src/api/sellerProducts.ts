@@ -48,8 +48,8 @@ export async function getCategoryAttributes(categoryId: string) {
 }
 
 // Update seller product
-export async function updateSellerProduct(token: string, productId: string, data: any) {
-  const res = await fetch(`${API_URL}/seller/product/${productId}`, {
+export async function updateSellerProduct(token: string, product_id: string, data: any) {
+  const res = await fetch(`${API_URL}/seller/product/${product_id}`, {
     method: 'PUT',
     headers: { 
       'Content-Type': 'application/json',
@@ -63,8 +63,8 @@ export async function updateSellerProduct(token: string, productId: string, data
 }
 
 // Delete seller product
-export async function deleteSellerProduct(token: string, productId: string) {
-  const res = await fetch(`${API_URL}/seller/product/${productId}`, {
+export async function deleteSellerProduct(token: string, product_id: string) {
+  const res = await fetch(`${API_URL}/seller/product/${product_id}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

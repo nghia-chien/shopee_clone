@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../utils/prisma";
 
 export interface SellerRequest extends Request {
-  seller?: { id: string; email?: string; phoneNumber?: string };
+  seller?: { id: string; email?: string; phone_number?: string };
 }
 
 export const requireAuthSeller = async (req: SellerRequest, res: Response, next: NextFunction) => {

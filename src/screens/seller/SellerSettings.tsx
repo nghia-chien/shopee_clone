@@ -114,7 +114,7 @@ export const SellerSettings = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Số Điện Thoại</label>
                       <input
                         type="tel"
-                        defaultValue={seller.phoneNumber || ""}
+                        defaultValue={seller.phone_number || ""}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                       />
                     </div>

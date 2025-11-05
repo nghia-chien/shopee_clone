@@ -8,13 +8,13 @@ interface SellerAuthState {
     rating: number;
     id: string;
     email: string;
-    phoneNumber?: string;
+    phone_number?: string;
     name?: string;
   } | null;
   setAuth: (token: string, seller: {
     id: string;
     email: string;
-    phoneNumber?: string;
+    phone_number?: string;
     name?: string;
     status: string;
     rating: number;

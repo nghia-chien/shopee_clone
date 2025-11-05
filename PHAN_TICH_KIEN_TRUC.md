@@ -123,7 +123,7 @@ export const prisma = new PrismaClient();
      id          String    @id @default(cuid())
      name        String
      email       String    @unique
-     phoneNumber String?   @unique
+     phone_number String?   @unique
      password    String
      address     Json?
      rating      Float?    @default(0)
@@ -140,7 +140,7 @@ export const prisma = new PrismaClient();
      price     Decimal
      stock     Int
      images    String[] # Array of image URLs
-     sellerId  String
+     seller_id  String
      seller    Seller   @relation(...) # Many-to-One
    }
    ```
@@ -213,8 +213,8 @@ router.use('/upload', uploadSellerRoutes);  // /api/seller/upload/*
 
 ```typescript
 export const createSellerProduct = async (req, res) => {
-  const sellerId = req.seller?.id; // Từ middleware authSeller
-  const product = await SellerProductService.create(sellerId, req.body);
+  const seller_id = req.seller?.id; // Từ middleware authSeller
+  const product = await SellerProductService.create(seller_id, req.body);
   res.status(201).json({ product });
 };
 ```
@@ -226,9 +226,9 @@ export const createSellerProduct = async (req, res) => {
 
 ```typescript
 export const SellerProductService = {
-  async create(sellerId, data) {
+  async create(seller_id, data) {
     return prisma.product.create({
-      data: { ...data, sellerId }
+      data: { ...data, seller_id }
     });
   }
 };
@@ -359,8 +359,8 @@ interface SellerAuthState {
 - ✅ **Error Handling**: Hiển thị lỗi rõ ràng
 
 **New API Functions:**
-- `updateSellerProduct(token, productId, data)`
-- `deleteSellerProduct(token, productId)`
+- `updateSellerProduct(token, product_id, data)`
+- `deleteSellerProduct(token, product_id)`
 
 ---
 

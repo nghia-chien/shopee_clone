@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 export function RegisterPage() {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phone_number, setphone_number] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string>('');
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; phoneNumber?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; phone_number?: string; password?: string }>({});
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
 
@@ -20,9 +20,9 @@ export function RegisterPage() {
     setFieldErrors({});
 
     // Client-side validation mirroring backend
-    const errs: { email?: string; phoneNumber?: string; password?: string } = {};
+    const errs: { email?: string; phone_number?: string; password?: string } = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email không hợp lệ';
-    if (!/^\+?\d{10,15}$/.test(phoneNumber)) errs.phoneNumber = 'Số điện thoại phải 10-15 chữ số (có thể có +)';
+    if (!/^\+?\d{10,15}$/.test(phone_number)) errs.phone_number = 'Số điện thoại phải 10-15 chữ số (có thể có +)';
     if (password.length < 6) errs.password = 'Mật khẩu tối thiểu 6 ký tự';
     if (Object.keys(errs).length) {
       setFieldErrors(errs);
@@ -38,7 +38,7 @@ export function RegisterPage() {
         },
         body: JSON.stringify({
           email,
-          phoneNumber,
+          phone_number,
           password,
           name: name || undefined,
         }),
@@ -111,13 +111,13 @@ export function RegisterPage() {
         <div>
           <input
             type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            value={phone_number}
+            onChange={(e) => setphone_number(e.target.value)}
             placeholder="Số điện thoại"
             className="text-black w-full px-4 py-3 bg-white border border-black focus:ring-2 focus:ring-black focus:border-black outline-none"
             required
           />
-          {fieldErrors.phoneNumber && <p className="text-sm text-red-600 mt-1">{fieldErrors.phoneNumber}</p>}
+          {fieldErrors.phone_number && <p className="text-sm text-red-600 mt-1">{fieldErrors.phone_number}</p>}
         </div>
 
         {/* Password Input */}

@@ -6,8 +6,8 @@ const ALLOWED = new Set(['pending', 'accepted', 'cancelled', 'completed']);
 
 export async function updateSellerOrderStatusController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) return res.status(401).json({ message: 'Unauthorized' });
+    const seller_id = req.seller?.id;
+    if (!seller_id) return res.status(401).json({ message: 'Unauthorized' });
 
     const { id } = req.params;
     const { status } = req.body as { status: string };
@@ -19,7 +19,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
     const ownsOrder = await prisma.orders.findFirst({
       where: {
         id,
-        items: { some: { product: { sellerId } } },
+        items: { some: { product: { seller_id } } },
       },
       select: { id: true, status: true },
     });

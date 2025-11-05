@@ -13,9 +13,9 @@ Sau khi cập nhật schema Prisma, bạn **BẮT BUỘC** phải chạy migrati
 **File:** `backend/prisma/schema.prisma`
 
 Đảm bảo các model đã có:
-- ✅ `Seller` có quan hệ `cartItems` và `orders`
-- ✅ `CartItem` có `sellerId` (optional) và quan hệ `seller`
-- ✅ `Orders` có `sellerId` (optional) và quan hệ `seller`
+- ✅ `Seller` có quan hệ `cart_items` và `orders`
+- ✅ `cart_item` có `seller_id` (optional) và quan hệ `seller`
+- ✅ `Orders` có `seller_id` (optional) và quan hệ `seller`
 
 ### 2. Tạo Migration
 
@@ -28,7 +28,7 @@ yarn prisma migrate dev --name add_seller_shopping_capability
 - Thêm column `seller_id` (nullable) vào `cart_item` table
 - Thêm column `seller_id` (nullable) vào `orders` table
 - Thêm foreign key constraints
-- Thêm unique constraints cho `sellerId + productId`
+- Thêm unique constraints cho `seller_id + product_id`
 
 ### 3. Generate Prisma Client
 
@@ -146,6 +146,6 @@ Sau khi migration xong, test:
 ## 🚨 LƯU Ý
 
 - ⚠️ Migration sẽ **KHÔNG** xóa dữ liệu cũ
-- ⚠️ Dữ liệu cũ vẫn có `userId`, giờ có thể có thêm `sellerId`
-- ⚠️ Backend code cần handle cả User và Seller trong Orders/CartItem
+- ⚠️ Dữ liệu cũ vẫn có `user_id`, giờ có thể có thêm `seller_id`
+- ⚠️ Backend code cần handle cả User và Seller trong Orders/cart_item
 

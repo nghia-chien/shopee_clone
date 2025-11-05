@@ -9,7 +9,7 @@ export async function getSellerById(id: string) {
       email: true,
       rating: true,
       status: true,
-      phoneNumber: true,
+      phone_number: true,
       address: true,
     },
   });

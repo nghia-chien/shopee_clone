@@ -7,23 +7,23 @@ import { SellerRequest } from '../../middlewares/authSeller';
  */
 export async function createSellerOrderController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     // ✅ Lấy giỏ hàng của seller
-    const cartItems = await prisma.cartItem.findMany({
-      where: { sellerId },
+    const cart_items = await prisma.cart_item.findMany({
+      where: { seller_id },
       include: { product: true },
     });
 
-    if (cartItems.length === 0) {
+    if (cart_items.length === 0) {
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
     // ✅ Tính tổng tiền
-    const total = cartItems.reduce((sum, item) => {
+    const total = cart_items.reduce((sum, item) => {
       const price = Number(item.product.price);
       return sum + price * item.quantity;
     }, 0);
@@ -31,12 +31,12 @@ export async function createSellerOrderController(req: SellerRequest, res: Respo
     // ✅ Tạo đơn hàng + OrderItems
     const order = await prisma.orders.create({
       data: {
-        sellerId, // Seller mua hàng
+        seller_id, // Seller mua hàng
         total,
         status: 'pending',
         items: {
-          create: cartItems.map((item) => ({
-            productId: item.productId,
+          create: cart_items.map((item) => ({
+            product_id: item.product_id,
             price: item.product.price,
             quantity: item.quantity,
           })),
@@ -48,7 +48,7 @@ export async function createSellerOrderController(req: SellerRequest, res: Respo
     });
 
     // ✅ Xóa giỏ hàng sau khi đặt đơn
-    await prisma.cartItem.deleteMany({ where: { sellerId } });
+    await prisma.cart_item.deleteMany({ where: { seller_id } });
 
     return res.status(201).json(order);
   } catch (error) {
@@ -62,13 +62,13 @@ export async function createSellerOrderController(req: SellerRequest, res: Respo
  */
 export async function listSellerOrdersController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const orders = await prisma.orders.findMany({
-      where: { sellerId }, // Orders mà seller đã mua
+      where: { seller_id }, // Orders mà seller đã mua
       include: {
         items: {
           include: {
@@ -82,7 +82,7 @@ export async function listSellerOrdersController(req: SellerRequest, res: Respon
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { creat_at: 'desc' },
     });
 
     return res.json({ orders });
@@ -97,51 +97,51 @@ export async function listSellerOrdersController(req: SellerRequest, res: Respon
  */
 export async function listSellerSoldOrdersController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     // ✅ Lấy tất cả products của seller
     const sellerProducts = await prisma.product.findMany({
-      where: { sellerId },
+      where: { seller_id },
       select: { id: true },
     });
 
-    const productIds = sellerProducts.map((p) => p.id);
+    const product_ids = sellerProducts.map((p) => p.id);
 
     // ✅ Lấy các OrderItems có products của seller
     const orderItems = await prisma.orderItem.findMany({
       where: {
-        productId: { in: productIds },
+        product_id: { in: product_ids },
       },
       include: {
         product: true,
         orders: {
           include: {
             user: {
-              select: { name: true, email: true, phoneNumber: true },
+              select: { name: true, email: true, phone_number: true },
             },
             seller: {
-              select: { name: true, email: true, phoneNumber: true },
+              select: { name: true, email: true, phone_number: true },
             },
           },
         },
       },
-      orderBy: { orders: { createdAt: 'desc' } },
+      orderBy: { orders: { creat_at: 'desc' } },
     });
 
     // ✅ Nhóm theo orders
     const orderMap = new Map();
     orderItems.forEach((item) => {
-      const orderId = item.orders.id;
-      if (!orderMap.has(orderId)) {
-        orderMap.set(orderId, {
+      const order_id = item.orders.id;
+      if (!orderMap.has(order_id)) {
+        orderMap.set(order_id, {
           ...item.orders,
           items: [],
         });
       }
-      orderMap.get(orderId).items.push(item);
+      orderMap.get(order_id).items.push(item);
     });
 
     const orders = Array.from(orderMap.values());
@@ -158,8 +158,8 @@ export async function listSellerSoldOrdersController(req: SellerRequest, res: Re
  */
 export async function getSellerOrderController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -169,12 +169,12 @@ export async function getSellerOrderController(req: SellerRequest, res: Response
       where: {
         id,
         OR: [
-          { sellerId }, // Seller đã mua đơn này
+          { seller_id }, // Seller đã mua đơn này
           {
             items: {
               some: {
                 product: {
-                  sellerId, // Hoặc seller đã bán sản phẩm trong đơn này
+                  seller_id, // Hoặc seller đã bán sản phẩm trong đơn này
                 },
               },
             },
@@ -194,10 +194,10 @@ export async function getSellerOrderController(req: SellerRequest, res: Response
           },
         },
         user: {
-          select: { name: true, email: true, phoneNumber: true },
+          select: { name: true, email: true, phone_number: true },
         },
         seller: {
-          select: { name: true, email: true, phoneNumber: true },
+          select: { name: true, email: true, phone_number: true },
         },
       },
     });

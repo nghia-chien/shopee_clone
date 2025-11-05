@@ -13,7 +13,8 @@ interface Product {
   images: string[];
   status?: string;
   rating?: number;
-  createdAt?: string;
+  creat_at?: string;
+  attributes?: Record<string, any>;
 }
 
 export const SellerDashboard = () => {
@@ -27,6 +28,7 @@ export const SellerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editForm, setEditForm] = useState({ title: "", price: "", stock: "", description: "" });
+  const [attributesEditor, setAttributesEditor] = useState<Array<{ key: string; value: string }>>([]);
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -72,6 +74,14 @@ export const SellerDashboard = () => {
       stock: product.stock.toString(),
       description: product.description || "",
     });
+    const pairs: Array<{ key: string; value: string }> = [];
+    if (product.attributes && typeof product.attributes === "object") {
+      Object.entries(product.attributes).forEach(([k, v]) => {
+        pairs.push({ key: k, value: String(v ?? "") });
+      });
+    }
+    if (pairs.length === 0) pairs.push({ key: "", value: "" });
+    setAttributesEditor(pairs);
     setEditErrors({});
     setError("");
     setSuccessMessage("");
@@ -105,11 +115,17 @@ export const SellerDashboard = () => {
     setError("");
     setSuccessMessage("");
     try {
+      const attributesObj: Record<string, any> = {};
+      attributesEditor.forEach(({ key, value }) => {
+        const k = key.trim();
+        if (k) attributesObj[k] = value;
+      });
       await updateSellerProduct(token, editingProduct.id, {
         title: editForm.title.trim(),
         price: parseFloat(editForm.price),
         stock: parseInt(editForm.stock),
         description: editForm.description.trim(),
+        attributes: Object.keys(attributesObj).length ? attributesObj : undefined,
       });
       await loadProducts();
       setSuccessMessage("Cập nhật sản phẩm thành công!");
@@ -124,15 +140,15 @@ export const SellerDashboard = () => {
     }
   };
 
-  const handleDelete = async (productId: string) => {
+  const handleDelete = async (product_id: string) => {
     if (!token) return;
     if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác.")) return;
     
-    setDeleting(productId);
+    setDeleting(product_id);
     setError("");
     setSuccessMessage("");
     try {
-      await deleteSellerProduct(token, productId);
+      await deleteSellerProduct(token, product_id);
       setSuccessMessage("Xóa sản phẩm thành công!");
       await loadProducts();
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -465,6 +481,55 @@ export const SellerDashboard = () => {
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 />
+              </div>
+
+              {/* Chi tiết sản phẩm (Attributes) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Chi Tiết Sản Phẩm</label>
+                  <button
+                    type="button"
+                    onClick={() => setAttributesEditor([...attributesEditor, { key: "", value: "" }])}
+                    className="text-sm px-2 py-1 border rounded hover:bg-gray-50"
+                  >
+                    Thêm dòng
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {attributesEditor.map((pair, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Thuộc tính (vd: Màu sắc)"
+                        value={pair.key}
+                        onChange={(e) => {
+                          const next = [...attributesEditor];
+                          next[idx] = { ...next[idx], key: e.target.value };
+                          setAttributesEditor(next);
+                        }}
+                        className="flex-1 px-3 py-2 border rounded"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Giá trị (vd: Đỏ)"
+                        value={pair.value}
+                        onChange={(e) => {
+                          const next = [...attributesEditor];
+                          next[idx] = { ...next[idx], value: e.target.value };
+                          setAttributesEditor(next);
+                        }}
+                        className="flex-1 px-3 py-2 border rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAttributesEditor(attributesEditor.filter((_, i) => i !== idx))}
+                        className="px-2 py-1 border rounded text-red-600 hover:bg-red-50"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

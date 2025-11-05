@@ -5,13 +5,13 @@ import { SellerRequest } from '../../middlewares/authSeller';
 // 🧾 Lấy giỏ hàng của Seller (khi Seller mua hàng)
 export async function listSellerCartController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const items = await prisma.cartItem.findMany({
-      where: { sellerId },
+    const items = await prisma.cart_item.findMany({
+      where: { seller_id },
       include: { product: true },
     });
 
@@ -25,58 +25,58 @@ export async function listSellerCartController(req: SellerRequest, res: Response
 // ➕ Thêm sản phẩm vào giỏ hàng (Seller mua hàng)
 export async function addToSellerCartController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { productId, quantity } = req.body;
+    const { product_id, quantity } = req.body;
 
-    if (!productId || !quantity || isNaN(Number(quantity))) {
+    if (!product_id || !quantity || isNaN(Number(quantity))) {
       return res.status(400).json({ message: 'Invalid input data' });
     }
 
     // ✅ Không cho Seller mua sản phẩm của chính mình
     const product = await prisma.product.findUnique({
-      where: { id: productId },
+      where: { id: product_id },
     });
 
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    if (product.sellerId === sellerId) {
+    if (product.seller_id === seller_id) {
       return res.status(400).json({ message: 'Cannot add your own product to cart' });
     }
 
-    const existingItem = await prisma.cartItem.findUnique({
+    const existingItem = await prisma.cart_item.findUnique({
       where: {
-        sellerId_productId: {
-          sellerId,
-          productId,
+        seller_id_product_id: {
+          seller_id,
+          product_id,
         },
       },
     });
 
-    let cartItem;
+    let cart_item;
 
     if (existingItem) {
-      cartItem = await prisma.cartItem.update({
+      cart_item = await prisma.cart_item.update({
         where: { id: existingItem.id },
         data: { quantity: existingItem.quantity + Number(quantity) },
       });
     } else {
-      cartItem = await prisma.cartItem.create({
+      cart_item = await prisma.cart_item.create({
         data: {
-          sellerId,
-          productId,
+          seller_id,
+          product_id,
           quantity: Number(quantity),
         },
         include: { product: true },
       });
     }
 
-    return res.json(cartItem);
+    return res.json(cart_item);
   } catch (error: any) {
     console.error('Error adding to seller cart:', error);
     return res.status(500).json({ message: error.message || 'Internal server error' });
@@ -84,34 +84,34 @@ export async function addToSellerCartController(req: SellerRequest, res: Respons
 }
 
 // ✏️ Cập nhật số lượng
-export async function updateSellerCartItemController(req: SellerRequest, res: Response) {
+export async function updateSellercart_itemController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { productId, quantity } = req.body;
+    const { product_id, quantity } = req.body;
 
-    if (!productId || isNaN(Number(quantity))) {
+    if (!product_id || isNaN(Number(quantity))) {
       return res.status(400).json({ message: 'Invalid input data' });
     }
 
-    const cartItem = await prisma.cartItem.findUnique({
+    const cart_item = await prisma.cart_item.findUnique({
       where: {
-        sellerId_productId: {
-          sellerId,
-          productId,
+        seller_id_product_id: {
+          seller_id,
+          product_id,
         },
       },
     });
 
-    if (!cartItem) {
+    if (!cart_item) {
       return res.status(404).json({ message: 'Item not found in cart' });
     }
 
-    const updated = await prisma.cartItem.update({
-      where: { id: cartItem.id },
+    const updated = await prisma.cart_item.update({
+      where: { id: cart_item.id },
       data: { quantity: Number(quantity) },
       include: { product: true },
     });
@@ -124,29 +124,29 @@ export async function updateSellerCartItemController(req: SellerRequest, res: Re
 }
 
 // 🗑️ Xóa sản phẩm khỏi giỏ hàng
-export async function removeSellerCartItemController(req: SellerRequest, res: Response) {
+export async function removeSellercart_itemController(req: SellerRequest, res: Response) {
   try {
-    const sellerId = req.seller?.id;
-    if (!sellerId) {
+    const seller_id = req.seller?.id;
+    if (!seller_id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { productId } = req.params;
+    const { product_id } = req.params;
 
-    const cartItem = await prisma.cartItem.findUnique({
+    const cart_item = await prisma.cart_item.findUnique({
       where: {
-        sellerId_productId: {
-          sellerId,
-          productId,
+        seller_id_product_id: {
+          seller_id,
+          product_id,
         },
       },
     });
 
-    if (!cartItem) {
+    if (!cart_item) {
       return res.status(404).json({ message: 'Item not found in cart' });
     }
 
-    await prisma.cartItem.delete({ where: { id: cartItem.id } });
+    await prisma.cart_item.delete({ where: { id: cart_item.id } });
 
     return res.json({ message: 'Item removed from cart' });
   } catch (error) {

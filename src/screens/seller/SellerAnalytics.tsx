@@ -12,13 +12,13 @@ interface Stats {
   completedOrders: number;
   cancelledOrders: number;
   recentOrders: Array<{
-    orderId: string;
+    order_id: string;
     productName: string;
     quantity: number;
     price: number;
     total: number;
     status: string;
-    createdAt: string;
+    creat_at: string;
   }>;
 }
 
@@ -238,10 +238,10 @@ export const SellerAnalytics = () => {
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{order.productName}</p>
                     <p className="text-sm text-gray-500">
-                      SL: {order.quantity} | Đơn: #{order.orderId.slice(0, 8)}
+                      SL: {order.quantity} | Đơn: #{order.order_id.slice(0, 8)}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {new Date(order.createdAt).toLocaleString("vi-VN")}
+                      {new Date(order.creat_at).toLocaleString("vi-VN")}
                     </p>
                   </div>
                   <div className="text-right">

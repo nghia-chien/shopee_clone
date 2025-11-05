@@ -19,8 +19,8 @@ export async function getSellerSoldOrders(token: string) {
 }
 
 // Get order details
-export async function getSellerOrderDetails(token: string, orderId: string) {
-  const res = await fetch(`${API_URL}/seller/order/${orderId}`, {
+export async function getSellerOrderDetails(token: string, order_id: string) {
+  const res = await fetch(`${API_URL}/seller/order/${order_id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch order details');
@@ -56,8 +56,8 @@ export async function getSellerStats(token: string) {
 }
 
 // Update order status (accept/cancel/complete)
-export async function updateSellerOrderStatus(token: string, orderId: string, status: 'accepted' | 'cancelled' | 'completed' | 'pending') {
-  const res = await fetch(`${API_URL}/seller/order/${orderId}/status`, {
+export async function updateSellerOrderStatus(token: string, order_id: string, status: 'accepted' | 'cancelled' | 'completed' | 'pending') {
+  const res = await fetch(`${API_URL}/seller/order/${order_id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ status }),

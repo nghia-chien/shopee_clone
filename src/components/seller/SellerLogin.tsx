@@ -25,7 +25,7 @@ export const SellerLogin = () => {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.message || "Sai email hoặc mật khẩu");
+        setError(data?.message || data?.error || "Sai email hoặc mật khẩu");
         return;
       }
 

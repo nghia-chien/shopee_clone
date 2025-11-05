@@ -4,12 +4,12 @@ import { SellerProductService } from "../../services/seller/product.service";
 // 🟢 CREATE
 export const createSellerProduct = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.id;
-    if (!sellerId)
+    const seller_id = (req as any).seller?.id;
+    if (!seller_id)
       return res.status(401).json({ error: "Unauthorized create seller/productseller.controller.ts" });
 
 
-    const product = await SellerProductService.create(sellerId, req.body);
+    const product = await SellerProductService.create(seller_id, req.body);
     res.status(201).json({ product });
   } catch (err) {
     console.error("CREATE error details:", err);
@@ -20,8 +20,8 @@ export const createSellerProduct = async (req: Request, res: Response) => {
 // 🟡 READ ALL
 export const getSellerProducts = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.id;
-    const products = await SellerProductService.getAll(sellerId);
+    const seller_id = (req as any).seller?.id;
+    const products = await SellerProductService.getAll(seller_id);
     res.json({ products });
   } catch (err) {
     console.error("READ error:", err);
@@ -32,9 +32,9 @@ export const getSellerProducts = async (req: Request, res: Response) => {
 // 🟣 READ ONE
 export const getSellerProductById = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.id;
+    const seller_id = (req as any).seller?.id;
     const { id } = req.params;
-    const product = await SellerProductService.getById(sellerId, id);
+    const product = await SellerProductService.getById(seller_id, id);
     if (!product) return res.status(404).json({ error: "Product not found" });
     res.json({ product });
   } catch (err) {
@@ -46,9 +46,9 @@ export const getSellerProductById = async (req: Request, res: Response) => {
 // 🔵 UPDATE
 export const updateSellerProduct = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.id;
+    const seller_id = (req as any).seller?.id;
     const { id } = req.params;
-    const updated = await SellerProductService.update(sellerId, id, req.body);
+    const updated = await SellerProductService.update(seller_id, id, req.body);
     if (!updated) return res.status(404).json({ error: "Product not found or not yours" });
     res.json({ product: updated });
   } catch (err) {
@@ -60,9 +60,9 @@ export const updateSellerProduct = async (req: Request, res: Response) => {
 // 🔴 DELETE
 export const deleteSellerProduct = async (req: Request, res: Response) => {
   try {
-    const sellerId = (req as any).seller?.id;
+    const seller_id = (req as any).seller?.id;
     const { id } = req.params;
-    const deleted = await SellerProductService.remove(sellerId, id);
+    const deleted = await SellerProductService.remove(seller_id, id);
     if (!deleted) return res.status(404).json({ error: "Product not found or not yours" });
     res.json({ message: "Product deleted successfully" });
   } catch (err) {

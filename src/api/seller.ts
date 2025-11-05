@@ -4,11 +4,11 @@ export interface SellerAuthData { id: string; email: string; name?: string; }
 export interface SellerAuthResponse { error: any; seller: SellerAuthData; token: string; }
 
 // Đăng ký
-export async function registerSeller(name: string, email: string, password: string, phoneNumber?: string) {
+export async function registerSeller(name: string, email: string, password: string, phone_number?: string) {
   const res = await fetch(`${API_URL}/seller/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password, phoneNumber }),
+    body: JSON.stringify({ name, email, password, phone_number }),
   });
   return res.json() as Promise<SellerAuthResponse>;
 }

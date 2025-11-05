@@ -19,25 +19,25 @@ Hệ thống Seller đã được phát triển theo mô hình của Shopee, cho
 ```prisma
 model Seller {
   // ... existing fields
-  cartItems  CartItem[] @relation("seller_cart_items")
+  cart_items  cart_item[] @relation("seller_cart_items")
   orders    Orders[]   @relation("seller_orders")
 }
 ```
 
-#### Thay đổi trong `CartItem` model:
+#### Thay đổi trong `cart_item` model:
 ```prisma
-model CartItem {
+model cart_item {
   id        String   @id
-  userId    String?  // Optional: cho User
-  sellerId  String?  // Optional: cho Seller (mua hàng)
-  productId String
+  user_id    String?  // Optional: cho User
+  seller_id  String?  // Optional: cho Seller (mua hàng)
+  product_id String
   quantity  Int
   user      User?    @relation(...)
   seller    Seller?  @relation(...)
   
   // Unique constraints cho cả User và Seller
-  @@unique([userId, productId])
-  @@unique([sellerId, productId])
+  @@unique([user_id, product_id])
+  @@unique([seller_id, product_id])
 }
 ```
 
@@ -45,8 +45,8 @@ model CartItem {
 ```prisma
 model Orders {
   id        String
-  userId    String?  // Optional: cho User
-  sellerId  String?  // Optional: cho Seller (mua hàng)
+  user_id    String?  // Optional: cho User
+  seller_id  String?  // Optional: cho Seller (mua hàng)
   total     Decimal
   status    String
   user      User?    @relation(...)
@@ -61,8 +61,8 @@ model Orders {
 |--------|----------|-------|
 | GET | `/api/seller/cart` | Lấy giỏ hàng của seller |
 | POST | `/api/seller/cart` | Thêm sản phẩm vào giỏ (seller mua hàng) |
-| PUT | `/api/seller/cart/:productId` | Cập nhật số lượng |
-| DELETE | `/api/seller/cart/:productId` | Xóa sản phẩm khỏi giỏ |
+| PUT | `/api/seller/cart/:product_id` | Cập nhật số lượng |
+| DELETE | `/api/seller/cart/:product_id` | Xóa sản phẩm khỏi giỏ |
 
 #### Order API cho Seller:
 | Method | Endpoint | Mô tả |
@@ -82,7 +82,7 @@ model Orders {
 
 1. **Seller không thể mua sản phẩm của chính mình:**
    ```typescript
-   if (product.sellerId === sellerId) {
+   if (product.seller_id === seller_id) {
      return res.status(400).json({ 
        message: 'Cannot add your own product to cart' 
      });
@@ -167,13 +167,13 @@ model Orders {
 ### Order Service (`backend/src/services/seller/order.service.ts`)
 
 **Functions:**
-1. `getSellerOrderStats(sellerId)`:
+1. `getSellerOrderStats(seller_id)`:
    - Tính tổng đơn hàng
    - Tính sản phẩm đã bán
    - Tính doanh thu
    - Phân loại theo trạng thái
 
-2. `getSellerAnalytics(sellerId, days)`:
+2. `getSellerAnalytics(seller_id, days)`:
    - Thống kê theo ngày
    - Daily revenue chart data
    - Trends analysis
@@ -201,14 +201,14 @@ model Orders {
 
 **`src/api/sellerCart.ts`**: Cart operations cho seller
 - `getSellerCart(token)`
-- `addToSellerCart(token, productId, quantity)`
-- `updateSellerCartItem(token, productId, quantity)`
-- `removeFromSellerCart(token, productId)`
+- `addToSellerCart(token, product_id, quantity)`
+- `updateSellercart_item(token, product_id, quantity)`
+- `removeFromSellerCart(token, product_id)`
 
 **`src/api/sellerOrders.ts`**: Order operations cho seller
 - `getSellerOrders(token)` - Đơn seller đã mua
 - `getSellerSoldOrders(token)` - Đơn seller đã bán
-- `getSellerOrderDetails(token, orderId)`
+- `getSellerOrderDetails(token, order_id)`
 - `createSellerOrder(token)`
 - `getSellerStats(token)` - Thống kê
 - `getSellerAnalytics(token, days)` - Analytics
@@ -238,7 +238,7 @@ model Orders {
    ↓
 3. Middleware: requireAuthSeller
    ↓
-4. req.seller = { id, email, phoneNumber }
+4. req.seller = { id, email, phone_number }
    ↓
 5. Access protected routes
 ```
@@ -266,11 +266,11 @@ router.use('/analytics', requireAuthSeller, ...);
    - Validation: Không được mua sản phẩm của chính mình
    ↓
 3. Seller checkout: POST /api/seller/order
-   - Lấy cartItems từ sellerId
-   - Tạo Orders với sellerId
-   - Xóa cartItems
+   - Lấy cart_items từ seller_id
+   - Tạo Orders với seller_id
+   - Xóa cart_items
    ↓
-4. Order created với sellerId (seller mua hàng)
+4. Order created với seller_id (seller mua hàng)
 ```
 
 ### Flow 2: Seller Xem Đơn Hàng Đã Bán
@@ -317,14 +317,14 @@ yarn prisma migrate dev --name add_seller_shopping
 ```
 
 **Migration sẽ:**
-- Thêm `sellerId` (optional) vào `CartItem` table
-- Thêm `sellerId` (optional) vào `Orders` table
+- Thêm `seller_id` (optional) vào `cart_item` table
+- Thêm `seller_id` (optional) vào `Orders` table
 - Thêm unique constraints
 - Thêm foreign keys
 
 **Lưu ý:** 
-- Dữ liệu cũ sẽ vẫn giữ nguyên (userId vẫn có giá trị)
-- Có thể có cả `userId` và `sellerId` null (cần validation trong code)
+- Dữ liệu cũ sẽ vẫn giữ nguyên (user_id vẫn có giá trị)
+- Có thể có cả `user_id` và `seller_id` null (cần validation trong code)
 
 ---
 
@@ -419,12 +419,12 @@ src/
 
 ### Validation Rules
 
-1. **CartItem:**
-   - Phải có `userId` HOẶC `sellerId` (không thể cả 2 null)
+1. **cart_item:**
+   - Phải có `user_id` HOẶC `seller_id` (không thể cả 2 null)
    - Validation trong code, không phải database constraint
 
 2. **Orders:**
-   - Phải có `userId` HOẶC `sellerId`
+   - Phải có `user_id` HOẶC `seller_id`
    - Validation trong code
 
 3. **Seller mua hàng:**
@@ -433,9 +433,9 @@ src/
 
 ### Migration Considerations
 
-- **Existing Data:** Orders và CartItems cũ chỉ có `userId`, không có `sellerId` → OK
-- **New Data:** Có thể có `userId` null nếu seller mua hàng
-- **Unique Constraints:** Cần migration để tạo unique index cho `sellerId + productId`
+- **Existing Data:** Orders và cart_items cũ chỉ có `user_id`, không có `seller_id` → OK
+- **New Data:** Có thể có `user_id` null nếu seller mua hàng
+- **Unique Constraints:** Cần migration để tạo unique index cho `seller_id + product_id`
 
 ---
 

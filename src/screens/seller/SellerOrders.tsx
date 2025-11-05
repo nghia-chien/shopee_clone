@@ -23,16 +23,16 @@ interface Order {
   id: string;
   total: number;
   status: string;
-  createdAt: string;
+  creat_at: string;
   user?: {
     name: string;
     email: string;
-    phoneNumber?: string;
+    phone_number?: string;
   };
   seller?: {
     name: string;
     email: string;
-    phoneNumber?: string;
+    phone_number?: string;
   };
   items: OrderItem[];
 }
@@ -66,22 +66,22 @@ export const SellerOrders = () => {
     }
   };
 
-  const handleViewDetails = async (orderId: string) => {
+  const handleViewDetails = async (order_id: string) => {
     try {
-      const data = await getSellerOrderDetails(token!, orderId);
+      const data = await getSellerOrderDetails(token!, order_id);
       setSelectedOrder(data.order);
     } catch (err: any) {
       alert(err.message || "Failed to load order details");
     }
   };
 
-  const handleUpdateStatus = async (orderId: string, status: 'accepted' | 'cancelled') => {
+  const handleUpdateStatus = async (order_id: string, status: 'accepted' | 'cancelled') => {
     try {
-      setUpdatingId(orderId);
-      await updateSellerOrderStatus(token!, orderId, status);
+      setUpdatingId(order_id);
+      await updateSellerOrderStatus(token!, order_id, status);
       await loadOrders();
-      if (selectedOrder?.id === orderId) {
-        const data = await getSellerOrderDetails(token!, orderId);
+      if (selectedOrder?.id === order_id) {
+        const data = await getSellerOrderDetails(token!, order_id);
         setSelectedOrder(data.order);
       }
     } catch (err: any) {
@@ -246,7 +246,7 @@ export const SellerOrders = () => {
                       Đơn hàng #{order.id.slice(0, 8)}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      {new Date(order.createdAt).toLocaleString("vi-VN")}
+                      {new Date(order.creat_at).toLocaleString("vi-VN")}
                     </p>
                     {order.user && (
                       <p className="text-sm text-gray-600 mt-1">
@@ -371,8 +371,8 @@ export const SellerOrders = () => {
                   <div className="space-y-1 text-sm">
                     <p><span className="font-medium">Tên:</span> {selectedOrder.user.name || "N/A"}</p>
                     <p><span className="font-medium">Email:</span> {selectedOrder.user.email}</p>
-                    {selectedOrder.user.phoneNumber && (
-                      <p><span className="font-medium">SĐT:</span> {selectedOrder.user.phoneNumber}</p>
+                    {selectedOrder.user.phone_number && (
+                      <p><span className="font-medium">SĐT:</span> {selectedOrder.user.phone_number}</p>
                     )}
                   </div>
                 )}
@@ -387,7 +387,7 @@ export const SellerOrders = () => {
                 <h3 className="font-semibold text-gray-900 mb-2">Thông Tin Đơn Hàng</h3>
                 <div className="space-y-1 text-sm">
                   <p><span className="font-medium">Trạng thái:</span> {selectedOrder.status}</p>
-                  <p><span className="font-medium">Ngày tạo:</span> {new Date(selectedOrder.createdAt).toLocaleString("vi-VN")}</p>
+                  <p><span className="font-medium">Ngày tạo:</span> {new Date(selectedOrder.creat_at).toLocaleString("vi-VN")}</p>
                   <p className="text-lg font-bold text-blue-600 mt-2">
                     <span className="font-medium">Tổng tiền:</span>{" "}
                     {new Intl.NumberFormat("vi-VN", {

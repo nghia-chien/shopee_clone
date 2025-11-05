@@ -10,22 +10,22 @@ export async function getSellerCart(token: string) {
 }
 
 // Add to seller cart
-export async function addToSellerCart(token: string, productId: string, quantity: number) {
+export async function addToSellerCart(token: string, product_id: string, quantity: number) {
   const res = await fetch(`${API_URL}/seller/cart`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ productId, quantity }),
+    body: JSON.stringify({ product_id, quantity }),
   });
   if (!res.ok) throw new Error('Failed to add to cart');
   return res.json();
 }
 
 // Update seller cart item
-export async function updateSellerCartItem(token: string, productId: string, quantity: number) {
-  const res = await fetch(`${API_URL}/seller/cart/${productId}`, {
+export async function updateSellercart_item(token: string, product_id: string, quantity: number) {
+  const res = await fetch(`${API_URL}/seller/cart/${product_id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -38,8 +38,8 @@ export async function updateSellerCartItem(token: string, productId: string, qua
 }
 
 // Remove from seller cart
-export async function removeFromSellerCart(token: string, productId: string) {
-  const res = await fetch(`${API_URL}/seller/cart/${productId}`, {
+export async function removeFromSellerCart(token: string, product_id: string) {
+  const res = await fetch(`${API_URL}/seller/cart/${product_id}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

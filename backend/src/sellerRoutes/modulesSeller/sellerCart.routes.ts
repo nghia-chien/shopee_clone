@@ -3,16 +3,16 @@ import { requireAuthSeller } from '../../middlewares/authSeller';
 import {
   listSellerCartController,
   addToSellerCartController,
-  updateSellerCartItemController,
-  removeSellerCartItemController,
+  updateSellercart_itemController,
+  removeSellercart_itemController,
 } from '../../controllers/seller/cart.controller';
 
 const router = Router();
 
 router.get('/', requireAuthSeller, listSellerCartController);
 router.post('/', requireAuthSeller, addToSellerCartController);
-router.put('/:productId', requireAuthSeller, updateSellerCartItemController);
-router.delete('/:productId', requireAuthSeller, removeSellerCartItemController);
+router.put('/:product_id', requireAuthSeller, updateSellercart_itemController);
+router.delete('/:product_id', requireAuthSeller, removeSellercart_itemController);
 
 export default router;
 

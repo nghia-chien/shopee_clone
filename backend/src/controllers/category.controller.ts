@@ -8,8 +8,8 @@ export async function getCategoryTree(req: Request, res: Response) {
     const byId = new Map(categories.map(c => [c.id, { ...c, children: [] as any[] }]));
     const roots: any[] = [];
     byId.forEach((node) => {
-      if (node.parentId && byId.has(node.parentId)) {
-        byId.get(node.parentId)!.children.push(node);
+      if (node.parent_id && byId.has(node.parent_id)) {
+        byId.get(node.parent_id)!.children.push(node);
       } else {
         roots.push(node);
       }

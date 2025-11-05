@@ -6,6 +6,8 @@ import { RegisterPage } from "../screens/client/RegisterPage";
 import { AdminApp } from "../admin/AdminApp";
 import { AuthGuard } from "../components/auth/AuthGuard";
 import { SellerRoutes } from "./SellerRoutes"; // import routes riêng cho seller
+import { CartPage } from "../screens/client/CartPage";
+import { OrdersPage } from "../screens/client/OrdersPage";
 
 export function AppRoutes() {
   return (
@@ -17,6 +19,8 @@ export function AppRoutes() {
         {/* Public pages */}
         <Route path="/" element={<HomePage />} />
         <Route path="/products/:id" element={<ProductPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
         <Route path="/admin/*" element={<AdminApp />} />
 
         {/* Seller routes */}

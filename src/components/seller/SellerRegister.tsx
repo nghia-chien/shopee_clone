@@ -8,7 +8,7 @@ export const SellerRegister = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone_number, setphone_number] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,9 +18,9 @@ export const SellerRegister = () => {
     setError('');
     setSuccess('');
     setLoading(true);
-    const res = await registerSeller(name, email, password, phoneNumber);
+    const res = await registerSeller(name, email, password, phone_number);
     
-    if (!name || !email || !password || !phoneNumber) {
+    if (!name || !email || !password || !phone_number) {
       setError('Please fill in all fields');
       setLoading(false);
       return;
@@ -112,8 +112,8 @@ export const SellerRegister = () => {
                 <input
                   type="tel"
                   placeholder="+84 123 456 789"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  value={phone_number}
+                  onChange={(e) => setphone_number(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 />
               </div>

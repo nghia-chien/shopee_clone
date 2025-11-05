@@ -16,13 +16,13 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
     }
 
     const orders = await prisma.orders.findMany({
-      where: { userId: req.user.id },
+      where: { user_id: req.user.id },
       include: {
         items: {
           include: { product: true },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { creat_at: 'desc' },
     });
 
     return res.json({ items: orders });
@@ -42,17 +42,17 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
     }
 
     // ✅ Lấy giỏ hàng của user
-    const cartItems = await prisma.cartItem.findMany({
-      where: { userId: req.user.id },
+    const cart_items = await prisma.cart_item.findMany({
+      where: { user_id: req.user.id },
       include: { product: true },
     });
 
-    if (cartItems.length === 0) {
+    if (cart_items.length === 0) {
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
     // ✅ Tính tổng tiền
-    const total = cartItems.reduce((sum, item) => {
+    const total = cart_items.reduce((sum, item) => {
       const price = Number(item.product.price);
       return sum + price * item.quantity;
     }, 0);
@@ -60,12 +60,12 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
     // ✅ Tạo đơn hàng + OrderItems
     const order = await prisma.orders.create({
       data: {
-        userId: req.user.id,
+        user_id: req.user.id,
         total,
         status: 'pending',
         items: {
-          create: cartItems.map((item) => ({
-            productId: item.productId,
+          create: cart_items.map((item) => ({
+            product_id: item.product_id,
             price: item.product.price,
             quantity: item.quantity,
           })),
@@ -77,7 +77,7 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
     });
 
     // ✅ Xóa giỏ hàng sau khi đặt đơn
-    await prisma.cartItem.deleteMany({ where: { userId: req.user.id } });
+    await prisma.cart_item.deleteMany({ where: { user_id: req.user.id } });
 
     return res.status(201).json(order);
   } catch (error) {
@@ -98,7 +98,7 @@ export async function getOrderController(req: AuthenticatedRequest, res: Respons
     const { id } = req.params;
 
     const order = await prisma.orders.findFirst({
-      where: { id, userId: req.user.id },
+      where: { id, user_id: req.user.id },
       include: {
         items: { include: { product: true } },
       },

@@ -6,18 +6,18 @@ interface AuthState {
 	user: { 
 		id: string; 
 		email: string; 
-		phoneNumber?: string;
+		phone_number?: string;
     name?: string;
     isSeller?: boolean;
-    sellerId?: string | null;
+    seller_id?: string | null;
 	} | null;
 	setAuth: (token: string, user: { 
 		id: string; 
 		email: string; 
-		phoneNumber?: string;
+		phone_number?: string;
     name?: string;
     isSeller?: boolean;
-    sellerId?: string | null;
+    seller_id?: string | null;
 	}) => void;
 	logout: () => void;
 }
