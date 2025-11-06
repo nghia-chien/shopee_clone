@@ -6,6 +6,9 @@ import { useSellerAuthStore } from "../../store/SellerAuth";
 export const SellerUploadPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [discount, setDiscount] = useState<number | "">("");
+  const [rating, setRating] = useState<number | "">("");
+  const [tags, setTags] = useState("");
   const [price, setPrice] = useState<number | "">("");
   const [stock, setStock] = useState<number | "">("");
   const [images, setImages] = useState<File[]>([]);
@@ -107,6 +110,9 @@ export const SellerUploadPage = () => {
             stock,
             categoryId: selectedCategoryId,
             attributes,
+            discount,
+            rating,
+            tags,
             images: imageUrls, // ✅ gửi mảng nhiều ảnh
           }),
         }
@@ -120,6 +126,9 @@ export const SellerUploadPage = () => {
         // Reset form
         setTitle("");
         setDescription("");
+        setRating("");
+        setTags("");
+        setDiscount("");
         setPrice("");
         setStock("");
         setImages([]);

@@ -25,6 +25,16 @@ export function ProductPage() {
     queryFn: () => api<any>(`/products/${params.id}`),
     enabled: Boolean(params.id),
   });
+  
+  
+  const { data: sellerProducts } = useQuery({
+    queryKey: ["seller-products", data?.seller?.id],
+    queryFn: () =>
+      api<{ items: any[] }>(`/products?seller_id=${data?.seller?.id}`),
+    enabled: Boolean(data?.seller?.id), // chỉ gọi khi có seller_id
+  });
+console.log("Seller ID gọi API:", data?.seller?.id);
+console.log("Kết quả:", sellerProducts);
 
   const { data: sellerProducts } = useQuery({
     queryKey: ["seller-products", data?.seller?.id],

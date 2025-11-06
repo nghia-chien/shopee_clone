@@ -4,7 +4,7 @@ import { prisma } from "../../utils/prisma";
 export const SellerProductService = {
   async create(seller_id: string, data: any) {
     try {
-      const { title, description, price, stock, images, tags, weight, dimensions, categoryId, attributes } = data;
+      const { title, description, price, stock, images,rating,discount, tags, weight, dimensions, categoryId, attributes } = data;
 
       if (!title || !price || !stock)
         throw new Error("Thiếu dữ liệu cần thiết");
@@ -18,17 +18,22 @@ export const SellerProductService = {
           price: parseFloat(price),
           stock: parseInt(stock),
           images: cleanImages,
-          tags,
+          tags: tags ? tags.split(",").map((tag: string) => tag.trim()) : [],
+          discount: parseFloat(discount),
+          rating: parseFloat(rating),
           weight,
           dimensions,
           categoryId: categoryId ?? null,
           attributes: attributes ?? undefined,
           seller_id,
+         
         },
       });
+      
       return product;
     } catch (err) {
       console.error("Service createSellerProduct error:", err);
+      
       throw err;
     }
   },

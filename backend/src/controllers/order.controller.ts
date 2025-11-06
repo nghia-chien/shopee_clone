@@ -11,18 +11,14 @@ interface AuthenticatedRequest extends Request {
  */
 export async function listOrdersController(req: AuthenticatedRequest, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
     const orders = await prisma.orders.findMany({
       where: { user_id: req.user.id },
       include: {
-        items: {
-          include: { product: true },
-        },
+        order_item: { include: { product: true } }, // đúng tên quan hệ
       },
-      orderBy: { creat_at: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
 
     return res.json({ items: orders });
@@ -37,9 +33,7 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
  */
 export async function createOrderController(req: AuthenticatedRequest, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
     // ✅ Lấy giỏ hàng của user
     const cart_items = await prisma.cart_item.findMany({
@@ -57,7 +51,6 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
       return sum + price * item.quantity;
     }, 0);
 
-    // ✅ Tạo đơn hàng + OrderItems
     const order = await prisma.orders.create({
       data: {
         user_id: req.user.id,
@@ -72,7 +65,7 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
         },
       },
       include: {
-        items: { include: { product: true } },
+        order_item: { include: { product: true } },
       },
     });
 
@@ -91,22 +84,18 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
  */
 export async function getOrderController(req: AuthenticatedRequest, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
     const { id } = req.params;
 
     const order = await prisma.orders.findFirst({
       where: { id, user_id: req.user.id },
       include: {
-        items: { include: { product: true } },
+        order_item: { include: { product: true } },
       },
     });
 
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
+    if (!order) return res.status(404).json({ message: 'Order not found' });
 
     return res.json(order);
   } catch (error) {

@@ -9,10 +9,12 @@ import { SellerRoutes } from "./SellerRoutes"; // import routes riêng cho selle
 import { CartPage } from "../screens/client/CartPage";
 import { OrdersPage } from "../screens/client/OrdersPage";
 
+
 export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        
         {/* Client routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

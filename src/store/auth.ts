@@ -7,17 +7,13 @@ interface AuthState {
 		id: string; 
 		email: string; 
 		phone_number?: string;
-    name?: string;
-    isSeller?: boolean;
-    seller_id?: string | null;
+		name?: string;
 	} | null;
 	setAuth: (token: string, user: { 
 		id: string; 
 		email: string; 
 		phone_number?: string;
-    name?: string;
-    isSeller?: boolean;
-    seller_id?: string | null;
+		name?: string;
 	}) => void;
 	logout: () => void;
 }

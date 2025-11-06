@@ -33,5 +33,25 @@
     "loginButton": "Đăng nhập",
     "registerButton": "Đăng ký",
     "name": "Họ và tên"
+  },
+  "product":{
+    "loading": "Đang tải...",
+    "sold": "Đã bán",
+    "voucher": "Mã giảm giá",
+    "shipping": "Vận chuyển",
+    "quantity": "Số lượng",
+    "add_to_cart": "Thêm vào giỏ hàng",
+    "buy_now": "Mua ngay",
+    "chat_now": "Chat ngay",
+    "view_shop": "Xem shop",
+    "product_details": "Chi tiết sản phẩm",
+    "stock": "Tồn kho",
+    "seller_address": "Địa chỉ người bán",
+    "description": "Mô tả sản phẩm",
+    "reviews": "Đánh giá sản phẩm",
+    "updating": "Đang cập nhật...",
+    "other_products_by_shop": "Các sản phẩm khác của shop",
+    "you_may_also_like": "Có thể bạn cũng thích"
   }
+
 }
