@@ -7,13 +7,16 @@ import { Footer } from "../../components/layout/Footer";
 import { useTranslation } from "react-i18next";
 import { Star } from "lucide-react";
 import { ProductListSection } from "../../components/product/ProductListSection";
-
+import { useAuthStore } from "../../store/auth";
+import { useNavigate } from "react-router-dom";
 
 export function ProductPage() {
   const { t } = useTranslation();
   const params = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { token } = useAuthStore();
+  const navigate = useNavigate();
 
   // Lấy dữ liệu sản phẩm theo id
   // Giả định cấu trúc data: {..., title, rating, reviews, sold, price, discount, images: [], description, tags: [], stock, seller: {logo, name, address}}
@@ -32,7 +35,6 @@ export function ProductPage() {
   });
 console.log("Seller ID gọi API:", data?.seller?.id);
 console.log("Kết quả:", sellerProducts);
-
 
   const { data: relatedProducts } = useQuery({
     queryKey: ["related-products", data?.id],
@@ -62,6 +64,30 @@ console.log("Kết quả:", sellerProducts);
   const priceAfterDiscount = data.discount
     ? (data.price * (100 - data.discount)) / 100
     : data.price;
+
+  const addToCart = async () => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    try {
+      await api(`/cart/items`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ product_id: params.id, quantity }),
+      });
+      alert('Đã thêm vào giỏ hàng');
+    } catch (err: any) {
+      alert(err?.message || 'Lỗi thêm giỏ hàng');
+    }
+  };
+
+  const buyNow = async () => {
+    try {
+      await addToCart();
+      navigate('/cart');
+    } catch {}
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -158,10 +184,10 @@ console.log("Kết quả:", sellerProducts);
 
           {/* Nút hành động */}
           <div className="flex items-center gap-3 pt-3">
-            <button className="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded">
+            <button onClick={addToCart} className="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded">
               {t("product.add_to_cart")}
             </button>
-            <button className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded">
+            <button onClick={buyNow} className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded">
               {t("product.buy_now")}
             </button>
           </div>

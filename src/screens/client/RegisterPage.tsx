@@ -8,12 +8,27 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [formError, setFormError] = useState<string>('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; phone_number?: string; password?: string }>({});
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setFormError('');
+    setFieldErrors({});
+
+    // Client-side validation mirroring backend
+    const errs: { email?: string; phone_number?: string; password?: string } = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email không hợp lệ';
+    if (!/^\+?\d{10,15}$/.test(phone_number)) errs.phone_number = 'Số điện thoại phải 10-15 chữ số (có thể có +)';
+    if (password.length < 6) errs.password = 'Mật khẩu tối thiểu 6 ký tự';
+    if (Object.keys(errs).length) {
+      setFieldErrors(errs);
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/auth/register`, {
@@ -32,14 +47,21 @@ export function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+        throw new Error(
+          data.message ||
+            (response.status === 400
+              ? 'Dữ liệu không hợp lệ. Vui lòng kiểm tra thông tin.'
+              : response.status === 409
+              ? 'Email hoặc số điện thoại đã được sử dụng.'
+              : 'Đăng ký thất bại')
+        );
       }
 
       setAuth(data.token, data.user);
       navigate('/');
     } catch (error) {
       console.error('Registration failed:', error);
-      alert(error instanceof Error ? error.message : 'Đăng ký thất bại');
+      setFormError(error instanceof Error ? error.message : 'Đăng ký thất bại');
     } finally {
       setIsLoading(false);
     }
@@ -52,6 +74,12 @@ export function RegisterPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Đăng ký</h1>
       </div>
+
+      {formError && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {formError}
+        </div>
+      )}
 
       {/* Registration Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,6 +104,7 @@ export function RegisterPage() {
             className="text-black w-full px-4 py-3 bg-white border border-black focus:ring-2 focus:ring-black focus:border-black outline-none"
             required
           />
+          {fieldErrors.email && <p className="text-sm text-red-600 mt-1">{fieldErrors.email}</p>}
         </div>
 
         {/* Phone Number Input */}
@@ -88,6 +117,7 @@ export function RegisterPage() {
             className="text-black w-full px-4 py-3 bg-white border border-black focus:ring-2 focus:ring-black focus:border-black outline-none"
             required
           />
+          {fieldErrors.phone_number && <p className="text-sm text-red-600 mt-1">{fieldErrors.phone_number}</p>}
         </div>
 
         {/* Password Input */}
@@ -101,6 +131,7 @@ export function RegisterPage() {
             required
             minLength={6}
           />
+          {fieldErrors.password && <p className="text-sm text-red-600 mt-1">{fieldErrors.password}</p>}
         </div>
 
         {/* Register Button */}

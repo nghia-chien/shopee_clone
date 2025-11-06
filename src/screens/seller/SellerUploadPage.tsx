@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { uploadSellerImage } from "../../api/sellerProducts";
+import { uploadSellerImage, getCategoryTree, getCategoryAttributes } from "../../api/sellerProducts";
 import { useSellerAuthStore } from "../../store/SellerAuth";
 
 export const SellerUploadPage = () => {
@@ -15,7 +15,35 @@ export const SellerUploadPage = () => {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [attributeSchema, setAttributeSchema] = useState<{ fields: Array<{ key: string; label: string; type: string; required?: boolean }> } | null>(null);
+  const [attributes, setAttributes] = useState<Record<string, any>>({});
   const navigate = useNavigate();
+
+  // Load category tree
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const data = await getCategoryTree();
+        setCategories(data.categories || []);
+      } catch {}
+    })();
+  }, []);
+
+  // Load attribute schema when category changes
+  React.useEffect(() => {
+    (async () => {
+      if (!selectedCategoryId) { setAttributeSchema(null); setAttributes({}); return; }
+      try {
+        const data = await getCategoryAttributes(selectedCategoryId);
+        setAttributeSchema(data.attributes);
+        const initial: Record<string, any> = {};
+        data.attributes?.fields?.forEach((f: any) => { initial[f.key] = ""; });
+        setAttributes(initial);
+      } catch {}
+    })();
+  }, [selectedCategoryId]);
 
   // 🖼 Khi chọn thêm ảnh
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,6 +77,10 @@ export const SellerUploadPage = () => {
       setMessage("Vui lòng nhập đủ thông tin và chọn ít nhất 1 ảnh");
       return;
     }
+    if (!selectedCategoryId) {
+      setMessage("Vui lòng chọn ngành hàng");
+      return;
+    }
 
     const token = useSellerAuthStore.getState().token;
     if (!token) {
@@ -76,6 +108,8 @@ export const SellerUploadPage = () => {
             description,
             price,
             stock,
+            categoryId: selectedCategoryId,
+            attributes,
             discount,
             rating,
             tags,
@@ -99,6 +133,8 @@ export const SellerUploadPage = () => {
         setStock("");
         setImages([]);
         setPreviewUrls([]);
+        setSelectedCategoryId("");
+        setAttributes({});
       }
     } catch (err: any) {
       console.error(err);
@@ -109,103 +145,185 @@ export const SellerUploadPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-3xl mx-auto bg-white p-6 rounded shadow">
-        <h1 className="text-2xl font-bold mb-4">Upload New Product</h1>
+    <div className="min-h-screen bg-[#f5f5f5] w-full overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-12 gap-6">
+        {/* Steps */}
+        <aside className="hidden md:block col-span-3 lg:col-span-3">
+          <div className="bg-white border rounded-lg p-4">
+            <h3 className="font-semibold mb-3">Gợi ý đến Thông tin</h3>
+            <ol className="space-y-3 text-sm text-gray-700">
+              <li>Thêm ít nhất 3 hình ảnh</li>
+              <li>Thêm video sản phẩm</li>
+              <li>Tên sản phẩm rõ ràng</li>
+              <li>Thêm thuộc tính và mô tả</li>
+              <li>Chọn ngành hàng</li>
+            </ol>
+          </div>
+        </aside>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Product Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border rounded"
-            required
-          />
-          <textarea
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 border rounded"
-          />
-          <input
-            type="number"
-            placeholder="discount"
-            value={discount}
-            onChange={(e) => setDiscount(Number(e.target.value))}
-            className="w-full p-2 border rounded"
-            required
-          />
-          <input
-            type="number"
-            placeholder="rating"
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            className="w-full p-2 border rounded"
-            required
-          />
-          <textarea
-            placeholder="tags"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="w-full p-2 border rounded"
-          />
-          <input
-            type="number"
-            placeholder="Price"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            className="w-full p-2 border rounded"
-            required
-          />
-          <input
-            type="number"
-            placeholder="Stock"
-            value={stock}
-            onChange={(e) => setStock(Number(e.target.value))}
-            className="w-full p-2 border rounded"
-            required
-          />
+        {/* Form */}
+        <section className="col-span-12 md:col-span-9 lg:col-span-9">
+          <div className="bg-white border rounded-lg p-0">
+            <div className="border-b px-6 py-4">
+              <h1 className="text-xl font-bold">Thêm 1 sản phẩm mới</h1>
+            </div>
 
-          {/* ✅ Chọn thêm ảnh mà không mất ảnh cũ */}
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageSelect}
-            className="block w-full text-sm text-gray-500"
-          />
+            <form onSubmit={handleSubmit} className="divide-y">
+              {/* Thông tin cơ bản */}
+              <div className="p-6 space-y-4">
+                <h2 className="font-semibold text-gray-900">Thông tin cơ bản</h2>
+                {/* Ngành hàng */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngành hàng</label>
+                  <select
+                    value={selectedCategoryId}
+                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                    className="w-full px-3 py-2 border rounded"
+                  >
+                    <option value="">Chọn ngành hàng</option>
+                    {categories.map((c) => (
+                      <optgroup key={c.id} label={c.name}>
+                        {c.children?.length ? c.children.map((c2: any) => (
+                          <>
+                            <option key={c2.id} value={c2.id}>{c2.name}</option>
+                            {c2.children?.length ? c2.children.map((c3: any) => (
+                              <option key={c3.id} value={c3.id}>└ {c3.name}</option>
+                            )) : null}
+                          </>
+                        )) : (
+                          <option value={c.id}>{c.name}</option>
+                        )}
+                      </optgroup>
+                    ))}
+                  </select>
+                  {categories.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">Chưa có dữ liệu danh mục. Vui lòng chạy seed danh mục trong backend rồi tải lại trang.</p>
+                  )}
+                </div>
+                {/* Ảnh sản phẩm */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Hình ảnh sản phẩm</label>
+                  <div className="flex items-start gap-4">
+                    <div>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="block text-sm text-gray-600"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Tối thiểu 1 ảnh. Tỉ lệ 1:1 khuyến nghị.</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {previewUrls.map((url, index) => (
+                      <div key={index} className="relative">
+                        <img src={url} alt={`preview-${index}`} className="w-24 h-24 object-cover rounded border" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs"
+                          aria-label="remove"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-          {/* ✅ Hiển thị preview nhiều ảnh có nút xóa */}
-          <div className="flex flex-wrap gap-3 mt-3">
-            {previewUrls.map((url, index) => (
-              <div key={index} className="relative">
-                <img
-                  src={url}
-                  alt={`preview-${index}`}
-                  className="w-24 h-24 object-cover rounded border"
-                />
+                {/* Tên & mô tả */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm</label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full px-3 py-2 border rounded"
+                      placeholder="Tên sản phẩm + Thương hiệu + Mẫu + Thông số"
+                      required
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả sản phẩm</label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={5}
+                      className="w-full px-3 py-2 border rounded"
+                      placeholder="Mô tả chi tiết, chất liệu, kích thước..."
+                    />
+                  </div>
+                </div>
+                {/* Thuộc tính theo ngành */}
+                {attributeSchema && attributeSchema.fields?.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {attributeSchema.fields.map((f) => (
+                      <div key={f.key}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}{f.required ? ' *' : ''}</label>
+                        <input
+                          type={f.type === 'number' ? 'number' : 'text'}
+                          value={attributes[f.key] ?? ''}
+                          onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
+                          className="w-full px-3 py-2 border rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Thông tin bán hàng */}
+              <div className="p-6 space-y-4">
+                <h2 className="font-semibold text-gray-900">Thông tin bán hàng</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Giá</label>
+                    <input
+                      type="number"
+                      value={price}
+                      onChange={(e) => setPrice(Number(e.target.value))}
+                      className="w-full px-3 py-2 border rounded"
+                      placeholder="0"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kho hàng</label>
+                    <input
+                      type="number"
+                      value={stock}
+                      onChange={(e) => setStock(Number(e.target.value))}
+                      className="w-full px-3 py-2 border rounded"
+                      placeholder="0"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Hành động */}
+              <div className="p-6 flex items-center justify-end gap-3 bg-gray-50">
+                {message && <p className="text-sm text-red-600 mr-auto">{message}</p>}
                 <button
                   type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded"
+                  onClick={() => navigate(-1)}
+                  className="px-4 py-2 border rounded bg-white hover:bg-gray-50"
                 >
-                  🗑
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded bg-[#ee4d2d] text-white hover:bg-[#d63d20]"
+                  disabled={uploading}
+                >
+                  {uploading ? "Đang lưu..." : "Lưu & Hiển thị"}
                 </button>
               </div>
-            ))}
+            </form>
           </div>
-
-          <button
-            type="submit"
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
-            disabled={uploading}
-          >
-            {uploading ? "Uploading..." : "Upload Product"}
-          </button>
-        </form>
-
-        {message && <p className="mt-4 text-red-600">{message}</p>}
+        </section>
       </div>
     </div>
   );

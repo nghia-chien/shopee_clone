@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { api } from "../../api/client";
+import { useAuthStore } from "../../store/auth";
 
 interface Product {
   id: string;
@@ -20,6 +22,24 @@ interface Props {
 
 export function ProductListSection({ title = "Gợi Ý Hôm Nay", products }: Props) {
   const navigate = useNavigate();
+  const { token } = useAuthStore();
+
+  const addToCart = async (product_id: string) => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    try {
+      await api(`/cart/items`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ product_id, quantity: 1 }),
+      });
+      alert('Đã thêm vào giỏ hàng');
+    } catch (err: any) {
+      alert(err?.message || 'Lỗi thêm giỏ hàng');
+    }
+  };
 
   if (!products || products.length === 0)
     return (
@@ -113,6 +133,21 @@ export function ProductListSection({ title = "Gợi Ý Hôm Nay", products }: Pr
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>{product.location ?? "Việt Nam"}</span>
               </div>
+
+              {/* <div className="flex gap-2 mt-2">
+                <button
+                  className="flex-1 text-center border border-gray-300 rounded py-2 hover:bg-gray-50"
+                  onClick={(e) => { e.stopPropagation(); navigate(`/products/${product.id}`); }}
+                >
+                  Xem chi tiết
+                </button>
+                <button
+                  className="flex-1 text-center bg-orange-500 text-white rounded py-2 hover:bg-orange-600"
+                  onClick={(e) => { e.stopPropagation(); addToCart(product.id); }}
+                >
+                  Thêm vào giỏ
+                </button>
+              </div> */}
             </div>
           </div>
         ))}
