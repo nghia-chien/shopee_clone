@@ -134,7 +134,7 @@ export function ProductListSection({ title = "Gợi Ý Hôm Nay", products }: Pr
                 <span>{product.location ?? "Việt Nam"}</span>
               </div>
 
-              <div className="flex gap-2 mt-2">
+              {/* <div className="flex gap-2 mt-2">
                 <button
                   className="flex-1 text-center border border-gray-300 rounded py-2 hover:bg-gray-50"
                   onClick={(e) => { e.stopPropagation(); navigate(`/products/${product.id}`); }}
@@ -147,7 +147,7 @@ export function ProductListSection({ title = "Gợi Ý Hôm Nay", products }: Pr
                 >
                   Thêm vào giỏ
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         ))}
