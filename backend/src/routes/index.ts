@@ -4,6 +4,7 @@ import productRouter from './modules/product.routes';
 import cartRouter from './modules/cart.routes';
 import orderRouter from './modules/order.routes';
 import sellerRoutes from '../sellerRoutes/index';
+import categoryRoutes from './modules/category.routes';
 
 const router = Router();
 
@@ -16,11 +17,12 @@ router.use('/products', productRouter);
 router.use('/cart', cartRouter);
 router.use('/orders', orderRouter);
 router.use('/seller', sellerRoutes); 
+router.use('/categories', categoryRoutes);
 // ✅ Route mặc định (test API)
 router.get('/', (_req, res) => {
   res.json({
     message: 'API is running 🚀',
-    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller'],
+    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller', '/categories'],
   });
 });
 

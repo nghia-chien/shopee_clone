@@ -18,6 +18,20 @@ model cart_item {
   @@unique([user_id, product_id], map: "cart_item_user_product_key")
 }
 
+model category {
+  id             String     @id @default(dbgenerated("gen_random_uuid()"))
+  name           String
+  slug           String     @unique
+  parent_id      String?
+  level          Int        @default(1)
+  path           String[]
+  category       category?  @relation("categoryTocategory", fields: [parent_id], references: [id])
+  other_category category[] @relation("categoryTocategory")
+  product        product[]
+
+  @@index([parent_id], map: "idx_category_parent_id")
+}
+
 model order_item {
   id         String  @id @default(dbgenerated("gen_random_uuid()"))
   order_id   String
@@ -63,8 +77,8 @@ model product {
   category      category?    @relation(fields: [category_id], references: [id])
   seller        seller       @relation(fields: [seller_id], references: [id])
 
-  @@index([seller_id], map: "idx_product_seller_id")
   @@index([category_id], map: "idx_product_category_id")
+  @@index([seller_id], map: "idx_product_seller_id")
 }
 
 model seller {
@@ -127,18 +141,4 @@ model user {
   updated_at   DateTime    @default(now())
   cart_item    cart_item[]
   orders       orders[]
-}
-
-model category {
-  id             String     @id @default(dbgenerated("gen_random_uuid()"))
-  name           String
-  slug           String     @unique
-  parent_id      String?
-  level          Int        @default(1)
-  path           String[]
-  category       category?  @relation("categoryTocategory", fields: [parent_id], references: [id])
-  other_category category[] @relation("categoryTocategory")
-  product        product[]
-
-  @@index([parent_id], map: "idx_category_parent_id")
 }

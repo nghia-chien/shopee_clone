@@ -35,22 +35,29 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
+    // ✅ Lấy giỏ hàng của user
     const cart_items = await prisma.cart_item.findMany({
       where: { user_id: req.user.id },
       include: { product: true },
     });
 
-    if (cart_items.length === 0) return res.status(400).json({ message: 'Cart is empty' });
+    if (cart_items.length === 0) {
+      return res.status(400).json({ message: 'Cart is empty' });
+    }
 
-    const total = cart_items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+    // ✅ Tính tổng tiền
+    const total = cart_items.reduce((sum, item) => {
+      const price = Number(item.product.price);
+      return sum + price * item.quantity;
+    }, 0);
 
     const order = await prisma.orders.create({
       data: {
         user_id: req.user.id,
         total,
         status: 'pending',
-        order_item: {
-          create: cart_items.map(item => ({
+        items: {
+          create: cart_items.map((item) => ({
             product_id: item.product_id,
             price: item.product.price,
             quantity: item.quantity,
@@ -62,6 +69,7 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
       },
     });
 
+    // ✅ Xóa giỏ hàng sau khi đặt đơn
     await prisma.cart_item.deleteMany({ where: { user_id: req.user.id } });
 
     return res.status(201).json(order);

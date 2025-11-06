@@ -29,10 +29,10 @@ export const sellerRegisterController = async (req:any , res: Response)=>{
     
     const hashed = await bcrypt.hash(password, 10);
     const seller = await prisma.seller.create({
-      data: { name, email, password: hashed, phone_number, address ,updated_at: new Date() },
+      data: { name, email, password: hashed, phone_number, address },
     });
 
-    const token = jwt.sign({ id: seller.id, email: seller.email, phone_number: seller.phone_number }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
+    const token = jwt.sign({ id: seller.id, email: seller.email, phone_number: seller.phone_number, role: 'seller' }, process.env.JWT_SECRET || "secret", { expiresIn: "7d" });
 
     res.json({ seller: { id: seller.id, email: seller.email, name: seller.name }, token });
   } catch (err) {
@@ -48,10 +48,18 @@ export const sellerLoginController = async (req:any , res: Response)=>{
     const seller = await prisma.seller.findUnique({ where: { email } });
     if (!seller) return res.status(400).json({ error: "Seller not found" });
 
-    const match = await bcrypt.compare(password, seller.password);
+    if (!seller.password) {
+      return res.status(400).json({ error: "Invalid password" });
+    }
+    let match = false;
+    try {
+      match = await bcrypt.compare(password, seller.password);
+    } catch {
+      match = false;
+    }
     if (!match) return res.status(400).json({ error: "Invalid password" });
 
-    const token = jwt.sign({ id: seller.id, email: seller.email, phone_number: seller.phone_number }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
+    const token = jwt.sign({ id: seller.id, email: seller.email, phone_number: seller.phone_number, role: 'seller' }, process.env.JWT_SECRET || "secret", { expiresIn: "7d" });
 
     res.json({ seller: { id: seller.id, email: seller.email, name: seller.name }, token });
   } catch (err) {
@@ -76,5 +84,39 @@ export const sellerMeController = async (req: any, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error sellerMeController seller/auth.controller" });
+  }
+};
+
+// Exchange a buyer token for a seller token if linked
+export const sellerExchangeController = async (req: Request, res: Response) => {
+  try {
+    const header = req.headers.authorization;
+    if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const buyerToken = header.slice('Bearer '.length);
+    const secret = process.env.JWT_SECRET || 'secret';
+    let payload: any;
+    try {
+      payload = jwt.verify(buyerToken, secret);
+    } catch {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    // payload should have user id
+    const user_id = payload.id as string | undefined;
+    if (!user_id) return res.status(401).json({ error: 'Invalid token payload' });
+
+    const seller = await prisma.seller.findUnique({ where: { user_id } });
+    if (!seller) return res.status(404).json({ error: 'Seller link not found' });
+
+    const sellerToken = jwt.sign(
+      { id: seller.id, email: seller.email, phone_number: seller.phone_number, role: 'seller' },
+      secret,
+      { expiresIn: '7d' }
+    );
+
+    return res.json({ token: sellerToken, seller: { id: seller.id, email: seller.email, name: seller.name } });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error sellerExchangeController' });
   }
 };
