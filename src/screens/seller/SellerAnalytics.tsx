@@ -18,7 +18,7 @@ interface Stats {
     price: number;
     total: number;
     status: string;
-    creat_at: string;
+    created_at: string;
   }>;
 }
 
@@ -241,7 +241,7 @@ export const SellerAnalytics = () => {
                       SL: {order.quantity} | Đơn: #{order.order_id.slice(0, 8)}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {new Date(order.creat_at).toLocaleString("vi-VN")}
+                      {new Date(order.created_at).toLocaleString("vi-VN")}
                     </p>
                   </div>
                   <div className="text-right">

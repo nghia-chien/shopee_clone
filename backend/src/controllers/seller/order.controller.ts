@@ -28,7 +28,7 @@ export async function createSellerOrderController(req: SellerRequest, res: Respo
       return sum + price * item.quantity;
     }, 0);
 
-    // ✅ Tạo đơn hàng + OrderItems
+    // ✅ Tạo đơn hàng + order_items
     const order = await prisma.orders.create({
       data: {
         seller_id, // Seller mua hàng
@@ -82,7 +82,7 @@ export async function listSellerOrdersController(req: SellerRequest, res: Respon
           },
         },
       },
-      orderBy: { creat_at: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
 
     return res.json({ orders });
@@ -110,8 +110,8 @@ export async function listSellerSoldOrdersController(req: SellerRequest, res: Re
 
     const product_ids = sellerProducts.map((p) => p.id);
 
-    // ✅ Lấy các OrderItems có products của seller
-    const orderItems = await prisma.orderItem.findMany({
+    // ✅ Lấy các order_items có products của seller
+    const order_items = await prisma.order_item.findMany({
       where: {
         product_id: { in: product_ids },
       },
@@ -128,12 +128,12 @@ export async function listSellerSoldOrdersController(req: SellerRequest, res: Re
           },
         },
       },
-      orderBy: { orders: { creat_at: 'desc' } },
+      orderBy: { orders: { created_at: 'desc' } },
     });
 
     // ✅ Nhóm theo orders
     const orderMap = new Map();
-    orderItems.forEach((item) => {
+    order_items.forEach((item) => {
       const order_id = item.orders.id;
       if (!orderMap.has(order_id)) {
         orderMap.set(order_id, {

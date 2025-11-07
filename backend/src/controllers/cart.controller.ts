@@ -124,3 +124,25 @@ export async function removecart_itemController(req: Request & { user?: { id: st
 		return res.status(500).json({ message: 'Internal server error' });
 	}
 }
+
+export const getCartCountController = async (
+  req: Request & { user?: { id: string } },
+  res: Response
+) => {
+  try {
+    const user_id = req.user?.id;
+    if (!user_id) return res.status(401).json({ message: "Unauthorized" });
+
+    const distinctProducts = await prisma.cart_item.groupBy({
+      by: ["product_id"],
+      where: { user_id },
+    });
+
+    const count = distinctProducts.length;
+
+    return res.json({ count });
+  } catch (err) {
+    console.error("Failed to get cart count:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

@@ -34,10 +34,14 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
 export async function createOrderController(req: AuthenticatedRequest, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
-
-    // ✅ Lấy giỏ hàng của user
+    const { cart_item_ids } = req.body as { cart_item_ids?: string[] };
+    
+    // ✅ Lấy chi tiết các item được chọn trong giỏ hàng
     const cart_items = await prisma.cart_item.findMany({
-      where: { user_id: req.user.id },
+      where: {
+        user_id: req.user.id,
+        id: { in: cart_item_ids }, // lọc theo id các cart_item được chọn
+      },
       include: { product: true },
     });
 
@@ -51,12 +55,13 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
       return sum + price * item.quantity;
     }, 0);
 
+    // ✅ Tạo đơn hàng cùng order_item
     const order = await prisma.orders.create({
       data: {
         user_id: req.user.id,
         total,
         status: 'pending',
-        items: {
+        order_item: {
           create: cart_items.map((item) => ({
             product_id: item.product_id,
             price: item.product.price,
@@ -69,8 +74,13 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
       },
     });
 
-    // ✅ Xóa giỏ hàng sau khi đặt đơn
-    await prisma.cart_item.deleteMany({ where: { user_id: req.user.id } });
+    // ✅ Xóa CHỈ các item đã chọn khỏi giỏ hàng
+    await prisma.cart_item.deleteMany({ 
+      where: { 
+        user_id: req.user.id,
+        id: { in: cart_item_ids }
+      } 
+    });
 
     return res.status(201).json(order);
   } catch (error) {
@@ -79,27 +89,26 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
   }
 }
 
+
 /**
  * 🔍 Lấy chi tiết một đơn hàng
  */
-export async function getOrderController(req: AuthenticatedRequest, res: Response) {
+export async function getOrdersController(req: AuthenticatedRequest, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { id } = req.params;
-
-    const order = await prisma.orders.findFirst({
-      where: { id, user_id: req.user.id },
+    // Lấy tất cả đơn hàng của user, kèm order_item + product
+    const orders = await prisma.orders.findMany({
+      where: { user_id: req.user.id },
       include: {
         order_item: { include: { product: true } },
       },
+      orderBy: { created_at: 'desc' }, // mới nhất lên đầu
     });
 
-    if (!order) return res.status(404).json({ message: 'Order not found' });
-
-    return res.json(order);
+    return res.status(200).json({ items: orders }); // ⚡ trả về array
   } catch (error) {
-    console.error('❌ getOrderController error:', error);
+    console.error('❌ getOrdersController error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

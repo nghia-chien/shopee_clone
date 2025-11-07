@@ -29,12 +29,9 @@ export function ProductPage() {
   
   const { data: sellerProducts } = useQuery({
     queryKey: ["seller-products", data?.seller?.id],
-    queryFn: () =>
-      api<{ items: any[] }>(`/products?seller_id=${data?.seller?.id}`),
-    enabled: Boolean(data?.seller?.id), // chỉ gọi khi có seller_id
+    queryFn: () => api<{ items: any[] }>(`/products?seller_id=${data?.seller?.id}`),
+    enabled: Boolean(data?.seller?.id),
   });
-console.log("Seller ID gọi API:", data?.seller?.id);
-console.log("Kết quả:", sellerProducts);
 
   const { data: relatedProducts } = useQuery({
     queryKey: ["related-products", data?.id],
@@ -218,7 +215,7 @@ console.log("Kết quả:", sellerProducts);
         <h2 className="text-lg font-semibold mb-3">{t("product.product_details")}</h2>
         <div className="text-sm text-gray-700 space-y-2">
           <div>• Tags: {data.tags?.join(", ") || t("updating")}</div>
-          <div>• {t("product.stock")}: {data.stock}</div>
+          <div>• {t("product.stock")}: {data.stock > 0 ? 'Còn hàng' : 'Hết hàng'}</div>
           <div>• {t("product.seller_address")}: {data.seller?.address || t("updating")}</div>
         </div>
       </div>
@@ -231,23 +228,32 @@ console.log("Kết quả:", sellerProducts);
 
       {/* (Yêu cầu 8) ĐÁNH GIÁ SẢN PHẨM */}
       <div className="max-w-6xl mx-auto bg-white mt-4 p-6 shadow-sm rounded-md text-left">
-        <h2 className="text-lg font-semibold mb-3">{t("product.reviews")}</h2>
-        <p className="text-sm text-gray-500">{t("product.updating")}</p>
+        <h2 className="text-2xl font-semibold mb-3">{t("product.reviews")}</h2>
+        <p className="text-sm text-gray-500">{t("product.reviews_notyet")}</p>
       </div>
 
+      {/* (Yêu cầu 9) SẢN PHẨM KHÁC CỦA SHOP */}
       {/* (Yêu cầu 9) SẢN PHẨM KHÁC CỦA SHOP */}
       <div className="max-w-6xl mx-auto bg-white mt-4 p-6 shadow-sm rounded-md text-left">
         <ProductListSection
           title={t("product.other_products_by_shop")}
-          products={sellerProducts?.items?.filter(p => p.id !== data.id) || []} // loại bỏ chính sản phẩm hiện tại
+          // Chỉ lấy sản phẩm có cùng seller_id và khác id hiện tại
+          products={
+            sellerProducts?.items
+              ?.filter(p => p.seller_id === data.seller?.id && p.id !== data.id)
+              ?.slice(0, 10) || []
+          }
+          horizontal
         />
       </div>
+
 
       {/* (Yêu cầu 10) SẢN PHẨM LIÊN QUAN */}
       <div className="max-w-6xl mx-auto bg-white mt-4 p-6 shadow-sm rounded-md text-left">
         <ProductListSection
           title={t("product.you_may_also_like")}
           products={relatedProducts?.items?.filter(p => p.id !== data.id) || []}
+          lazyLoad
         />
       </div>
 

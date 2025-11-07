@@ -50,6 +50,7 @@
     "reviews": "Product Reviews",
     "updating": "Updating...",
     "other_products_by_shop": "Other Products from this Shop",
-    "you_may_also_like": "You May Also Like"
+    "you_may_also_like": "You May Also Like",
+    "reviews_notyet": "No reviews yet for this product."
   }
 }

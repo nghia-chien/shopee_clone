@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import { HomeLayout } from "../../components/layout/HomeLayout";
-import { HeaderLayout } from "../../components/layout/HeaderLayout";
 import { ProductListSection } from "../../components/product/ProductListSection";
 import { useAuthStore } from "../../store/auth";
 
@@ -29,18 +28,18 @@ export function HomePage() {
 
   if (isLoading)
     return (
-      <HeaderLayout>
+      <HomeLayout>
         <div className="text-center text-gray-500">Loading products...</div>
-      </HeaderLayout>
+      </HomeLayout>
     );
 
   if (isError)
     return (
-      <HeaderLayout>
+      <HomeLayout>
         <div className="text-center text-red-500">
           Error: {(error as any)?.message || "Something went wrong"}
         </div>
-      </HeaderLayout>
+      </HomeLayout>
     );
 
   return (

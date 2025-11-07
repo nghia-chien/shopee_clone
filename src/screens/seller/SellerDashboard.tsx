@@ -13,7 +13,7 @@ interface Product {
   images: string[];
   status?: string;
   rating?: number;
-  creat_at?: string;
+  created_at?: string;
   attributes?: Record<string, any>;
 }
 

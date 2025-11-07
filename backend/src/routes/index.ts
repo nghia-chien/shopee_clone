@@ -18,11 +18,12 @@ router.use('/cart', cartRouter);
 router.use('/orders', orderRouter);
 router.use('/seller', sellerRoutes); 
 router.use('/categories', categoryRoutes);
+router.use('/shops', categoryRoutes);
 // ✅ Route mặc định (test API)
 router.get('/', (_req, res) => {
   res.json({
     message: 'API is running 🚀',
-    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller', '/categories'],
+    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller', '/categories','/shops'],
   });
 });
 

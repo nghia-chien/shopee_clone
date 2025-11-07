@@ -144,3 +144,84 @@ export const addProductFeedbackController = async (req: Request & { user?: { id:
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
+
+export const searchKeywords = async (req: Request, res: Response) => {
+  try {
+    const { q } = req.query;
+    if (!q || typeof q !== "string") {
+      return res.status(400).json({ message: "Query không hợp lệ" });
+    }
+
+    // Lấy sản phẩm + seller có tên chứa query
+    const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { seller: { name: { contains: q, mode: "insensitive" } } },
+        ],
+      },
+      include: { seller: true },
+      take: 50,
+    });
+
+    // map ra keywords và loại trùng
+    const keywordSet = new Set<string>();
+    products.forEach(p => {
+      if (p.title.toLowerCase().includes(q.toLowerCase())) keywordSet.add(p.title);
+      if (p.seller?.name.toLowerCase().includes(q.toLowerCase())) keywordSet.add(p.seller.name);
+    });
+
+    res.json({ items: Array.from(keywordSet).slice(0, 10) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+
+export const searchHandler = async (req: Request, res: Response) => {
+  try {
+    const { q, type } = req.query;
+    if (!q || typeof q !== "string") {
+      return res.status(400).json({ message: "Query không hợp lệ" });
+    }
+
+    const query = (req.query.q || req.query.query || "").toString().trim();
+if (!query) return res.status(400).json({ message: "Query không hợp lệ" });
+
+    let products: any[] = [];
+    let shops: any[] = [];
+
+    // Nếu type === 'shop', chỉ tìm shop
+    if (type === 'shop') {
+      shops = await prisma.seller.findMany({
+        where: { name: { contains: query, mode: "insensitive" } },
+        take: 50,
+      });
+    } else {
+      // Tìm cả product và shop
+      products = await prisma.product.findMany({
+        where: {
+          OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+          ],
+        },
+        include: { seller: true },
+        take: 50,
+      });
+
+      shops = await prisma.seller.findMany({
+        where: { name: { contains: query, mode: "insensitive" } },
+        take: 50,
+      });
+    }
+
+    res.json({ products, shops });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
