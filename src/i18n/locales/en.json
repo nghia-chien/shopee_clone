@@ -1,0 +1,56 @@
+{
+  "home":{ 
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "seller_channel": "Seller Center",
+    "download_app": "Download",
+    "connect": "Follw us on",
+    "notification": "Notifications",
+    "support": "Help",
+    "search_placeholder": "Search for products, brands and shops",
+    "keyword_shirt": "Men's T-Shirt",
+    "keyword_phone": "Samsung Phone",
+    "keyword_shoes": "Sneakers",
+    "keyword_bag": "Women's Bag",
+    "keyword_headphones": "Bluetooth Headphones",
+    "keyword_watch": "Smart Watch",
+    "keyword_dress": "Office Dress",
+    "my_account": "My Account",
+    "my_orders": "My Purchase",
+    "see_more": "See more",
+    "recently_notification":"Recently Received Notification"
+  } 
+  ,
+  
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "loginButton": "Login",
+    "registerButton": "Register",
+    "name": "Full Name"
+  },
+  "product":{
+    "loading": "Loading...",
+    "sold": "Sold",
+    "voucher": "Voucher",
+    "shipping": "Shipping",
+    "quantity": "Quantity",
+    "add_to_cart": "Add to Cart",
+    "buy_now": "Buy Now",
+    "chat_now": "Chat Now",
+    "view_shop": "View Shop",
+    "product_details": "Product Details",
+    "stock": "In Stock",
+    "seller_address": "Seller Address",
+    "description": "Description",
+    "reviews": "Product Reviews",
+    "updating": "Updating...",
+    "other_products_by_shop": "Other Products from this Shop",
+    "you_may_also_like": "You May Also Like",
+    "reviews_notyet": "No reviews yet for this product."
+  }
+}

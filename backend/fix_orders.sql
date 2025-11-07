@@ -1,0 +1,4 @@
+ALTER TABLE "orders" DROP COLUMN IF EXISTS "seller_id";
+ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE "cart_item" DROP COLUMN IF EXISTS "seller_id";
+DROP INDEX IF EXISTS cart_item_seller_product_key;

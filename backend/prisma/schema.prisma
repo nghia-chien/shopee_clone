@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model cart_item {
+  id         String  @id @default(dbgenerated("gen_random_uuid()"))
+  user_id    String
+  product_id String
+  quantity   Int     @default(1)
+  product    product @relation(fields: [product_id], references: [id])
+  user       user    @relation(fields: [user_id], references: [id])
+  seller_id  String?
+  seller     seller? @relation(fields: [seller_id], references: [id])
+
+  @@unique([user_id, product_id], map: "cart_item_user_product_key")
+  @@unique([seller_id, product_id])
+}
+
+model category {
+  id             String     @id @default(dbgenerated("gen_random_uuid()"))
+  name           String
+  slug           String     @unique
+  parent_id      String?
+  level          Int        @default(1)
+  path           String[]
+  category       category?  @relation("categoryTocategory", fields: [parent_id], references: [id])
+  other_category category[] @relation("categoryTocategory")
+  product        product[]
+
+  @@index([parent_id], map: "idx_category_parent_id")
+}
+
+model order_item {
+  id         String  @id @default(dbgenerated("gen_random_uuid()"))
+  order_id   String
+  product_id String
+  price      Decimal @db.Decimal(10, 2)
+  quantity   Int     @default(1)
+  orders     orders  @relation(fields: [order_id], references: [id])
+  product    product @relation(fields: [product_id], references: [id])
+}
+
+model orders {
+  id         String       @id @default(dbgenerated("gen_random_uuid()"))
+  total      Decimal      @db.Decimal(10, 2)
+  status     String       @default("pending")
+  created_at DateTime     @default(now())
+  updated_at DateTime     @default(now())
+  user_id    String?
+  seller_id  String?
+  items      order_item[]
+  user       user?        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  seller     seller?      @relation(fields: [seller_id], references: [id])
+}
+
+model product {
+  id            String       @id @default(dbgenerated("gen_random_uuid()"))
+  title         String
+  description   String?
+  price         Decimal      @db.Decimal(10, 2)
+  stock         Int          @default(0)
+  images        String[]
+  seller_id     String
+  category_id   String?
+  dimensions    Json?
+  discount      Decimal?     @default(0) @db.Decimal(10, 2)
+  rating        Float?       @default(0)
+  reviews_count Int?         @default(0)
+  tags          String[]
+  attributes    Json?
+  status        String?      @default("active")
+  weight        Float?
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @default(now())
+  cart_item     cart_item[]
+  order_item    order_item[]
+  category      category?    @relation(fields: [category_id], references: [id])
+  seller        seller       @relation(fields: [seller_id], references: [id])
+
+  @@index([category_id], map: "idx_product_category_id")
+  @@index([seller_id], map: "idx_product_seller_id")
+}
+
+model seller {
+  id                          String                        @id @default(dbgenerated("gen_random_uuid()"))
+  name                        String
+  email                       String                        @unique
+  phone_number                String?                       @unique @db.VarChar(20)
+  address                     Json?
+  rating                      Float?                        @default(0)
+  status                      String                        @default("active")
+  created_at                  DateTime                      @default(now())
+  updated_at                  DateTime                      @default(now())
+  password                    String
+  product                     product[]
+  seller_payout_settings      seller_payout_settings[]
+  seller_shipping_preferences seller_shipping_preferences[]
+  cart_item                   cart_item[]
+  orders                      orders[]
+}
+
+model seller_payout_settings {
+  id                String   @id @default(dbgenerated("gen_random_uuid()"))
+  seller_id         String
+  payout_method     String
+  account_number    String
+  bank_name         String?
+  currency          String   @default("VND")
+  min_payout_amount Decimal  @default(0) @db.Decimal(10, 2)
+  payout_frequency  String   @default("weekly")
+  status            String   @default("active")
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now())
+  seller            seller   @relation(fields: [seller_id], references: [id])
+
+  @@index([seller_id], map: "idx_seller_payout_settings_seller_id")
+}
+
+model seller_shipping_preferences {
+  id                      String   @id @default(dbgenerated("gen_random_uuid()"))
+  seller_id               String
+  shipping_methods        Json
+  shipping_rates          Json
+  free_shipping_threshold Decimal  @default(0) @db.Decimal(10, 2)
+  default_warehouse       String?
+  regions_covered         Json?
+  status                  String   @default("active")
+  is_default              Boolean  @default(true)
+  created_at              DateTime @default(now())
+  updated_at              DateTime @default(now())
+  seller                  seller   @relation(fields: [seller_id], references: [id])
+
+  @@index([seller_id], map: "idx_seller_shipping_preferences_seller_id")
+}
+
+model user {
+  id           String      @id @default(dbgenerated("gen_random_uuid()"))
+  email        String      @unique
+  phone_number String?     @unique @db.VarChar(20)
+  password     String
+  name         String?
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @default(now())
+  cart_item    cart_item[]
+  orders       orders[]
+}
+

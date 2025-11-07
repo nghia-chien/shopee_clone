@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: rgb(0, 0, 0);
+  background-color: #F9FAFB;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+header{
+  width: 100%;
+margin: 0;
+padding: 0;
+
+}
+
+/* Fix overflow issues */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+a {
+  font-weight: 500;
+  color: rgb(0, 0, 0);
+  text-decoration: inherit;
+}
+a:hover {
+  color: orange-300;
+}
+
+
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+/* Keep only focus outline reset; do not override padding/background from Tailwind */
+button:focus,
+button:focus-visible {
+  outline: none;
+}
+
+/* Tạo class bg-gradient cho gradient tĩnh */
+.bg-gradient {
+  background: linear-gradient(to bottom,#FF5722, #FF7043, #FF8A50);
+}
+
+/* Nếu muốn gradient động */
+.bg-gradient-animated {
+  background: linear-gradient(90deg,#FF5722, #FF7043, #FF8A50);
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #2e92ea;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}

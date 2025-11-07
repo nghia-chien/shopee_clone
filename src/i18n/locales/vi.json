@@ -1,0 +1,58 @@
+{
+  "home":{
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "register": "Đăng ký",
+    "seller_channel": "Kênh Người Bán",
+    "download_app": "Tải ứng dụng",
+    "connect": "Kết nối",
+    "notification": "Thông báo",
+    "support": "Hỗ trợ",
+    "search_placeholder": "Tìm sản phẩm , thương hiệu, và tên shop",
+    "keyword_shirt": "Áo thun nam",
+    "keyword_phone": "Điện thoại Samsung",
+    "keyword_shoes": "Giày sneaker",
+    "keyword_bag": "Túi xách nữ",
+    "keyword_headphones": "Tai nghe bluetooth",
+    "keyword_watch": "Đồng hồ thông minh",
+    "keyword_dress": "Váy đầm công sở",
+    "keyword_sandals": "Dép sandal",
+    "flash_sale": "Siêu Sale",
+    "my_account": "Tài khoản của tôi",
+    "my_orders": "Đơn mua",
+    "see_more": "Xem thêm",
+    "recently_notification":"Thông báo mới nhận"
+    
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "loginButton": "Đăng nhập",
+    "registerButton": "Đăng ký",
+    "name": "Họ và tên"
+  },
+  "product":{
+    "loading": "Đang tải...",
+    "sold": "Đã bán",
+    "voucher": "Mã giảm giá",
+    "shipping": "Vận chuyển",
+    "quantity": "Số lượng",
+    "add_to_cart": "Thêm vào giỏ hàng",
+    "buy_now": "Mua ngay",
+    "chat_now": "Chat ngay",
+    "view_shop": "Xem shop",
+    "product_details": "Chi tiết sản phẩm",
+    "stock": "Tồn kho",
+    "seller_address": "Địa chỉ người bán",
+    "description": "Mô tả sản phẩm",
+    "reviews": "Đánh giá",
+    "updating": "Đang cập nhật...",
+    "other_products_by_shop": "Các sản phẩm khác của shop",
+    "you_may_also_like": "Có thể bạn cũng thích",
+    "reviews_notyet": "Chưa có đánh giá nào cho sản phẩm này."
+  }
+
+}
