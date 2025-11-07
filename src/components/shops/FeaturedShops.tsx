@@ -1,5 +1,5 @@
 import React from "react";
-
+import { useNavigate } from "react-router-dom";
 interface Shop {
   shop_id: string;
   shop_name: string;
@@ -13,12 +13,14 @@ interface FeaturedShopsProps {
 }
 
 const FeaturedShops: React.FC<FeaturedShopsProps> = ({ shops }) => {
+  const navigate = useNavigate();
+
   return (
     <section className="bg-white rounded-lg shadow-sm p-6 mb-8">
       <div className="space-y-4">
         {shops.map((shop) => (
           <div
-            key={shop.shop_id}
+            key={String(shop.shop_id)}
             className="flex flex-col sm:flex-row items-center justify-between bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition"
           >
             {/* Logo + Thông tin bên trái */}
@@ -59,12 +61,15 @@ const FeaturedShops: React.FC<FeaturedShopsProps> = ({ shops }) => {
                 <span className="text-orange-500 font-semibold mr-1">
                   {shop.total_products.toLocaleString()}k
                 </span>
-                Sản Phẩm
+                <p>Sản phẩm: {Number(shop.total_products || 0)}</p>
               </div>
 
               <div className="flex items-center px-3 border-r">
                 <span className="text-orange-500 font-semibold mr-1">
-                  {shop.avg_rating.toFixed(1)}
+                  <p>
+  {Number(shop.avg_rating || 0).toFixed(1)} ★
+</p>
+
                 </span>
                 Đánh Giá
               </div>
@@ -89,7 +94,10 @@ const FeaturedShops: React.FC<FeaturedShopsProps> = ({ shops }) => {
 
             {/* Nút bên phải */}
             <div className="flex flex-col gap-2 mt-3 sm:mt-0">
-              <button className="border text-gray-800 px-4 py-1 rounded hover:bg-gray-100 transition">
+              <button
+                onClick={() => navigate(`/shop/${shop.shop_id}`)}
+                className="border text-gray-800 px-4 py-1 rounded hover:bg-gray-100 transition"
+              >
                 XEM SHOP
               </button>
               <button className="border text-gray-800 px-4 py-1 rounded hover:bg-gray-100 transition">
