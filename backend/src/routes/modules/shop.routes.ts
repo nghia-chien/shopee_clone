@@ -1,7 +1,11 @@
 import { Router } from 'express';
-import { getShopSummaries,getProductsBySeller} from '../../controllers/shop.controller';
+import { getShopSummaries,getProductsBySeller,getShopInfo} from '../../controllers/shop.controller';
 import { requireAuth } from '../../middlewares/auth';
+
+
 const router = Router();
-router.get(":seller_id", getProductsBySeller); // route dùng seller_id
-router.get("summary", getShopSummaries);
+// Lấy tất cả shop tóm tắt
+router.get("/summary", getShopSummaries);
+router.get("/:seller_id", getShopInfo);
+router.get("/:seller_id/products", getProductsBySeller);
 export default router;

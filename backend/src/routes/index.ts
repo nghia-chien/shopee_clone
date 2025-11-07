@@ -5,6 +5,7 @@ import cartRouter from './modules/cart.routes';
 import orderRouter from './modules/order.routes';
 import sellerRoutes from '../sellerRoutes/index';
 import categoryRoutes from './modules/category.routes';
+import shopRoutes from './modules/shop.routes';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ router.use('/cart', cartRouter);
 router.use('/orders', orderRouter);
 router.use('/seller', sellerRoutes); 
 router.use('/categories', categoryRoutes);
-router.use('/shops', categoryRoutes);
+router.use('/shops', shopRoutes);
 // ✅ Route mặc định (test API)
 router.get('/', (_req, res) => {
   res.json({
