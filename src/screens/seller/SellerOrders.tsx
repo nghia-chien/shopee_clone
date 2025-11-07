@@ -4,7 +4,7 @@ import { useSellerAuthStore } from "../../store/SellerAuth";
 import { getSellerSoldOrders, getSellerOrderDetails, updateSellerOrderStatus } from "../../api/sellerOrders";
 import { Package, ShoppingBag, Eye, TrendingUp, DollarSign, CheckCircle2, Clock, XCircle } from "lucide-react";
 
-interface OrderItem {
+interface order_item {
   id: string;
   quantity: number;
   price: number;
@@ -23,7 +23,7 @@ interface Order {
   id: string;
   total: number;
   status: string;
-  creat_at: string;
+  created_at: string;
   user?: {
     name: string;
     email: string;
@@ -34,7 +34,7 @@ interface Order {
     email: string;
     phone_number?: string;
   };
-  items: OrderItem[];
+  items: order_item[];
 }
 
 export const SellerOrders = () => {
@@ -246,7 +246,7 @@ export const SellerOrders = () => {
                       Đơn hàng #{order.id.slice(0, 8)}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      {new Date(order.creat_at).toLocaleString("vi-VN")}
+                      {new Date(order.created_at).toLocaleString("vi-VN")}
                     </p>
                     {order.user && (
                       <p className="text-sm text-gray-600 mt-1">
@@ -387,7 +387,7 @@ export const SellerOrders = () => {
                 <h3 className="font-semibold text-gray-900 mb-2">Thông Tin Đơn Hàng</h3>
                 <div className="space-y-1 text-sm">
                   <p><span className="font-medium">Trạng thái:</span> {selectedOrder.status}</p>
-                  <p><span className="font-medium">Ngày tạo:</span> {new Date(selectedOrder.creat_at).toLocaleString("vi-VN")}</p>
+                  <p><span className="font-medium">Ngày tạo:</span> {new Date(selectedOrder.created_at).toLocaleString("vi-VN")}</p>
                   <p className="text-lg font-bold text-blue-600 mt-2">
                     <span className="font-medium">Tổng tiền:</span>{" "}
                     {new Intl.NumberFormat("vi-VN", {

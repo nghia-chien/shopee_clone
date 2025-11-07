@@ -282,7 +282,7 @@ router.use('/analytics', requireAuthSeller, ...);
    ↓
 3. Backend:
    - Lấy tất cả products của seller
-   - Tìm OrderItems có products của seller
+   - Tìm order_items có products của seller
    - Nhóm theo Orders
    ↓
 4. Hiển thị danh sách đơn hàng đã bán
@@ -298,7 +298,7 @@ router.use('/analytics', requireAuthSeller, ...);
    - GET /api/seller/analytics/analytics?days=30 (chi tiết)
    ↓
 3. Backend:
-   - Tính toán từ OrderItems của seller
+   - Tính toán từ order_items của seller
    - Nhóm theo ngày
    - Tính revenue, orders, items
    ↓

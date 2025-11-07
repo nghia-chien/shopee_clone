@@ -12,8 +12,8 @@ export async function getSellerOrderStats(seller_id: string) {
 
   const product_ids = sellerProducts.map((p) => p.id);
 
-  // Lấy tất cả OrderItems có products của seller
-  const orderItems = await prisma.orderItem.findMany({
+  // Lấy tất cả order_items có products của seller
+  const order_items = await prisma.order_item.findMany({
     where: {
       product_id: { in: product_ids },
     },
@@ -25,20 +25,20 @@ export async function getSellerOrderStats(seller_id: string) {
 
   // Tính toán thống kê
   const stats = {
-    totalOrders: new Set(orderItems.map((item) => item.order_id)).size,
-    totalItemsSold: orderItems.reduce((sum, item) => sum + item.quantity, 0),
-    totalRevenue: orderItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0),
+    totalOrders: new Set(order_items.map((item) => item.order_id)).size,
+    totalItemsSold: order_items.reduce((sum, item) => sum + item.quantity, 0),
+    totalRevenue: order_items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0),
     pendingOrders: new Set(
-      orderItems.filter((item) => item.orders.status === 'pending').map((item) => item.order_id)
+      order_items.filter((item) => item.orders.status === 'pending').map((item) => item.order_id)
     ).size,
     completedOrders: new Set(
-      orderItems.filter((item) => item.orders.status === 'completed').map((item) => item.order_id)
+      order_items.filter((item) => item.orders.status === 'completed').map((item) => item.order_id)
     ).size,
     cancelledOrders: new Set(
-      orderItems.filter((item) => item.orders.status === 'cancelled').map((item) => item.order_id)
+      order_items.filter((item) => item.orders.status === 'cancelled').map((item) => item.order_id)
     ).size,
-    recentOrders: orderItems
-      .sort((a, b) => new Date(b.orders.creat_at).getTime() - new Date(a.orders.creat_at).getTime())
+    recentOrders: order_items
+      .sort((a, b) => new Date(b.orders.created_at).getTime() - new Date(a.orders.created_at).getTime())
       .slice(0, 5)
       .map((item) => ({
         order_id: item.order_id,
@@ -47,7 +47,7 @@ export async function getSellerOrderStats(seller_id: string) {
         price: Number(item.price),
         total: Number(item.price) * item.quantity,
         status: item.orders.status,
-        creat_at: item.orders.creat_at,
+        created_at: item.orders.created_at,
       })),
   };
 
@@ -68,11 +68,11 @@ export async function getSellerAnalytics(seller_id: string, days: number = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
-  const orderItems = await prisma.orderItem.findMany({
+  const order_items = await prisma.order_item.findMany({
     where: {
       product_id: { in: product_ids },
       orders: {
-        creat_at: {
+        created_at: {
           gte: startDate,
         },
       },
@@ -86,8 +86,8 @@ export async function getSellerAnalytics(seller_id: string, days: number = 30) {
   // Nhóm theo ngày
   const dailyStats: Record<string, { revenue: number; orders: number; items: number }> = {};
 
-  orderItems.forEach((item) => {
-    const date = new Date(item.orders.creat_at).toISOString().split('T')[0];
+  order_items.forEach((item) => {
+    const date = new Date(item.orders.created_at).toISOString().split('T')[0];
     if (!dailyStats[date]) {
       dailyStats[date] = { revenue: 0, orders: 0, items: 0 };
     }
@@ -97,8 +97,8 @@ export async function getSellerAnalytics(seller_id: string, days: number = 30) {
 
   // Đếm số orders unique mỗi ngày
   const orderDates: Record<string, Set<string>> = {};
-  orderItems.forEach((item) => {
-    const date = new Date(item.orders.creat_at).toISOString().split('T')[0];
+  order_items.forEach((item) => {
+    const date = new Date(item.orders.created_at).toISOString().split('T')[0];
     if (!orderDates[date]) {
       orderDates[date] = new Set();
     }

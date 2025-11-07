@@ -23,7 +23,7 @@ export const SellerProductService = {
           rating: parseFloat(rating),
           weight,
           dimensions,
-          categoryId: categoryId ?? null,
+          category_id: categoryId ?? null,
           attributes: attributes ?? undefined,
           seller_id,
          
