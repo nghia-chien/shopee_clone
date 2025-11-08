@@ -14,11 +14,9 @@ model cart_item {
   quantity   Int     @default(1)
   product    product @relation(fields: [product_id], references: [id])
   user       user    @relation(fields: [user_id], references: [id])
-  seller_id  String?
-  seller     seller? @relation(fields: [seller_id], references: [id])
 
   @@unique([user_id, product_id], map: "cart_item_user_product_key")
-  @@unique([seller_id, product_id])
+ 
 }
 
 model category {

@@ -1,18 +1,12 @@
 import { Router } from 'express';
 import { requireAuthSeller } from '../../middlewares/authSeller';
 import {
-  createSellerOrderController,
-  listSellerOrdersController,
   listSellerSoldOrdersController,
   getSellerOrderController,
 } from '../../controllers/seller/order.controller';
 import { updateSellerOrderStatusController } from '../../controllers/seller/updateOrderStatus.controller';
 
 const router = Router();
-
-// Orders mà seller đã mua
-router.post('/', requireAuthSeller, createSellerOrderController);
-router.get('/purchased', requireAuthSeller, listSellerOrdersController);
 
 // Orders mà seller đã bán (sản phẩm của seller được mua)
 router.get('/sold', requireAuthSeller, listSellerSoldOrdersController);
