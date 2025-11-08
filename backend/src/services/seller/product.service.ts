@@ -41,8 +41,79 @@ export const SellerProductService = {
 
 
   // 🟡 READ ALL
-  async getAll(seller_id: string) {
-    return prisma.product.findMany({ where: { seller_id } });
+  async getAll(
+    seller_id: string,
+    filters?: {
+      discountOnly?: string | boolean;
+      stockLt?: string | number;
+      stockGt?: string | number;
+      status?: string;
+      tags?: string;
+      categoryId?: string;
+      search?: string;
+    }
+  ) {
+    const where: any = { seller_id };
+    if (filters) {
+      const {
+        discountOnly,
+        stockLt,
+        stockGt,
+        status,
+        tags,
+        categoryId,
+        search,
+      } = filters;
+
+      // discount > 0
+      if (
+        typeof discountOnly !== 'undefined' &&
+        (discountOnly === true || discountOnly === 'true')
+      ) {
+        where.discount = { gt: 0 };
+      }
+
+      // stock thresholds
+      if (typeof stockLt !== 'undefined' && stockLt !== null && stockLt !== '') {
+        where.stock = { ...(where.stock || {}), lt: Number(stockLt) };
+      }
+      if (typeof stockGt !== 'undefined' && stockGt !== null && stockGt !== '') {
+        where.stock = { ...(where.stock || {}), gt: Number(stockGt) };
+      }
+
+      // status
+      if (status) {
+        where.status = status;
+      }
+
+      // tags contains any of provided list
+      if (tags) {
+        const tagList = tags.split(',').map((t) => t.trim()).filter(Boolean);
+        if (tagList.length) {
+          where.tags = { hasSome: tagList };
+        }
+      }
+
+      // category
+      if (categoryId) {
+        where.category_id = categoryId;
+      }
+
+      // search in title or description
+      if (search) {
+        where.AND = [
+          where.AND,
+          {
+            OR: [
+              { title: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+        ].filter(Boolean);
+      }
+    }
+
+    return prisma.product.findMany({ where, orderBy: { created_at: 'desc' } });
   },
 
   // 🟣 READ ONE

@@ -21,7 +21,15 @@ export const createSellerProduct = async (req: Request, res: Response) => {
 export const getSellerProducts = async (req: Request, res: Response) => {
   try {
     const seller_id = (req as any).seller?.id;
-    const products = await SellerProductService.getAll(seller_id);
+    const products = await SellerProductService.getAll(seller_id, {
+      discountOnly: (req.query.discountOnly as string) ?? undefined,
+      stockLt: (req.query.stockLt as string) ?? undefined,
+      stockGt: (req.query.stockGt as string) ?? undefined,
+      status: (req.query.status as string) ?? undefined,
+      tags: (req.query.tags as string) ?? undefined,
+      categoryId: (req.query.categoryId as string) ?? undefined,
+      search: (req.query.search as string) ?? undefined,
+    });
     res.json({ products });
   } catch (err) {
     console.error("READ error:", err);

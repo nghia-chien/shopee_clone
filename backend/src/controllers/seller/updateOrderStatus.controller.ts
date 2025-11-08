@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../../utils/prisma';
 import { SellerRequest } from '../../middlewares/authSeller';
+import { sendEmail } from '../../utils/email';
 
 const ALLOWED = new Set(['pending', 'accepted', 'cancelled', 'completed']);
 
@@ -31,8 +32,21 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
       data: { status },
       include: {
         items: { include: { product: true } },
+        user: true,
+        seller: true,
       },
     });
+
+    // Email cho người mua (user hoặc seller)
+    const buyerEmail = updated.user?.email || updated.seller?.email;
+    if (buyerEmail) {
+      const html = `
+        <h2>Đơn hàng cập nhật trạng thái</h2>
+        <p>Mã đơn: ${updated.id}</p>
+        <p>Trạng thái mới: ${updated.status}</p>
+      `;
+      await sendEmail(buyerEmail, 'Cập nhật trạng thái đơn hàng', html);
+    }
 
     return res.json({ order: updated });
   } catch (error) {
@@ -40,5 +54,4 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
-
 

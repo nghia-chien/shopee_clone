@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../utils/prisma';
 import { SellerRequest } from '../../middlewares/authSeller';
+import { sendEmail } from '../../utils/email';
 
 /**
  * 🛒 Tạo đơn hàng mới từ giỏ hàng (Seller mua hàng)
@@ -49,6 +50,18 @@ export async function createSellerOrderController(req: SellerRequest, res: Respo
 
     // ✅ Xóa giỏ hàng sau khi đặt đơn
     await prisma.cart_item.deleteMany({ where: { seller_id } });
+
+    // 📧 Gửi email xác nhận đơn hàng cho seller đã mua (nếu có SMTP)
+    const to = order.seller?.email;
+    if (to) {
+      const html = `
+        <h2>Đơn hàng đã được tạo</h2>
+        <p>Mã đơn: ${order.id}</p>
+        <p>Tổng tiền: ${Number(order.total).toLocaleString('vi-VN')} VND</p>
+        <p>Trạng thái: ${order.status}</p>
+      `;
+      await sendEmail(to, 'Xác nhận tạo đơn hàng', html);
+    }
 
     return res.status(201).json(order);
   } catch (error) {
