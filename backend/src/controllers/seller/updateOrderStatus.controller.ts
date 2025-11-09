@@ -10,48 +10,49 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
     const seller_id = req.seller?.id;
     if (!seller_id) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { id } = req.params;
+    const { id } = req.params; // id của seller_order
     const { status } = req.body as { status: string };
+
     if (!status || !ALLOWED.has(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    // Ensure seller owns at least one item in this order (seller is the seller of products)
-    const ownsOrder = await prisma.orders.findFirst({
+    // Kiểm tra seller sở hữu seller_order
+    const sellerOrder = await prisma.seller_order.findFirst({
       where: {
         id,
-        items: { some: { product: { seller_id } } },
+        seller_id,
       },
-      select: { id: true, status: true },
-    });
-
-    if (!ownsOrder) return res.status(404).json({ message: 'Order not found or not owned' });
-
-    const updated = await prisma.orders.update({
-      where: { id },
-      data: { status },
       include: {
-        items: { include: { product: true } },
-        user: true,
-        seller: true,
+        orders: { include: { user: true } },
       },
     });
 
-    // Email cho người mua (user hoặc seller)
-    const buyerEmail = updated.user?.email || updated.seller?.email;
+    if (!sellerOrder) return res.status(404).json({ message: 'Seller order not found or not owned' });
+
+    // Cập nhật trạng thái
+    const updatedSellerOrder = await prisma.seller_order.update({
+      where: { id },
+      data: { seller_status: status },
+      include: {
+        orders: { include: { user: true } },
+      },
+    });
+
+    // Gửi email cho buyer
+    const buyerEmail = updatedSellerOrder.orders.user?.email;
     if (buyerEmail) {
       const html = `
         <h2>Đơn hàng cập nhật trạng thái</h2>
-        <p>Mã đơn: ${updated.id}</p>
-        <p>Trạng thái mới: ${updated.status}</p>
+        <p>Mã đơn: ${updatedSellerOrder.orders.id}</p>
+        <p>Trạng thái của shop ${req.seller?.name}: ${updatedSellerOrder.seller_status}</p>
       `;
       await sendEmail(buyerEmail, 'Cập nhật trạng thái đơn hàng', html);
     }
 
-    return res.json({ order: updated });
+    return res.json({ sellerOrder: updatedSellerOrder });
   } catch (error) {
     console.error('updateSellerOrderStatusController error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
-

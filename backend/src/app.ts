@@ -13,7 +13,7 @@ const app = express();
 app.use(cors({
   origin: true,            // ✅ Tự động cho phép domain đang gửi request (devtunnel, localhost, v.v)
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // ✅ tránh preflight bị fail
+  methods: ["GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS"], // ✅ tránh preflight bị fail
 }));
 
 
