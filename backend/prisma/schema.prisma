@@ -43,14 +43,17 @@ model order_item {
 }
 
 model orders {
-  id         String       @id @default(dbgenerated("gen_random_uuid()"))
-  total      Decimal      @db.Decimal(10, 2)
-  status     String       @default("pending")
-  created_at DateTime     @default(now())
-  updated_at DateTime     @default(now())
-  user_id    String?
-  order_item order_item[]
-  user       user?        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             String         @id @default(dbgenerated("gen_random_uuid()"))
+  total          Decimal        @db.Decimal(10, 2)
+  status         String         @default("pending")
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @default(now())
+  user_id        String?
+  system_voucher Json?
+  payment_method String?
+  order_item     order_item[]
+  user           user?          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  seller_order   seller_order[]
 }
 
 model product {
@@ -93,6 +96,7 @@ model seller {
   updated_at                  DateTime                      @default(now())
   password                    String
   product                     product[]
+  seller_order                seller_order[]
   seller_payout_settings      seller_payout_settings[]
   seller_shipping_preferences seller_shipping_preferences[]
 }
@@ -141,4 +145,22 @@ model user {
   updated_at   DateTime    @default(now())
   cart_item    cart_item[]
   orders       orders[]
+}
+
+model seller_order {
+  id                String    @id @default(dbgenerated("gen_random_uuid()"))
+  order_id          String
+  seller_id         String
+  total             Decimal   @db.Decimal
+  shop_voucher      Json?
+  shipping_provider String?
+  shipping_fee      Decimal?  @default(0) @db.Decimal
+  seller_status     String?   @default("pending")
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+  orders            orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  seller            seller    @relation(fields: [seller_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([order_id], map: "idx_seller_order_order_id")
+  @@index([seller_id], map: "idx_seller_order_seller_id")
 }

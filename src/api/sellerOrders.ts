@@ -1,41 +1,25 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
-// Get seller orders (orders seller purchased)
-export async function getSellerOrders(token: string) {
-  const res = await fetch(`${API_URL}/seller/order/purchased`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error('Failed to fetch orders');
-  return res.json();
-}
 
-// Get seller sold orders (orders with seller's products)
+
+// Lấy danh sách các order mà seller có sản phẩm
 export async function getSellerSoldOrders(token: string) {
   const res = await fetch(`${API_URL}/seller/order/sold`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch sold orders');
-  return res.json();
+  return res.json(); // trả về seller_order[]
 }
 
-// Get order details
-export async function getSellerOrderDetails(token: string, order_id: string) {
-  const res = await fetch(`${API_URL}/seller/order/${order_id}`, {
+// Lấy chi tiết seller_order
+export async function getSellerOrderDetails(token: string, seller_order_id: string) {
+  const res = await fetch(`${API_URL}/seller/order/${seller_order_id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error('Failed to fetch order details');
-  return res.json();
+  if (!res.ok) throw new Error('Failed to fetch seller order details');
+  return res.json(); // trả về seller_order chi tiết, kèm items
 }
 
-// Create order from cart
-export async function createSellerOrder(token: string) {
-  const res = await fetch(`${API_URL}/seller/order`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error('Failed to create order');
-  return res.json();
-}
 
 // Get seller analytics
 export async function getSellerAnalytics(token: string, days: number = 30) {
@@ -55,14 +39,17 @@ export async function getSellerStats(token: string) {
   return res.json();
 }
 
-// Update order status (accept/cancel/complete)
-export async function updateSellerOrderStatus(token: string, order_id: string, status: 'accepted' | 'cancelled' | 'completed' | 'pending') {
-  const res = await fetch(`${API_URL}/seller/order/${order_id}/status`, {
+// Cập nhật trạng thái seller_order (pending/accepted/cancelled/completed)
+export async function updateSellerOrderStatus(
+  token: string,
+  seller_order_id: string,
+  status: 'pending' | 'accepted' | 'cancelled' | 'completed'
+) {
+  const res = await fetch(`${API_URL}/seller/order/${seller_order_id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ status }),
   });
-  if (!res.ok) throw new Error('Failed to update order status');
-  return res.json();
+  if (!res.ok) throw new Error('Failed to update seller order status');
+  return res.json(); // trả về seller_order đã cập nhật
 }
-

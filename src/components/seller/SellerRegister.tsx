@@ -1,169 +1,172 @@
-import { useState } from "react";
-import { registerSeller } from "../../api/seller";
-import { User, Mail, Lock, Phone, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState } from "react";
+import { User, Mail, Lock, Phone, Store, Truck, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { registerSeller } from "../../api/seller";
 
 export const SellerRegister = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone_number, setphone_number] = useState("");
+  const [phone_number, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
     setLoading(true);
-    const res = await registerSeller(name, email, password, phone_number);
-    
+
     if (!name || !email || !password || !phone_number) {
-      setError('Please fill in all fields');
+      setError("Vui lòng nhập đầy đủ thông tin");
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Mật khẩu phải có ít nhất 6 ký tự");
       setLoading(false);
       return;
     }
 
-    if (res.error) setError(res.error);
-    else {
-      setTimeout(() => {
-      setSuccess(`Registered! Welcome ${res.seller.name}`);
-      localStorage.setItem("sellerToken", res.token);
-      navigate("/seller/home");
-    }, 10);
-  }
+    const res = await registerSeller(name, email, password, phone_number);
 
+    if (res.error) {
+      setError(res.error);
+      setLoading(false);
+      return;
+    }
+
+    localStorage.setItem("sellerToken", res.token);
+    navigate("/seller/home");
   };
 
- return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Card Container */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-2">
-              <User className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-800">Seller Register</h2>
-            <p className="text-gray-500 text-sm">Create your seller account to get started</p>
+  return (
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+      {/* Left brand panel */}
+      <div className="hidden lg:flex flex-col justify-center bg-gradient-to-br from-[#ffede5] via-[#fff5f2] to-white border-r px-16">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-[#ffe3da] flex items-center justify-center">
+            <img src="/shopee_icon_o.png" alt="logo" className="w-7 h-7" />
           </div>
+          <div>
+            <h2 className="text-2xl font-bold text-[#ee4d2d]">Shopee Seller Center</h2>
+            <p className="text-sm text-gray-600">Đồng hành phát triển cùng nhà bán</p>
+          </div>
+        </div>
+        <ul className="space-y-4 text-gray-700">
+          <li className="flex items-center gap-3"><Store className="w-5 h-5 text-[#ee4d2d]" /> Quản lý sản phẩm, kho hàng dễ dàng</li>
+          <li className="flex items-center gap-3"><Truck className="w-5 h-5 text-[#ee4d2d]" /> Đồng bộ vận chuyển nhanh chóng</li>
+          <li className="flex items-center gap-3"><ShieldCheck className="w-5 h-5 text-[#ee4d2d]" /> Bảo mật và an toàn giao dịch</li>
+        </ul>
+      </div>
 
-          {/* Form */}
-          <div className="space-y-4 text-left">
-            {/* Name Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                />
-              </div>
+      {/* Right form panel */}
+      <div className="flex items-center justify-center bg-[#f5f5f5] p-6">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-xl border shadow-sm p-8">
+            <div className="flex items-center gap-2 mb-6 lg:hidden">
+              <img src="/shopee_icon_o.png" className="w-6 h-6" />
+              <span className="text-[#ee4d2d] font-semibold">Seller Center</span>
             </div>
 
-            {/* Email Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                />
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Đăng ký tài khoản</h1>
 
-            {/* Password Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  placeholder="Min. 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Phone Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Phone Number</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="tel"
-                  placeholder="+84 123 456 789"
-                  value={phone_number}
-                  onChange={(e) => setphone_number(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Error Message */}
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+                {error}
               </div>
             )}
 
-            {/* Success Message */}
-            {success && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <p className="text-sm text-green-600">{success}</p>
+            <form onSubmit={handleRegister} className="space-y-5">
+              {/* Họ tên */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-[#ee4d2d] focus:border-transparent"
+                    placeholder="Nguyễn Văn A"
+                  />
+                </div>
               </div>
-            )}
 
-            {/* Submit Button */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 focus:ring-4 focus:ring-blue-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                'Create Seller Account'
-              )}
-            </button>
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-[#ee4d2d] focus:border-transparent"
+                    placeholder="seller@example.com"
+                  />
+                </div>
+              </div>
+
+              {/* Số điện thoại */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    value={phone_number}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-[#ee4d2d] focus:border-transparent"
+                    placeholder="(+84) 912 345 678"
+                  />
+                </div>
+              </div>
+
+              {/* Mật khẩu */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-[#ee4d2d] focus:border-transparent"
+                    placeholder="Ít nhất 6 ký tự"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#ee4d2d] hover:bg-[#d63d20] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+              >
+                {loading ? "Đang đăng ký..." : "Tạo tài khoản"}
+              </button>
+
+              <p className="text-sm text-gray-600 text-center">
+                Đã có tài khoản?{" "}
+                <Link to="/seller/login" className="text-[#ee4d2d] hover:underline font-medium">
+                  Đăng nhập
+                </Link>
+              </p>
+              <p className="text-xs text-gray-500 text-center">
+                Bạn là người mua?{" "}
+                <Link to="/register" className="text-[#ee4d2d] hover:underline">
+                  Đăng ký người mua
+                </Link>
+              </p>
+            </form>
           </div>
 
-          {/* Footer */}
-          <div className="text-center text-sm text-gray-500">
-            Already have an account?{' '}
-              <Link to="/seller/login" className="text-orange-500 hover:text-orange-600 font-medium">
-              Login
-              </Link>
-          </div>
+          <p className="text-center text-xs text-gray-500 mt-6">
+            © 2025 Shopee Seller Center
+          </p>
         </div>
       </div>
     </div>
   );
-}
+};
