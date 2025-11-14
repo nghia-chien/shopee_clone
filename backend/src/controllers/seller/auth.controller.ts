@@ -68,6 +68,16 @@ export const sellerLoginController = async (req:any , res: Response)=>{
   }
 }
 
+export const refreshSellerTokenController = async (req: Request, res: Response) => {
+  try {
+    // TODO: implement refresh token logic
+    return res.status(501).json({ message: 'Not implemented yet' });
+  } catch (error) {
+    console.error('seller refresh token error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export const sellerMeController = async (req: any, res: Response) => {
   try {
     const seller_id = req.seller?.id;
