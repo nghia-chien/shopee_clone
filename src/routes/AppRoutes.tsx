@@ -29,7 +29,7 @@ export function AppRoutes() {
         <Route path="/cart" element={<CartPage />} />
         
         
-        <Route path="/chat" element={<ChatPage />} />
+        
         <Route path="/admin/*" element={<AdminRoutes />} />
         <Route path="/category" element={<OrdersPage />} />
 
@@ -51,11 +51,13 @@ export function AppRoutes() {
             </AuthGuard>
           }
         >
+          <Route path="chat" element={<ChatPage />} />
           <Route path="orders" element={<OrdersPage />} />
       </Route>
       <Route path="/user" element={<UserLayout />}>           
             <Route path="orders" element={<OrdersPage />} />
             <Route path="profile" element={<AccountPage />} />
+            <Route path="chat" element={<ChatPage />} />
             {/* {<Route path="notifications" element={<NotificationsPage />} /> */}
           </Route>
       </Routes>
