@@ -177,3 +177,23 @@ export async function getSellerOrderController(req: SellerRequest, res: Response
   }
 }
 
+export async function getSellerOrderTimelineController(req: SellerRequest, res: Response) {
+  try {
+    // TODO: implement seller order timeline retrieval
+    return res.status(501).json({ message: 'Not implemented yet' });
+  } catch (error) {
+    console.error('❌ getSellerOrderTimelineController error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function updateSellerOrderTrackingController(req: SellerRequest, res: Response) {
+  try {
+    // TODO: implement seller order tracking update
+    return res.status(501).json({ message: 'Not implemented yet' });
+  } catch (error) {
+    console.error('❌ updateSellerOrderTrackingController error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+

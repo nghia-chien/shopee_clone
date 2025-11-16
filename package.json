@@ -11,6 +11,7 @@
     "start": "vite"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.0",
     "@refinedev/core": "^5.0.4",
     "@refinedev/react-router": "^2.0.1",
     "@refinedev/simple-rest": "^6.0.0",
