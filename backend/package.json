@@ -12,7 +12,14 @@
     "prisma:reset": "prisma migrate reset --force",
     "prisma:studio": "prisma studio",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "seed:categories": "tsx src/seeds/categories.ts"
+    "seed:categories": "tsx src/seeds/categories.ts",
+    "seed:admin": "tsx src/seeds/admin.ts",
+    "setup:admin": "tsx src/scripts/setup-admin.ts",
+    "check:admin": "tsx src/scripts/check-admin-setup.ts",
+    "prisma:force-generate": "tsx src/scripts/force-regenerate-prisma.ts",
+    "create:admin-table": "tsx src/scripts/create-admin-table.ts",
+    "update:admin-table": "tsx src/scripts/update-admin-table.ts",
+    "verify:admin": "tsx verify-admin-table.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
