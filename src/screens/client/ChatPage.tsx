@@ -13,13 +13,7 @@ export function ChatPage() {
   const threads = threadsData?.threads || [];
   const selectedThread = threads.find((t) => t.id === selectedThreadId);
 
-  const handleThreadClick = (threadId: string) => {
-    setSelectedThreadId(threadId);
-    // Prevent scroll when switching threads
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }, 0);
-  };
+  const handleThreadClick = (threadId: string) => setSelectedThreadId(threadId);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
