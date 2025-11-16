@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../../store/auth";
 import { useSellerAuthStore } from "../../store/SellerAuth";
-import { exchangeSellerToken } from "../../api/seller";
+import { exchangeSellerToken } from "../../api/sellerapi/seller";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../api/client"; // hoặc hàm gọi fetch riêng bạn dùng
+import { api } from "../../api/userapi/client"; // hoặc hàm gọi fetch riêng bạn dùng
 import  SearchBar  from "../home/SearchBar";
 
 interface Product {
@@ -131,17 +131,45 @@ export const Header: React.FC = () => {
               </button>             
               
               <div className="relative group">
-              <button type="button" className="inline-flex items-center cursor-pointer hover:text-gray-200 transition focus:outline-none focus:ring-0">
-                {t("home.download_app")}
-              </button>
-              
-              <div className="absolute hidden group-hover:block right-0 top-full mt-1 bg-white text-black rounded shadow-md min-w-[160px] z-[9999]">
-                {/* QR Code */}
-                <div className="w-20 h-20 bg-gray-100 border border-gray-200 rounded flex items-center justify-center">
-                  <span className="text-xs text-gray-400">QR Code</span>
+                <button
+                  type="button"
+                  className="inline-flex items-center cursor-pointer hover:text-gray-200 transition focus:outline-none focus:ring-0"
+                >
+                  {t("home.download_app")}
+                </button>
+
+                <div
+                  className="absolute hidden group-hover:flex flex-col items-center
+                            right-0 top-full mt-1 bg-white text-black 
+                            border border-gray-300 rounded-lg shadow-md
+                            min-w-[160px] p-3 z-[9999]"
+                >
+
+                  {/* QR Code phóng to + giữ tỉ lệ */}
+                  <img
+                    src="/qr.png"
+                    alt="QR Code"
+                    className="w-30 h-auto  rounded object-contain"
+                  />
+
+                  {/* Hai icon căn sát 2 bên bằng đúng chiều rộng QR */}
+                  <div className="w-full flex items-center justify-between mt-2">
+                    <img
+                      src="/appstore.png"
+                      alt="appstore"
+                      className="w-[48%] h-auto object-contain"
+                    />
+
+                    <img
+                      src="/googleplay.png"
+                      alt="googleplay"
+                      className="w-[48%] h-auto object-contain"
+                    />
+                  </div>
                 </div>
               </div>
-              </div>
+
+
               <div className="flex items-center gap-2">
                 <span>{t("home.connect")}</span>
               </div>

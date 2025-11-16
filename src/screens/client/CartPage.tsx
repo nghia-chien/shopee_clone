@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../../store/auth';
-import { api } from '../../api/client';
+import { api } from '../../api/userapi/client';
 import { useNavigate } from 'react-router-dom';
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
@@ -48,7 +48,65 @@ export function CartPage() {
     }
   };
 
-  useEffect(() => { loadCart(); }, [token]);
+  // Xử lý thêm sản phẩm từ reorder vào cart
+  const handleReorderItems = async () => {
+    if (!token) return;
+    
+    try {
+      const reorderDataStr = localStorage.getItem('reorder_items');
+      if (!reorderDataStr) {
+        // Không có reorder data, chỉ load cart bình thường
+        await loadCart();
+        return;
+      }
+
+      const reorderData = JSON.parse(reorderDataStr);
+      
+      // Kiểm tra timestamp (chỉ xử lý trong 5 phút)
+      const fiveMinutes = 5 * 60 * 1000;
+      if (Date.now() - reorderData.timestamp > fiveMinutes) {
+        localStorage.removeItem('reorder_items');
+        await loadCart();
+        return;
+      }
+
+      // Thêm từng sản phẩm vào cart
+      for (const item of reorderData.items) {
+        try {
+          await api('/cart/items', {
+            method: 'POST',
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              product_id: item.product_id,
+              quantity: item.quantity,
+            }),
+          });
+        } catch (err) {
+          console.error(`Error adding product ${item.product_id} to cart:`, err);
+        }
+      }
+
+      // Xóa reorder data sau khi đã thêm vào cart
+      localStorage.removeItem('reorder_items');
+      
+      // Reload cart để hiển thị items mới
+      await loadCart();
+    } catch (err) {
+      console.error('Error handling reorder items:', err);
+      localStorage.removeItem('reorder_items');
+      await loadCart();
+    }
+  };
+
+  useEffect(() => { 
+    // Xử lý reorder items trước, sau đó load cart
+    (async () => {
+      await handleReorderItems();
+    })();
+  }, [token]);
 
   // ✅ Tính tổng tiền dựa trên cart_item.id
   const total = useMemo(

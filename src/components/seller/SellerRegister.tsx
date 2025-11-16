@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { User, Mail, Lock, Phone, Store, Truck, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { registerSeller } from "../../api/seller";
+import { registerSeller } from "../../api/sellerapi/seller";
 
 export const SellerRegister = () => {
   const navigate = useNavigate();

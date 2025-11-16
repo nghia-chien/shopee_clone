@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { uploadSellerImage, getCategoryTree, getCategoryAttributes } from "../../api/sellerProducts";
+import { uploadSellerImage, getCategoryTree, getCategoryAttributes } from "../../api/sellerapi/sellerProducts";
 import { useSellerAuthStore } from "../../store/SellerAuth";
 
 export const SellerUploadPage = () => {

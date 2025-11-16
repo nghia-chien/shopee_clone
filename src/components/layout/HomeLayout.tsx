@@ -6,6 +6,7 @@ import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
+import { ChatWidget } from "../chat/ChatWidget";
 
 interface HomeLayoutProps {
   children?: ReactNode;
@@ -457,16 +458,8 @@ export function HomeLayout({ children }: HomeLayoutProps) {
         </span>
       </button>
 
-      {/* Live Chat Button */}
-      {/* TODO: Integrate with customer support chat system */}
-      <button 
-        className="fixed bottom-24 right-6 w-12 h-12 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition flex items-center justify-center z-50"
-        title="Chat với chúng tôi"
-      >
-        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"/>
-        </svg>
-      </button>
+      {/* Chat Widget */}
+      <ChatWidget />
     
     </div>
   );

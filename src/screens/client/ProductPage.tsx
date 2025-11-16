@@ -1,12 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../api/client";
+import { api } from "../../api/userapi/client";
 import { useState } from "react";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { useTranslation } from "react-i18next";
 import { Star } from "lucide-react";
 import { ProductListSection } from "../../components/product/ProductListSection";
+import { ReviewSection } from "../../components/review/ReviewSection";
 import { useAuthStore } from "../../store/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -227,10 +228,12 @@ export function ProductPage() {
       </div>
 
       {/* (Yêu cầu 8) ĐÁNH GIÁ SẢN PHẨM */}
-      <div className="max-w-6xl mx-auto bg-white mt-4 p-6 shadow-sm rounded-md text-left">
-        <h2 className="text-2xl font-semibold mb-3">{t("product.reviews")}</h2>
-        <p className="text-sm text-gray-500">{t("product.reviews_notyet")}</p>
-      </div>
+      {/* Reviews Section */}
+      {data?.id && data?.seller?.id && (
+        <div className="max-w-6xl mx-auto bg-white mt-4 p-6 shadow-sm rounded-md">
+          <ReviewSection productId={data.id} sellerId={data.seller.id} />
+        </div>
+      )}
 
       {/* (Yêu cầu 9) SẢN PHẨM KHÁC CỦA SHOP */}
       {/* (Yêu cầu 9) SẢN PHẨM KHÁC CỦA SHOP */}
@@ -246,6 +249,8 @@ export function ProductPage() {
           horizontal
         />
       </div>
+
+
 
 
       {/* (Yêu cầu 10) SẢN PHẨM LIÊN QUAN */}

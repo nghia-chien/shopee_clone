@@ -6,7 +6,9 @@ import orderRouter from './modules/order.routes';
 import sellerRoutes from '../sellerRoutes/index';
 import categoryRoutes from './modules/category.routes';
 import shopRoutes from './modules/shop.routes';
-
+import chatRouter from './modules/chat.routes';
+import reviewRouter from './modules/review.routes';
+import accountRouter from './modules/account.routes';
 const router = Router();
 
 /**
@@ -20,11 +22,14 @@ router.use('/orders', orderRouter);
 router.use('/seller', sellerRoutes); 
 router.use('/categories', categoryRoutes);
 router.use('/shops', shopRoutes);
+router.use('/chat', chatRouter);
+router.use('/reviews', reviewRouter);
+router.use('/account', accountRouter);
 // ✅ Route mặc định (test API)
 router.get('/', (_req, res) => {
   res.json({
     message: 'API is running 🚀',
-    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller', '/categories','/shops'],
+    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller', '/categories','/shops', '/chat', '/reviews','/account'],
   });
 });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchSellerProducts, updateSellerProduct, deleteSellerProduct } from "../../api/sellerProducts";
+import { fetchSellerProducts, updateSellerProduct, deleteSellerProduct } from "../../api/sellerapi/sellerProducts";
 import { useSellerAuthStore } from "../../store/SellerAuth";
 import { Package, TrendingUp, DollarSign, ShoppingBag, Plus, Edit2, Trash2, Search } from "lucide-react";
 
