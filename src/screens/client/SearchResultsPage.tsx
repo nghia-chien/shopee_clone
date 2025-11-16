@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../api/client";
+import { api } from "../../api/userapi/client";
 import { ProductListSection } from "../../components/product/ProductListSection"; //
 import FeaturedShops  from "../../components/shops/FeaturedShops"; 
 import { Header } from "../../components/layout/Header";

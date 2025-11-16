@@ -1,4 +1,3 @@
-import { PropsWithChildren } from "react";
 import { Link, NavLink, useNavigate, Outlet } from "react-router-dom";
 import { useSellerAuthStore } from "../../store/SellerAuth";
 import {
@@ -9,9 +8,11 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  MessageSquare,
+  Star,
 } from "lucide-react";
 
-export function SellerLayout({ children }: PropsWithChildren) {
+export function SellerLayout() {
   const navigate = useNavigate();
   const { seller, logout } = useSellerAuthStore();
 
@@ -21,7 +22,7 @@ export function SellerLayout({ children }: PropsWithChildren) {
         ? "bg-orange-100 text-orange-600"
         : "text-gray-700 hover:bg-gray-100"
     }`;
-
+    Outlet
   return (
     <div className="min-h-screen w-full bg-[#f5f5f5] text-[#222]">
       {/* Top bar */}
@@ -74,6 +75,14 @@ export function SellerLayout({ children }: PropsWithChildren) {
             <NavLink to="/seller/settings" className={navItemClass}>
               <Settings className="w-4 h-4" />
               Cài đặt
+            </NavLink>
+            <NavLink to="/seller/chats" className={navItemClass}>
+              <MessageSquare className="w-4 h-4" />
+              Tin nhắn
+            </NavLink>
+            <NavLink to="/seller/reviews" className={navItemClass}>
+              <Star className="w-4 h-4" />
+              Đánh giá
             </NavLink>
           </div>
           <div className="mt-4 bg-white rounded-lg border p-3">

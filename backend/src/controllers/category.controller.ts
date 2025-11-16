@@ -41,5 +41,87 @@ export async function getCategoryAttributes(req: Request, res: Response) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+export const getProductsByCategory = async (req: Request, res: Response) => {
+  const { categoryId } = req.params;
+
+  try {
+    // Lấy tất cả sản phẩm thuộc category
+    const products = await prisma.product.findMany({
+      where: {
+        category_id: categoryId, // theo quan hệ
+        status: "active",        // chỉ lấy sản phẩm đang active
+      },
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        images: true,
+        discount: true,
+        rating: true,
+        stock: true,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
+    res.json(products);
+  } catch (err) {
+    console.error("getProductsByCategory error:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
 
 
+// Bản đồ slug → icon
+const iconMap: Record<string, string> = {
+  "thoi-trang-nam": "👔",
+  "thoi-trang-nu": "👗",
+  "thoi-trang-tre-em": "🧒",
+  "dien-thoai-phu-kien": "📱",
+  "thiet-bi-dien-tu": "💻",
+  "may-tinh-laptop": "🖥️",
+  "may-anh-may-quay": "📷",
+  "dong-ho": "⌚",
+  "giay-dep-nam": "👞",
+  "giay-dep-nu": "👠",
+  "tui-vi-nu": "🛍️",
+  "balo-tui-vi-nam": "👜",
+  "phu-kien-trang-suc-nu": "💍",
+  "nha-cua-doi-song": "🏠",
+  "sac-dep": "💄",
+  "suc-khoe": "🩺",
+  "bach-hoa-online": "🛒",
+  "nha-sach-online": "📚",
+  "do-choi": "🧸",
+  "cham-soc-thu-cung": "🐶",
+  "dung-cu-tien-ich": "🔧",
+  "giat-giu-cham-soc-nha-cua": "🧹",
+  "voucher-dich-vu": "🎟️",
+  "oto-xe-may-xe-dap": "🚗",
+  "the-thao-du-lich": "🏖️",
+  "thiet-bi-dien-gia-dung": "🔌",
+};
+
+export const getCategories = async (req: Request, res: Response) => {
+  try {
+    const categories = await prisma.category.findMany({
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    const result = categories.map(c => ({
+      ...c,
+      icon: iconMap[c.slug] || "❓", // Nếu chưa map thì dùng ❓
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error("getCategories error:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};

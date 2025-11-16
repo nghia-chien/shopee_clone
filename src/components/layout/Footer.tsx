@@ -156,21 +156,36 @@ export const Footer: React.FC = () => {
           <div className="flex gap-2 mb-4">
             {/* QR Code */}
             <div className="w-20 h-20 bg-gray-100 border border-gray-200 rounded flex items-center justify-center">
-              <span className="text-xs text-gray-400">QR Code</span>
+              <img src="/qr.png" alt="QR Code" className="w-full h-full object-cover" />
             </div>
             
             {/* App Store Buttons */}
             <div className="flex flex-col gap-2">
-              <div className="w-24 h-9 bg-black text-white rounded flex items-center justify-center text-xs cursor-pointer hover:opacity-80 transition">
+              <a
+                href="https://shopee.vn/web"
+                target="_blank"
+                className="w-24 h-9 bg-white text-black rounded flex items-center justify-center text-xs cursor-pointer hover:opacity-80 transition"
+              >
                 App Store
-              </div>
-              <div className="w-24 h-9 bg-black text-white rounded flex items-center justify-center text-xs cursor-pointer hover:opacity-80 transition">
+              </a>
+
+              <a
+                href="https://shopee.vn/web"
+                target="_blank"
+                className="w-24 h-9 bg-white text-black rounded flex items-center justify-center text-xs cursor-pointer hover:opacity-80 transition"
+              >
                 Google Play
-              </div>
-              <div className="w-24 h-9 bg-black text-white rounded flex items-center justify-center text-xs cursor-pointer hover:opacity-80 transition">
+              </a>
+
+              <a
+                href="https://shopee.vn/web"
+                target="_blank"
+                className="w-24 h-9 bg-white text-black rounded flex items-center justify-center text-xs cursor-pointer hover:opacity-80 transition"
+              >
                 AppGallery
-              </div>
+              </a>
             </div>
+
           </div>
         </div>
       </div>
@@ -179,22 +194,44 @@ export const Footer: React.FC = () => {
       <div className="border-t pt-6">
         {/* Region/Country Selector */}
         <div className="flex justify-center gap-4 mb-4 text-xs text-gray-500">
-          <span className="hover:text-orange-500 cursor-pointer">
-            Shopee Việt Nam
-          </span>
-          <span>|</span>
-          <span className="hover:text-orange-500 cursor-pointer">
-            Shopee Singapore
-          </span>
-          <span>|</span>
-          <span className="hover:text-orange-500 cursor-pointer">
-            Shopee Malaysia
-          </span>
-          <span>|</span>
-          <span className="hover:text-orange-500 cursor-pointer">
-            Shopee Thailand
-          </span>
-        </div>
+  <a
+    href="/"
+    className="hover:text-orange-500 cursor-pointer"
+  >
+    Shopee Việt Nam
+  </a>
+
+  <span>|</span>
+
+  <a
+    href="https://shopee.sg/"
+    target="_blank"
+    className="hover:text-orange-500 cursor-pointer"
+  >
+    Shopee Singapore
+  </a>
+
+  <span>|</span>
+
+  <a
+    href="https://shopee.com.my/"
+    target="_blank"
+    className="hover:text-orange-500 cursor-pointer"
+  >
+    Shopee Malaysia
+  </a>
+
+  <span>|</span>
+
+  <a
+    href="https://shopee.co.th/"
+    target="_blank"
+    className="hover:text-orange-500 cursor-pointer"
+  >
+    Shopee Thailand
+  </a>
+</div>
+
         
         {/* Copyright Notice */}
         <div className="text-center text-xs text-gray-500 mb-2">

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../../utils/prisma';
 import { SellerRequest } from '../../middlewares/authSeller';
 import { sendEmail } from '../../utils/email';
+import { createThreadIfNotExist, sendSystemMessage } from '../../services/chat.service';
 
 const ALLOWED = new Set(['pending', 'accepted', 'cancelled', 'completed']);
 
@@ -48,6 +49,23 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
         <p>Trạng thái của shop ${req.seller?.name}: ${updatedSellerOrder.seller_status}</p>
       `;
       await sendEmail(buyerEmail, 'Cập nhật trạng thái đơn hàng', html);
+    }
+
+    // Gửi tin nhắn hệ thống trong chat thread (nếu status là accepted, completed, hoặc cancelled)
+    if (updatedSellerOrder.orders.user_id && ['accepted', 'completed', 'cancelled'].includes(status)) {
+      try {
+        // Tìm hoặc tạo thread giữa user và seller
+        const thread = await createThreadIfNotExist(
+          updatedSellerOrder.orders.user_id,
+          seller_id
+        );
+
+        // Gửi tin nhắn hệ thống
+        await sendSystemMessage(thread.id, updatedSellerOrder.order_id, status);
+      } catch (chatError) {
+        // Log lỗi nhưng không fail request nếu chat có vấn đề
+        console.error('Error sending system message:', chatError);
+      }
     }
 
     return res.json({ sellerOrder: updatedSellerOrder });

@@ -7,8 +7,10 @@ import { SellerUploadPage } from "../screens/seller/SellerUploadPage";
 import { SellerOrders } from "../screens/seller/SellerOrders";
 import { SellerAnalytics } from "../screens/seller/SellerAnalytics";
 import { SellerSettings } from "../screens/seller/SellerSettings";
+import { SellerChatPage } from "../screens/seller/SellerChatPage";
 import { SellerLayout } from "../components/seller/SellerLayout";
 import { SellerAuthGuard } from "../components/seller/AuthGuard";
+import { SellerReview } from "../screens/seller/SellerReview";
 export function SellerRoutes() {
   return (
     <Routes>
@@ -20,7 +22,9 @@ export function SellerRoutes() {
       <Route
         element={
           <SellerAuthGuard>
-            <SellerLayout> {/** children injected by routes */} </SellerLayout>
+            <SellerLayout> 
+              
+            </SellerLayout>
           </SellerAuthGuard>
         }
       >
@@ -30,6 +34,8 @@ export function SellerRoutes() {
         <Route path="orders" element={<SellerOrders />} />
         <Route path="analytics" element={<SellerAnalytics />} />
         <Route path="settings" element={<SellerSettings />} />
+        <Route path="chats" element={<SellerChatPage />} />
+        <Route path="reviews" element={<SellerReview />} />
       </Route>
       <Route path="*" element={<Navigate to="login" replace />} />
     </Routes>
