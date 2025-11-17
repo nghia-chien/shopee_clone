@@ -71,6 +71,37 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi server" });
   }
 };
+// category.controller.ts
+export const getProductsByCategorySlug = async (req: Request, res: Response) => {
+  const { slug } = req.params;
+
+  try {
+    // Tìm category theo slug
+    const category = await prisma.category.findUnique({ where: { slug } });
+    if (!category) return res.status(404).json({ message: "Category not found" });
+
+    const products = await prisma.product.findMany({
+      where: {
+        category_id: category.id,
+        status: "active",
+      },
+      select: {
+        id: true,
+        title: true,
+        images: true,
+        price: true,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
+    res.json(products);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 // Bản đồ slug → icon

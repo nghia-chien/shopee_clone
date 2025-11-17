@@ -73,3 +73,24 @@ export const getShopInfo = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi server khi lấy thông tin shop" });
   }
 };
+export const getMallShops = async (req: Request, res: Response) => {
+  try {
+    // Lọc seller có shop_mall = 'mall'
+    const sellers = await prisma.seller.findMany({
+      where: { shop_mall: "mall" },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        rating: true,
+        
+      },
+      orderBy: { name: "asc" },
+    });
+
+    res.json(sellers);
+  } catch (err) {
+    console.error("getMallShops error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
