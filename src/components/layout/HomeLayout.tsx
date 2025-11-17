@@ -7,7 +7,7 @@ import Slider from "react-slick";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { ChatWidget } from "../chat/ChatWidget";
-
+import {useMallShops} from "../../hooks/useMall"
 interface HomeLayoutProps {
   children?: ReactNode;
 }
@@ -15,7 +15,7 @@ interface HomeLayoutProps {
 export function HomeLayout({ children }: HomeLayoutProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-
+  const { shops, loading } = useMallShops();
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -24,17 +24,30 @@ export function HomeLayout({ children }: HomeLayoutProps) {
   // ============================================================================
   // DATA SECTION - TODO: Replace with API calls
   // ============================================================================
+ const categories = [
+  { name: "Thời Trang Nam", slug: "thoi-trang-nam", icon: "👔" },
+  { name: "Thời Trang Nữ", slug: "thoi-trang-nu", icon: "👗" },
+  { name: "Điện Thoại & Phụ Kiện", slug: "dien-thoai-phu-kien", icon: "📱" },
+  { name: "Thiết Bị Điện Tử", slug: "thiet-bi-dien-tu", icon: "💻" },
+  { name: "Máy Tính & Laptop", slug: "may-tinh-laptop", icon: "🖥️" },
+  { name: "Máy Ảnh & Máy Quay Phim", slug: "may-anh-may-quay", icon: "📷" },
+  { name: "Đồng Hồ", slug: "dong-ho", icon: "⌚" },
+  { name: "Giày Dép Nam", slug: "giay-dep-nam", icon: "👞" },
+  { name: "Giày Dép Nữ", slug: "giay-dep-nu", icon: "👠" },
+  { name: "Túi Ví Nam", slug: "balo-tui-vi-nam", icon: "👜" },
+  { name: "Túi Ví Nữ", slug: "tui-vi-nu", icon: "🛍️" },
+  { name: "Phụ Kiện & Trang Sức", slug: "phu-kien-trang-suc-nu", icon: "💍" },
+  { name: "Nhà Cửa & Đời Sống", slug: "nha-cua-doi-song", icon: "🏠" },
+  { name: "Sách & Văn Phòng Phẩm", slug: "nha-sach-online", icon: "📚" },
+  { name: "Thể Thao & Du Lịch", slug: "the-thao-du-lich", icon: "🏖️" },
+  { name: "Ô Tô & Xe Máy", slug: "oto-xe-may-xe-dap", icon: "🚗" },
+  { name: "Mẹ & Bé", slug: "me-be", icon: "👶" },
+  { name: "Làm Đẹp & Sức Khỏe", slug: "suc-khoe", icon: "🩺" },
+  { name: "Thú Cưng", slug: "thu-cung", icon: "🐶" },
+  { name: "Voucher & Dịch Vụ", slug: "voucher-dich-vu", icon: "🎟️" },
+];
 
-  // TODO: API Integration - GET /api/categories
-  // Expected response: Array<{ id: string, name: string, icon: string, slug: string }>
-  const categories = [
-    "Thời Trang Nam", "Thời Trang Nữ", "Điện Thoại & Phụ Kiện", 
-    "Thiết Bị Điện Tử", "Máy Tính & Laptop", "Máy Ảnh & Máy Quay Phim",
-    "Đồng Hồ", "Giày Dép Nam", "Giày Dép Nữ", "Túi Ví Nam",
-    "Túi Ví Nữ", "Phụ Kiện & Trang Sức", "Nhà Cửa & Đời Sống", 
-    "Sách & Văn Phòng Phẩm", "Thể Thao & Du Lịch", "Ô Tô & Xe Máy",
-    "Mẹ & Bé", "Làm Đẹp & Sức Khỏe", "Thú Cưng", "Voucher & Dịch Vụ"
-  ];
+
 
   // TODO: API Integration - GET /api/products?type=flash-sale&limit=6
   // Add real-time countdown timer integration
@@ -48,34 +61,6 @@ export function HomeLayout({ children }: HomeLayoutProps) {
     image: "", // TODO: Add CDN image URLs
     stock: 100
   }));
-
-  // TODO: API Integration - GET /api/shops?type=mall&featured=true
-  const mallShops = Array.from({ length: 12 }, (_, i) => ({
-    id: `shop-${i + 1}`,
-    name: `Shop Mall ${i + 1}`,
-    logo: "", // TODO: Add shop logo URLs
-    isOfficial: true,
-    rating: 4.5 + Math.random() * 0.5
-  }));
-
-  // TODO: API Integration - GET /api/products?sort=trending&limit=30
-  // Add infinite scroll or pagination
-  const trendingProducts = Array.from({ length: 30 }, (_, i) => ({
-    id: `prod-${i + 1}`,
-    name: `Sản phẩm Hot ${i + 1}`,
-    description: "Chất lượng cao, giá tốt nhất thị trường",
-    price: 129000 + Math.floor(Math.random() * 500000),
-    originalPrice: 250000 + Math.floor(Math.random() * 500000),
-    sold: Math.floor(Math.random() * 10000),
-    rating: 4.0 + Math.random(),
-    ratingCount: Math.floor(Math.random() * 1000),
-    location: "TP. Hồ Chí Minh",
-    image: "", // TODO: Add product image URLs
-    freeShip: Math.random() > 0.5,
-    discount: Math.floor(Math.random() * 50)
-  }));
-
-
 
   // TODO: API Integration - GET /api/banners?position=main
   const mainBanners = [
@@ -123,10 +108,9 @@ export function HomeLayout({ children }: HomeLayoutProps) {
 
 
 
-  const handleCategoryClick = (category: string) => {
-    // TODO: Navigate to category page
-    navigate(`/category/${category}`);
-  };
+  function handleCategoryClick(cat: { name: string; slug: string }) {
+  navigate(`/category/${cat.slug}`);
+}
 
   const handleProductClick = (product_id: string) => {
     // TODO: Navigate to product detail page
@@ -230,14 +214,6 @@ export function HomeLayout({ children }: HomeLayoutProps) {
         </section>
 
         <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* ======================================================================
-            CATEGORIES SECTION
-            TODO: 
-            - Fetch from API
-            - Add category icons
-            - Implement category filtering
-            - Add breadcrumb navigation on category pages
-        ====================================================================== */}
         <section className="bg-white rounded-sm p-6 shadow-sm">
           <h2 className="text-gray-500 text-sm mb-4 uppercase font-semibold">Danh Mục</h2>
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-4">
@@ -247,13 +223,14 @@ export function HomeLayout({ children }: HomeLayoutProps) {
                 className="flex flex-col items-center gap-2 cursor-pointer group"
                 onClick={() => handleCategoryClick(cat)}
               >
-                <div className="w-16 h-16 bg-gray-50 border-2 border-gray-200 rounded-lg flex items-center justify-center group-hover:border-orange-500 group-hover:shadow-md transition-all">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-300 to-pink-300 rounded"></div>
+                <div className="w-16 h-16 bg-gray-50 border-2 border-gray-200 rounded-lg flex items-center justify-center text-2xl group-hover:border-orange-500 group-hover:shadow-md transition-all">
+                  {cat.icon}
                 </div>
                 <span className="text-xs text-center text-gray-700 line-clamp-2 group-hover:text-orange-500 transition">
-                  {cat}
+                  {cat.name}
                 </span>
               </div>
+
             ))}
           </div>
         </section>
@@ -375,19 +352,12 @@ export function HomeLayout({ children }: HomeLayoutProps) {
           </div>
           
           {/* Mall Shops Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-4">
-            {mallShops.map((shop) => (
-              <div 
-                key={shop.id}
-                className="cursor-pointer group"
-                onClick={() => handleShopClick(shop.id)}
-              >
-                <div className="w-full aspect-square border-2 border-gray-200 rounded-lg overflow-hidden group-hover:border-orange-500 group-hover:shadow-lg transition-all">
-                  <div className="w-full h-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
-                    <span className="text-2xl">🏪</span>
-                  </div>
-                </div>
-                {/* TODO: Add shop name and rating below */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+            {shops.map((shop) => (
+              <div key={shop.id} className="p-4 border rounded cursor-pointer">
+                <img src={shop.logo || "/placeholder.png"} alt={shop.name} className="w-16 h-16 mb-2" />
+                <h3 className="text-sm font-semibold">{shop.name}</h3>
+                <p className="text-xs text-gray-500">Rating: {shop.rating.toFixed(1)}</p>
               </div>
             ))}
           </div>
@@ -434,7 +404,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
         {children}
 
       </main>
-      <Footer></Footer>
+      <Footer/>
       {/* ========================================================================
           FLOATING ACTION BUTTONS (Optional)
           TODO: Add these floating elements:

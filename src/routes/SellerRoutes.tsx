@@ -6,7 +6,7 @@ import { SellerHome } from "../screens/seller/SellerHome";
 import { SellerUploadPage } from "../screens/seller/SellerUploadPage";
 import { SellerOrders } from "../screens/seller/SellerOrders";
 import { SellerAnalytics } from "../screens/seller/SellerAnalytics";
-import { SellerSettings } from "../screens/seller/SellerSettings";
+import  SellerSettings  from "../screens/seller/SellerSettings";
 import { SellerChatPage } from "../screens/seller/SellerChatPage";
 import { SellerLayout } from "../components/seller/SellerLayout";
 import { SellerAuthGuard } from "../components/seller/AuthGuard";

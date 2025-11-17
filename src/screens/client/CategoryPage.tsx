@@ -1,25 +1,31 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import { api } from "../../api/userapi/client"; // import api fetch chuẩn
+import type { Product } from "../../api/userapi/client";
 
 export default function CategoryPage() {
-  const { categoryId } = useParams(); // Lấy từ URL: /category/:categoryId
-  const [products, setProducts] = useState([]);
+  const { slug } = useParams<{ slug: string }>(); // slug từ URL
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!slug) return;
+
     const fetchProducts = async () => {
+      setLoading(true);
       try {
-        const res = await axios.get(`/api/categories/${categoryId}/products`);
-        setProducts(res.data);
+        const data = await api<Product[]>(`/categories/slug/${slug}/products`);
+        setProducts(data);
       } catch (err) {
         console.error("Lỗi khi lấy sản phẩm:", err);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchProducts();
-  }, [categoryId]);
+  }, [slug]);
 
   if (loading) return <div>Đang tải...</div>;
   if (products.length === 0) return <div>Không có sản phẩm trong danh mục này</div>;
@@ -31,12 +37,14 @@ export default function CategoryPage() {
         {products.map((product) => (
           <div key={product.id} className="border rounded p-2 shadow-sm">
             <img
-              src={product.image || "/placeholder.png"}
+              src={product.images[0] || "/placeholder.png"}
               alt={product.title}
               className="w-full h-40 object-cover mb-2 rounded"
             />
             <h2 className="text-sm font-semibold">{product.title}</h2>
-            <p className="text-red-500 font-bold">{product.price}₫</p>
+            <p className="text-red-500 font-bold">
+              {Number(product.price).toLocaleString()}₫
+            </p>
           </div>
         ))}
       </div>

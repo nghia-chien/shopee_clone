@@ -4,6 +4,7 @@
 ## 🔹 Backend Structure
 ```
 - **app.ts** [File]
+- **controllers\account.controller.ts** [Controller]
 - **controllers\auth.controller.ts** [Controller]
 - **controllers\cart.controller.ts** [Controller] → Exports: getCartCountController
 - **controllers\category.controller.ts** [Controller] → Exports: getProductsByCategory, getCategories
@@ -13,7 +14,7 @@
 - **controllers\product.controller.ts** [Controller] → Exports: getProductController, addProductReviewController, addProductFeedbackController, searchKeywords, searchHandler
 - **controllers\review.controller.ts** [Controller]
 - **controllers\seller\analytics.controller.ts** [Controller]
-- **controllers\seller\auth.controller.ts** [Controller] → Exports: sellerRegisterController, sellerLoginController, sellerMeController
+- **controllers\seller\auth.controller.ts** [Controller] → Exports: sellerRegisterController, sellerLoginController, refreshSellerTokenController, sellerMeController
 - **controllers\seller\getSellerProducts.ts** [Controller] → Exports: getSellerProducts
 - **controllers\seller\order.controller.ts** [Controller]
 - **controllers\seller\productSeller.controller.ts** [Controller] → Exports: createSellerProduct, getSellerProducts, getSellerProductById, updateSellerProduct, deleteSellerProduct
@@ -28,25 +29,31 @@
 - **middlewares\upload.ts** [File] → Exports: upload, authSeller
 - **prismaClient.ts** [File] → Exports: prisma
 - **routes\index.ts** [Router] → Routes: GET /
+- **routes\modules\account.routes.ts** [Router] → Routes: GET /, PUT /, POST /avatar, PUT /password, GET /addresses, POST /addresses, PUT /addresses/:id, DELETE /addresses/:id, PUT /addresses/:id/default
 - **routes\modules\auth.routes.ts** [Router] → Routes: POST /login, POST /register, GET /me
 - **routes\modules\cart.routes.ts** [Router] → Routes: GET /, POST /items, PUT /items/:product_id, DELETE /items/:product_id, GET /count
 - **routes\modules\category.routes.ts** [Router] → Routes: GET /, GET /tree, GET /:id/attributes, GET /:categoryId/products
-- **routes\modules\order.routes.ts** [Router] → Routes: GET /, POST /, GET /:id
-- **routes\modules\product.routes.ts** [Router] → Routes: GET /, GET /keywords, GET /search, GET /:id, POST /:id/reviews, POST /:id/feedback
+- **routes\modules\chat.routes.ts** [Router] → Routes: GET /threads/user, POST /threads, GET /threads/seller, POST /message, POST /message/seller, GET /messages/:threadId, GET /messages/:threadId/seller, POST /system-message
+- **routes\modules\order.routes.ts** [Router] → Routes: GET /orders, POST /, GET /all, GET /:id
+- **routes\modules\product.routes.ts** [Router] → Routes: GET /, GET /keywords, GET /search, GET /:id, GET /:id/reviews, POST /:id/reviews, POST /:id/feedback
+- **routes\modules\review.routes.ts** [Router] → Routes: POST /, GET /user, GET /:reviewId/media, POST /:reviewId/like, PUT /:reviewId, DELETE /:reviewId
 - **routes\modules\shop.routes.ts** [Router] → Routes: GET /summary, GET /:seller_id, GET /:seller_id/products
 - **seeds\categories.ts** [File]
 - **sellerRoutes\index.ts** [File]
-- **sellerRoutes\modulesSeller\sellerAnalytics.routes.ts** [Router] → Routes: GET /stats, GET /analytics
+- **sellerRoutes\modulesSeller\sellerAnalytics.routes.ts** [Router] → Routes: GET /stats, GET /analytics, GET /export, POST /email-report
 - **sellerRoutes\modulesSeller\sellerAuth.ts** [File]
-- **sellerRoutes\modulesSeller\sellerOrder.routes.ts** [Router] → Routes: POST /, GET /purchased, GET /sold, GET /:id, PATCH /:id/status
+- **sellerRoutes\modulesSeller\sellerOrder.routes.ts** [Router] → Routes: GET /sold, GET /:id, GET /:id/timeline, POST /:id/tracking, PATCH /:id/status
 - **sellerRoutes\modulesSeller\sellerProduct.ts** [File]
-- **sellerRoutes\modulesSeller\sellerSettings.routes.ts** [Router] → Routes: PUT /profile, PUT /payment, PUT /shipping, PUT /security/password
+- **sellerRoutes\modulesSeller\sellerReview.routes.ts** [Router] → Routes: GET /reviews, POST /reviews/:reviewId/reply
+- **sellerRoutes\modulesSeller\sellerSettings.routes.ts** [Router] → Routes: PUT /profile, PATCH /profile, PUT /payment, PATCH /payment, PUT /shipping, PATCH /shipping, POST /security/password
 - **sellerRoutes\modulesSeller\uploadSeller.routes.ts** [Router] → Routes: POST /
 - **server.ts** [File]
 - **services\auth.service.ts** [Service]
 - **services\cart.service.ts** [Service]
+- **services\chat.service.ts** [Service]
 - **services\order.service.ts** [Service]
 - **services\product.service.ts** [Service] → Exports: getProductById
+- **services\review.service.ts** [Service]
 - **services\seller\auth.service.ts** [Service]
 - **services\seller\order.service.ts** [Service]
 - **services\seller\product.service.ts** [Service] → Exports: SellerProductService
@@ -144,6 +151,7 @@
   - created_at                  DateTime                      @default(now())
   - updated_at                  DateTime                      @default(now())
   - password                    String
+  - avatar                      String?
   - chat_threads                chat_threads[]
   - complaints                  complaints[]
   - messages                    messages[]
@@ -193,6 +201,8 @@
   - name                                    String?
   - created_at                              DateTime             @default(now())
   - updated_at                              DateTime             @default(now())
+  - avatar                                  String?
+  - address                                 address[]
   - cart_item                               cart_item[]
   - chat_threads                            chat_threads[]
   - complaint_comments                      complaint_comments[]
@@ -298,6 +308,8 @@
   - status       String       @default("SENT") @db.VarChar(10)
   - pinned       Boolean?     @default(false)
   - created_at   DateTime?    @default(now()) @db.Timestamptz(6)
+  - sender_type  String       @default("USER") @db.VarChar(10)
+  - order_id     String?      @db.Uuid
   - seller       seller?      @relation(fields: [seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   - chat_threads chat_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   - user         user?        @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -305,24 +317,30 @@
   - @@index([seller_id], map: "idx_messages_seller")
   - @@index([thread_id], map: "idx_messages_thread")
   - @@index([user_id], map: "idx_messages_user")
+  - @@index([order_id], map: "idx_messages_order")
 
 ### Model: product_reviews
-  - id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  - product_id     String
-  - user_id        String
-  - rating         Int
-  - title          String?          @db.VarChar(255)
-  - content        String?
-  - attachments    Json?            @db.Json
-  - anonymous      Boolean?         @default(false)
-  - like_count     Int?             @default(0)
-  - created_at     DateTime?        @default(now()) @db.Timestamptz(6)
-  - updated_at     DateTime?        @default(now()) @db.Timestamptz(6)
-  - product        product          @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  - user           user             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  - review_likes   review_likes[]
-  - review_media   review_media[]
-  - review_replies review_replies[]
+  - id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  - product_id      String
+  - user_id         String
+  - rating          Int
+  - title           String?          @db.VarChar(255)
+  - content         String?
+  - attachments     Json?            @db.Json
+  - anonymous       Boolean?         @default(false)
+  - like_count      Int?             @default(0)
+  - created_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  - updated_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  - seller_order_id String?          @unique(map: "unique_review_per_seller_order") @db.Uuid
+  - product         product          @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  - user            user             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  - review_likes    review_likes[]
+  - review_media    review_media[]
+  - review_replies  review_replies[]
+  - 
+  - @@index([product_id], map: "idx_product_reviews_product")
+  - @@index([seller_order_id], map: "idx_product_reviews_seller_order")
+  - @@index([user_id], map: "idx_product_reviews_user")
 
 ### Model: review_likes
   - id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -351,33 +369,72 @@
   - product_reviews product_reviews @relation(fields: [review_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   - seller          seller          @relation(fields: [seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+### Model: admin
+  - id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  - name       String    @db.VarChar(255)
+  - email      String    @unique @db.VarChar(255)
+  - password   String    @db.VarChar(255)
+  - created_at DateTime? @default(now()) @db.Timestamp(6)
+  - updated_at DateTime? @default(now()) @db.Timestamp(6)
+  - 
+  - @@index([email], map: "idx_admin_email")
+
+### Model: address
+  - id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  - user_id      String
+  - full_name    String
+  - phone        String    @db.VarChar(20)
+  - address_line String
+  - city         String
+  - district     String
+  - ward         String
+  - is_default   Boolean   @default(false)
+  - created_at   DateTime? @default(now()) @db.Timestamp(6)
+  - updated_at   DateTime? @default(now()) @db.Timestamp(6)
+  - user         user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_user")
+
 
 ## 🔹 Frontend Structure
 ```
 - admin\AdminApp.tsx
-- api\client.ts
-- api\seller.ts
-- api\sellerCart.ts
-- api\sellerOrders.ts
-- api\sellerProducts.ts
+- api\chat.ts
+- api\reviews.ts
+- api\sellerapi\seller.ts
+- api\sellerapi\sellerCart.ts
+- api\sellerapi\sellerOrders.ts
+- api\sellerapi\sellerProducts.ts
+- api\userapi\account.ts
+- api\userapi\client.ts
+- api\userapi\orders.ts
 - App.css
 - App.tsx
 - assets\react.svg
 - components\auth\AuthGuard.tsx
 - components\auth\AuthLayout.tsx
 - components\auth\PromotionalBanner.tsx
+- components\chat\ChatBox.tsx
+- components\chat\ChatWidget.tsx
 - components\home\ScrollToTop.tsx
 - components\home\SearchBar.tsx
 - components\layout\Footer.tsx
 - components\layout\Header.tsx
 - components\layout\HomeLayout.tsx
+- components\layout\UserLayout.tsx
 - components\product\ProductListSection.tsx
+- components\review\ReviewForm.tsx
+- components\review\ReviewItem.tsx
+- components\review\ReviewList.tsx
+- components\review\ReviewMediaGallery.tsx
+- components\review\ReviewSection.tsx
+- components\review\SellerReplyForm.tsx
 - components\seller\AuthGuard.tsx
 - components\seller\SellerLayout.tsx
 - components\seller\SellerLogin.tsx
 - components\seller\SellerRegister.tsx
 - components\seller\UploadImage.tsx
 - components\shops\FeaturedShops.tsx
+- hooks\useChat.ts
+- hooks\useReviews.ts
 - i18n\index.ts
 - i18n\locales\en.json
 - i18n\locales\vi.json
@@ -387,12 +444,13 @@
 - main.tsx
 - providers\AppProviders.tsx
 - routes\AdminRoutes.tsx → Routes: /admin/categories, /admin/products
-- routes\AppRoutes.tsx → Routes: /login, /register, /, /products/:id, /cart, /orders, /account, /admin/*, /category, /shop/:seller_id, /seller/*, /search, *
-- routes\SellerRoutes.tsx → Routes: register, login, home, dashboard, upload, orders, analytics, settings, *
+- routes\AppRoutes.tsx → Routes: /login, /register, /, /products/:id, /cart, /admin/*, /category, /shop/:seller_id, /seller/*, /search, *, /account, chat, orders, /user, orders, profile, chat, notifications
+- routes\SellerRoutes.tsx → Routes: register, login, home, dashboard, upload, orders, analytics, settings, chats, reviews, *
 - screens\admin\CategoryPage.tsx
 - screens\client\AccountPage.tsx
 - screens\client\CartPage.tsx
 - screens\client\CategoryPage.jsx
+- screens\client\ChatPage.tsx
 - screens\client\HomePage.tsx
 - screens\client\LoginPage.tsx
 - screens\client\OrdersPage.tsx
@@ -402,9 +460,11 @@
 - screens\client\ShopPage.tsx
 - screens\seller\Loginseller.tsx
 - screens\seller\SellerAnalytics.tsx
+- screens\seller\SellerChatPage.tsx
 - screens\seller\SellerDashboard.tsx
 - screens\seller\SellerHome.tsx
 - screens\seller\SellerOrders.tsx
+- screens\seller\SellerReview.tsx
 - screens\seller\SellerSettings.tsx
 - screens\seller\SellerUploadPage.tsx
 - store\auth.ts

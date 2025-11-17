@@ -20,3 +20,51 @@ export async function getUserOrders(token: string) {
 	if (!res.ok) throw new Error('Failed to fetch orders');
 	return res.json(); // trả về seller_order[] đã map sẵn
   }
+
+// Product interface
+export interface Product {
+	id: string;
+	title: string;
+	images: string[];
+	price: string;
+}
+
+// Lấy sản phẩm theo slug category
+export async function getProductsByCategorySlug(slug: string): Promise<Product[]> {
+	return api<Product[]>(`/categories/slug/${slug}/products`);
+}
+
+// Lấy danh sách categories
+export interface Category {
+	id: string;
+	name: string;
+	slug: string;
+	icon: string;
+}
+export async function getCategories(): Promise<Category[]> {
+	return api<Category[]>('/categories');
+}
+
+// Lấy attributes theo slug
+export async function getCategoryAttributes(slug: string): Promise<any> {
+	return api(`/categories/slug/${slug}/attributes`);
+}
+
+// Lấy category tree
+export async function getCategoryTree(): Promise<any> {
+	return api('/categories/tree');
+}
+
+export interface MallShop {
+  id: string;
+  name: string;
+  logo?: string;
+  rating: number;
+  isOfficial: boolean;
+}
+
+export async function getMallShops(): Promise<MallShop[]> {
+  const res = await fetch(`${API_URL}/shops/mall`);
+  if (!res.ok) throw new Error("Failed to fetch mall shops");
+  return res.json();
+}

@@ -8,8 +8,10 @@ import ShopPage from "../screens/client/ShopPage";
 import { SellerRoutes } from "./SellerRoutes"; // import routes riêng cho seller
 import { CartPage } from "../screens/client/CartPage";
 import  OrdersPage  from "../screens/client/OrdersPage";
+import  CategoryPage  from "../screens/client/CategoryPage";
 import  AccountPage  from "../screens/client/AccountPage";
 import { ChatPage } from "../screens/client/ChatPage";
+import  FlashSalePage  from "../screens/client/FlashSalePage";
 import ScrollToTop from "../components/home/ScrollToTop";
 import { AdminRoutes } from "./AdminRoutes";
 import  {UserLayout}  from "../components/layout/UserLayout";
@@ -27,11 +29,12 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/products/:id" element={<ProductPage />} />
         <Route path="/cart" element={<CartPage />} />
-        
+        <Route path="/flash-sale" element={<FlashSalePage />} />
+
         
         
         <Route path="/admin/*" element={<AdminRoutes />} />
-        <Route path="/category" element={<OrdersPage />} />
+        <Route path="/category/:slug" element={<CategoryPage />} />
 
         <Route path="/shop/:seller_id" element={<ShopPage />} />
 
