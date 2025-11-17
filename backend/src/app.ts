@@ -13,7 +13,7 @@ const app = express();
 app.use(cors({
   origin: true,            // ✅ Tự động cho phép domain đang gửi request (devtunnel, localhost, v.v)
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // ✅ tránh preflight bị fail
+  methods: ["GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS"], // ✅ tránh preflight bị fail
 }));
 
 
@@ -22,6 +22,8 @@ app.use(helmet());
 
 // ✅ Cho phép đọc JSON body
 app.use(express.json());
+// ✅ Cho phép đọc URL-encoded và FormData
+app.use(express.urlencoded({ extended: true }));
 
 // ✅ Ghi log HTTP requests
 app.use(morgan('dev'));

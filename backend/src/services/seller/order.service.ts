@@ -1,161 +1,169 @@
 import { prisma } from '../../utils/prisma';
 
 /**
- * 📊 Lấy thống kê đơn hàng đã bán
+ * 📊 Thống kê đơn hàng của seller dựa trên seller_order
  */
 export async function getSellerOrderStats(seller_id: string) {
   // Lấy tất cả products của seller
-  const sellerProducts = await prisma.product.findMany({
+  const product_ids = (await prisma.product.findMany({
     where: { seller_id },
     select: { id: true },
-  });
+  })).map(p => p.id);
 
-  const product_ids = sellerProducts.map((p) => p.id);
-
-  // Lấy tất cả order_items có products của seller
+  // Lấy tất cả order_items của seller, include orders và seller_order
   const order_items = await prisma.order_item.findMany({
-    where: {
-      product_id: { in: product_ids },
-    },
+    where: { product_id: { in: product_ids } },
     include: {
-      orders: true,
       product: true,
+      orders: {
+        include: {
+          seller_order: {
+            where: { seller_id },
+          },
+        },
+      },
     },
   });
 
-  // Tính toán thống kê
-  const stats = {
-    totalOrders: new Set(order_items.map((item) => item.order_id)).size,
-    totalItemsSold: order_items.reduce((sum, item) => sum + item.quantity, 0),
-    totalRevenue: order_items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0),
-    pendingOrders: new Set(
-      order_items.filter((item) => item.orders.status === 'pending').map((item) => item.order_id)
-    ).size,
-    completedOrders: new Set(
-      order_items.filter((item) => item.orders.status === 'completed').map((item) => item.order_id)
-    ).size,
-    cancelledOrders: new Set(
-      order_items.filter((item) => item.orders.status === 'cancelled').map((item) => item.order_id)
-    ).size,
-    recentOrders: order_items
-      .sort((a, b) => new Date(b.orders.created_at).getTime() - new Date(a.orders.created_at).getTime())
-      .slice(0, 5)
-      .map((item) => ({
-        order_id: item.order_id,
-        productName: item.product.title,
-        quantity: item.quantity,
-        price: Number(item.price),
-        total: Number(item.price) * item.quantity,
-        status: item.orders.status,
-        created_at: item.orders.created_at,
-      })),
-  };
+  const totalOrdersSet = new Set<string>();
+  const pendingOrdersSet = new Set<string>();
+  const acceptedOrdersSet = new Set<string>();
+  const cancelledOrdersSet = new Set<string>();
+  const completedOrdersSet = new Set<string>();
 
-  return stats;
+  let totalItemsSold = 0;
+  let totalRevenue = 0;
+
+  const recentOrdersMap = new Map<string, any>();
+
+  order_items.forEach(item => {
+    const { order_id, quantity, price, product, orders } = item;
+
+    // Tính số lượng, doanh thu
+    totalItemsSold += quantity;
+    totalRevenue += Number(price) * quantity;
+
+    // Lấy seller_order cho seller hiện tại
+    const sellerOrder = orders.seller_order[0]; // giả sử mỗi seller chỉ có 1 seller_order / order
+    if (!sellerOrder) return;
+
+    totalOrdersSet.add(sellerOrder.id);
+
+    // Thống kê trạng thái
+    switch (sellerOrder.seller_status) {
+      case 'pending':
+        pendingOrdersSet.add(sellerOrder.id);
+        break;
+      case 'accepted':
+        acceptedOrdersSet.add(sellerOrder.id);
+        break;
+      case 'cancelled':
+        cancelledOrdersSet.add(sellerOrder.id);
+        break;
+      case 'completed':
+        completedOrdersSet.add(sellerOrder.id);
+        break;
+    }
+
+    // Recent orders
+    if (!recentOrdersMap.has(sellerOrder.id)) {
+      recentOrdersMap.set(sellerOrder.id, {
+        order_id: sellerOrder.id,
+        productName: product.title,
+        quantity,
+        price: Number(price),
+        total: Number(price) * quantity,
+        status: sellerOrder.seller_status,
+        created_at: sellerOrder.created_at,
+      });
+    }
+  });
+
+  const recentOrders = Array.from(recentOrdersMap.values())
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
+
+  return {
+    totalOrders: totalOrdersSet.size,
+    totalItemsSold,
+    totalRevenue,
+    pendingOrders: pendingOrdersSet.size,
+    acceptedOrders: acceptedOrdersSet.size,
+    completedOrders: completedOrdersSet.size,
+    cancelledOrders: cancelledOrdersSet.size,
+    recentOrders,
+  };
 }
 
 /**
- * 📈 Lấy analytics theo thời gian
+ * 📈 Analytics theo thời gian cho seller
  */
 export async function getSellerAnalytics(seller_id: string, days: number = 30) {
-  const sellerProducts = await prisma.product.findMany({
-    where: { seller_id },
-    select: { id: true },
-  });
-
-  const product_ids = sellerProducts.map((p) => p.id);
+  const product_ids = (await prisma.product.findMany({ where: { seller_id }, select: { id: true } }))
+    .map(p => p.id);
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
   const order_items = await prisma.order_item.findMany({
-    where: {
+    where: { 
       product_id: { in: product_ids },
-      orders: {
-        created_at: {
-          gte: startDate,
-        },
-      },
+      orders: { created_at: { gte: startDate } },
     },
-    include: {
-      orders: true,
-      product: true,
-    },
+    include: { orders: true, product: true },
   });
 
-  // Nhóm theo ngày
-  const dailyStats: Record<string, { revenue: number; orders: number; items: number }> = {};
+  const dailyStats: Record<string, { revenue: number; ordersSet: Set<string>; items: number }> = {};
+  const productAgg: Record<string, { product_id: string; title: string; quantity: number; revenue: number }> = {};
+  const statusCounts: Record<string, Set<string>> = {};
 
-  order_items.forEach((item) => {
-    const date = new Date(item.orders.created_at).toISOString().split('T')[0];
-    if (!dailyStats[date]) {
-      dailyStats[date] = { revenue: 0, orders: 0, items: 0 };
-    }
+  order_items.forEach(item => {
+    const date = item.orders.created_at.toISOString().split('T')[0];
+
+    if (!dailyStats[date]) dailyStats[date] = { revenue: 0, ordersSet: new Set(), items: 0 };
     dailyStats[date].revenue += Number(item.price) * item.quantity;
     dailyStats[date].items += item.quantity;
+    dailyStats[date].ordersSet.add(item.order_id);
+
+    // Status
+    if (!statusCounts[item.orders.status]) statusCounts[item.orders.status] = new Set();
+    statusCounts[item.orders.status].add(item.order_id);
+
+    // Top products
+    if (!productAgg[item.product_id]) productAgg[item.product_id] = {
+      product_id: item.product_id,
+      title: item.product.title,
+      quantity: 0,
+      revenue: 0,
+    };
+    productAgg[item.product_id].quantity += item.quantity;
+    productAgg[item.product_id].revenue += Number(item.price) * item.quantity;
   });
 
-  // Đếm số orders unique mỗi ngày
-  const orderDates: Record<string, Set<string>> = {};
-  order_items.forEach((item) => {
-    const date = new Date(item.orders.created_at).toISOString().split('T')[0];
-    if (!orderDates[date]) {
-      orderDates[date] = new Set();
-    }
-    orderDates[date].add(item.order_id);
-  });
+  // Tổng hợp
+  const dailyStatsArr = Object.entries(dailyStats).map(([date, stats]) => ({
+    date,
+    revenue: stats.revenue,
+    items: stats.items,
+    orders: stats.ordersSet.size,
+  }));
 
-  Object.keys(orderDates).forEach((date) => {
-    if (dailyStats[date]) {
-      dailyStats[date].orders = orderDates[date].size;
-    }
-  });
+  const monthlyRevenue = order_items
+    .filter(it => new Date(it.orders.created_at).getMonth() === new Date().getMonth())
+    .reduce((sum, it) => sum + Number(it.price) * it.quantity, 0);
 
-  // Doanh thu tháng hiện tại
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthOrderItems = order_items.filter((it) => new Date(it.orders.created_at) >= monthStart);
-  const monthlyRevenue = monthOrderItems.reduce((sum, it) => sum + Number(it.price) * it.quantity, 0);
+  const totalOrdersWindow = Object.values(statusCounts).reduce((acc, set) => acc + set.size, 0) || 1;
+  const statusRatio = Object.fromEntries(Object.entries(statusCounts).map(([st, set]) => [st, set.size / totalOrdersWindow]));
 
-  // Tỉ lệ trạng thái đơn hàng trong khoảng thời gian
-  const statusCounts: Record<string, Set<string>> = {};
-  order_items.forEach((it) => {
-    const st = it.orders.status;
-    statusCounts[st] = statusCounts[st] || new Set<string>();
-    statusCounts[st].add(it.order_id);
-  });
-  const totalOrdersWindow = Object.values(statusCounts).reduce((acc, s) => acc + s.size, 0) || 1;
-  const statusRatio = Object.fromEntries(
-    Object.entries(statusCounts).map(([st, set]) => [st, set.size / totalOrdersWindow])
-  );
-
-  // Top sản phẩm (theo số lượng và doanh thu)
-  const productAgg: Record<string, { product_id: string; title: string; quantity: number; revenue: number }> = {};
-  order_items.forEach((it) => {
-    const pid = it.product_id;
-    if (!productAgg[pid]) {
-      productAgg[pid] = { product_id: pid, title: it.product.title, quantity: 0, revenue: 0 };
-    }
-    productAgg[pid].quantity += it.quantity;
-    productAgg[pid].revenue += Number(it.price) * it.quantity;
-  });
-  const topProducts = Object.values(productAgg)
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 10);
+  const topProducts = Object.values(productAgg).sort((a, b) => b.quantity - a.quantity).slice(0, 10);
 
   return {
-    dailyStats: Object.entries(dailyStats).map(([date, stats]) => ({
-      date,
-      ...stats,
-    })),
-    totalRevenue: Object.values(dailyStats).reduce((sum, s) => sum + s.revenue, 0),
-    totalOrders: Object.values(orderDates).reduce((sum, set) => sum + set.size, 0),
-    totalItems: Object.values(dailyStats).reduce((sum, s) => sum + s.items, 0),
-
-    // New analytics
+    dailyStats: dailyStatsArr,
+    totalRevenue: dailyStatsArr.reduce((sum, s) => sum + s.revenue, 0),
+    totalOrders: dailyStatsArr.reduce((sum, s) => sum + s.orders, 0),
+    totalItems: dailyStatsArr.reduce((sum, s) => sum + s.items, 0),
     monthlyRevenue,
     statusRatio,
     topProducts,
   };
 }
-

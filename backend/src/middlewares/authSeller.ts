@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../utils/prisma";
 
 export interface SellerRequest extends Request {
-  seller?: { id: string; email?: string; phone_number?: string };
+  seller?: { id: string; email?: string; phone_number?: string ;name: string};
 }
 
 export const requireAuthSeller = async (req: SellerRequest, res: Response, next: NextFunction) => {
@@ -19,7 +19,7 @@ export const requireAuthSeller = async (req: SellerRequest, res: Response, next:
     // Optional: double-check seller exists
     const seller = await prisma.seller.findUnique({ where: { id: decoded.id } });
     if (!seller) return res.status(401).json({ message: 'Unauthorized: seller not found' });
-    req.seller = { id: decoded.id, email: decoded.email };
+    req.seller = { id: decoded.id, email: decoded.email , name: seller.name };
     next();
   } catch {
     res.status(401).json({ error: "Invalid token ở middlewares" });

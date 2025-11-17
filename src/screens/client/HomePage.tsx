@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../api/client";
+import { api } from "../../api/userapi/client";
 import { HomeLayout } from "../../components/layout/HomeLayout";
 import { ProductListSection } from "../../components/product/ProductListSection";
 import { useAuthStore } from "../../store/auth";

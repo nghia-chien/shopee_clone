@@ -39,3 +39,23 @@ export async function getSellerAnalyticsController(req: SellerRequest, res: Resp
   }
 }
 
+export async function exportSellerAnalyticsController(req: SellerRequest, res: Response) {
+  try {
+    // TODO: implement analytics export (CSV/PDF)
+    return res.status(501).json({ message: 'Not implemented yet' });
+  } catch (error) {
+    console.error('❌ exportSellerAnalyticsController error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function sendSellerAnalyticsEmailController(req: SellerRequest, res: Response) {
+  try {
+    // TODO: implement scheduled analytics email report
+    return res.status(501).json({ message: 'Not implemented yet' });
+  } catch (error) {
+    console.error('❌ sendSellerAnalyticsEmailController error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+

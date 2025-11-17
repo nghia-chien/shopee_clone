@@ -9,22 +9,56 @@ interface AuthenticatedRequest extends Request {
 /**
  * 📦 Lấy danh sách đơn hàng của người dùng hiện tại
  */
+// Lấy tất cả seller_order của user, kèm thông tin product
 export async function listOrdersController(req: AuthenticatedRequest, res: Response) {
   try {
-    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+    const user_id = req.user?.id;
+    if (!user_id) return res.status(401).json({ message: 'Unauthorized' });
 
-    const orders = await prisma.orders.findMany({
-      where: { user_id: req.user.id },
-      include: {
-        order_item: { include: { product: true } }, // đúng tên quan hệ
+    const sellerOrders = await prisma.seller_order.findMany({
+      where: {
+        orders: {
+          user_id
+        }
       },
-      orderBy: { created_at: 'desc' },
+      include: {
+        orders: {
+          include: {
+            order_item: {
+              include: { product: true }
+            }
+          }
+        },
+        seller: true
+      },
+      orderBy: { created_at: 'desc' }
     });
 
-    return res.json({ items: orders });
-  } catch (error) {
-    console.error('❌ listOrdersController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    const mapped = sellerOrders.map(so => {
+      const items = so.orders.order_item.filter(oi => oi.product.seller_id === so.seller_id);
+      return {
+        id: so.id,
+        order_id: so.order_id,
+        seller: so.seller,
+        total: Number(so.total),
+        status: so.seller_status || 'pending',
+        created_at: so.created_at,
+        items: items.map(i => ({
+          id: i.id,
+          product_id: i.product_id,
+          title: i.product.title,
+          images: i.product.images,
+          price: Number(i.price),
+          quantity: i.quantity
+        }))
+      };
+    });
+
+    return res.json({ data: mapped });
+
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ message: err.message });
   }
 }
 
@@ -35,12 +69,12 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
     const { cart_item_ids } = req.body as { cart_item_ids?: string[] };
-    
-    // ✅ Lấy chi tiết các item được chọn trong giỏ hàng
+
+    // Lấy chi tiết các item được chọn trong giỏ hàng
     const cart_items = await prisma.cart_item.findMany({
       where: {
         user_id: req.user.id,
-        id: { in: cart_item_ids }, // lọc theo id các cart_item được chọn
+        id: { in: cart_item_ids },
       },
       include: { product: true },
     });
@@ -49,13 +83,10 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
-    // ✅ Tính tổng tiền
-    const total = cart_items.reduce((sum, item) => {
-      const price = Number(item.product.price);
-      return sum + price * item.quantity;
-    }, 0);
+    // Tính tổng tiền order
+    const total = cart_items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
 
-    // ✅ Tạo đơn hàng cùng order_item
+    // Tạo order cùng order_item
     const order = await prisma.orders.create({
       data: {
         user_id: req.user.id,
@@ -74,15 +105,37 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
       },
     });
 
-    // ✅ Xóa CHỈ các item đã chọn khỏi giỏ hàng
-    await prisma.cart_item.deleteMany({ 
-      where: { 
-        user_id: req.user.id,
-        id: { in: cart_item_ids }
-      } 
+    // Nhóm order_item theo seller_id để tạo seller_order
+    const sellerMap = new Map<string, typeof cart_items>();
+    cart_items.forEach((item) => {
+      const sellerId = item.product.seller_id;
+      if (!sellerMap.has(sellerId)) sellerMap.set(sellerId, []);
+      sellerMap.get(sellerId)!.push(item);
     });
 
-    return res.status(201).json(order);
+    // Tạo seller_order cho từng seller
+    const sellerOrders = [];
+    for (const [seller_id, items] of sellerMap) {
+      const sellerTotal = items.reduce((sum, i) => sum + Number(i.product.price) * i.quantity, 0);
+      const sellerOrder = await prisma.seller_order.create({
+        data: {
+          order_id: order.id,
+          seller_id,
+          total: sellerTotal,
+          seller_status: 'pending',
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+        },
+      });
+      sellerOrders.push(sellerOrder);
+    }
+
+    // Xóa các cart_item đã chọn
+    await prisma.cart_item.deleteMany({
+      where: { user_id: req.user.id, id: { in: cart_item_ids } },
+    });
+
+    return res.status(201).json({ order, sellerOrders });
   } catch (error) {
     console.error('❌ createOrderController error:', error);
     return res.status(500).json({ message: 'Internal server error' });
@@ -90,18 +143,33 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
 }
 
 
+
 /**
- * 🔍 Lấy chi tiết một đơn hàng
+ * 🔍 Lấy chi tiết một đơn hàng hoặc tất cả đơn hàng
  */
 export async function getOrdersController(req: AuthenticatedRequest, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
-    // Lấy tất cả đơn hàng của user, kèm order_item + product
+    // Lấy tất cả đơn hàng của user, kèm order_item + product + seller_order
     const orders = await prisma.orders.findMany({
       where: { user_id: req.user.id },
       include: {
-        order_item: { include: { product: true } },
+        order_item: { 
+          include: { 
+            product: true 
+          } 
+        },
+        seller_order: {
+          include: {
+            seller: {
+              select: {
+                id: true,
+                name: true,
+              }
+            }
+          }
+        }
       },
       orderBy: { created_at: 'desc' }, // mới nhất lên đầu
     });

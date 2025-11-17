@@ -3,6 +3,8 @@ import { requireAuthSeller } from '../../middlewares/authSeller';
 import {
   listSellerSoldOrdersController,
   getSellerOrderController,
+  getSellerOrderTimelineController,
+  updateSellerOrderTrackingController,
 } from '../../controllers/seller/order.controller';
 import { updateSellerOrderStatusController } from '../../controllers/seller/updateOrderStatus.controller';
 
@@ -13,6 +15,8 @@ router.get('/sold', requireAuthSeller, listSellerSoldOrdersController);
 
 // Chi tiết đơn hàng
 router.get('/:id', requireAuthSeller, getSellerOrderController);
+router.get('/:id/timeline', requireAuthSeller, getSellerOrderTimelineController);
+router.post('/:id/tracking', requireAuthSeller, updateSellerOrderTrackingController);
 
 // Cập nhật trạng thái đơn hàng (seller xác nhận/hủy/hoàn thành)
 router.patch('/:id/status', requireAuthSeller, updateSellerOrderStatusController);

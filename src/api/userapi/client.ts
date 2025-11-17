@@ -13,3 +13,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 	}
 	return (await res.json()) as T;
 }
+export async function getUserOrders(token: string) {
+	const res = await fetch(`${API_URL}/orders`, {
+	  headers: { Authorization: `Bearer ${token}` }
+	});
+	if (!res.ok) throw new Error('Failed to fetch orders');
+	return res.json(); // trả về seller_order[] đã map sẵn
+  }
