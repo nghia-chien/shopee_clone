@@ -46,7 +46,7 @@ export async function getUserComplaintsController(req: AuthRequest, res: Respons
     return res.json({ complaints });
   } catch (error) {
     console.error('❌ getUserComplaintsController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getUserComplaintsController Internal server error' });
   }
 }
 
@@ -86,7 +86,7 @@ export async function getSellerComplaintsController(req: SellerRequest, res: Res
     return res.json({ complaints });
   } catch (error) {
     console.error('❌ getSellerComplaintsController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getSellerComplaintsController Internal server error' });
   }
 }
 
@@ -133,7 +133,7 @@ export async function createComplaintController(req: AuthRequest, res: Response)
     return res.status(201).json({ complaint });
   } catch (error) {
     console.error('❌ createComplaintController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'createComplaintController Internal server error' });
   }
 }
 
@@ -176,6 +176,6 @@ export async function addComplaintCommentController(req: Request, res: Response)
     return res.status(201).json({ comment });
   } catch (error) {
     console.error('❌ addComplaintCommentController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'addComplaintCommentController Internal server error' });
   }
 }

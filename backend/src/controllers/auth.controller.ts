@@ -59,7 +59,7 @@ export async function registerController(req: Request, res: Response) {
     });
   } catch (err) {
     console.error('❌ registerController error:', err);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'registerController Internal server error' });
   }
 }
 
@@ -85,7 +85,7 @@ export async function loginController(req: Request, res: Response) {
     });
   } catch (err) {
     console.error('❌ loginController error:', err);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'loginController Internal server error' });
   }}
 
 
@@ -110,6 +110,6 @@ export async function meController(req: AuthRequest, res: Response) {
     return res.json(user);
   } catch (error) {
     console.error('❌ meController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'meController Internal server error' });
   }
 }

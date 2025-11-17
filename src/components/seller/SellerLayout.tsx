@@ -10,6 +10,7 @@ import {
   LogOut,
   MessageSquare,
   Star,
+  Gift,
 } from "lucide-react";
 
 export function SellerLayout() {
@@ -83,6 +84,10 @@ export function SellerLayout() {
             <NavLink to="/seller/reviews" className={navItemClass}>
               <Star className="w-4 h-4" />
               Đánh giá
+            </NavLink>
+            <NavLink to="/seller/voucher" className={navItemClass}>
+              <Gift className="w-4 h-4" />
+              Tạo voucher 
             </NavLink>
           </div>
           <div className="mt-4 bg-white rounded-lg border p-3">

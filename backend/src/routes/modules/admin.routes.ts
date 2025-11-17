@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { adminLoginController, adminMeController } from '../../controllers/admin/auth.controller';
+import { createAdminVoucherController, listAdminVouchersController } from '../../controllers/admin/voucher.controller';
 import {
   getAllUsersController,
   getUserByIdController,
@@ -23,6 +24,8 @@ const router = Router();
  */
 router.post('/login', adminLoginController);
 router.get('/me', requireAuthAdmin, adminMeController);
+router.get('/vouchers', requireAuthAdmin, listAdminVouchersController);
+router.post('/vouchers', requireAuthAdmin, createAdminVoucherController);
 
 /**
  * 👥 User Management Routes

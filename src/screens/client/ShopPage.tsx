@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/userapi/client";
 import FeaturedShops from "../../components/shops/FeaturedShops";
 import { ProductListSection } from "../../components/product/ProductListSection";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
+import { fetchPublicVouchers, saveVoucher,getUserVouchers } from "../../api/vouchers";
+import type { Voucher } from "../../api/vouchers";
+import { useAuthStore } from "../../store/auth";
+import type { UserVoucherEntry } from "../../api/vouchers";
 
 interface Product {
   id: string;
@@ -20,17 +24,29 @@ interface ShopSummary {
   shop_name: string;
   total_products: number;
   avg_rating: number | null;
-  vouchers?: { id: string; discount: number; min_order: number }[];
 }
+
 
 export default function ShopPage() {
   const { seller_id } = useParams<{ seller_id: string }>();
+  const navigate = useNavigate();
+  const { token } = useAuthStore();
   const [shopInfo, setShopInfo] = useState<ShopSummary | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  
+  const [shopVouchers, setShopVouchers] = useState<Voucher[]>([]);
+  const [savingVoucherId, setSavingVoucherId] = useState<string | null>(null);
+  const [userVouchers, setUserVouchers] = useState<UserVoucherEntry[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    getUserVouchers(token).then(data => setUserVouchers(data.vouchers || []));
+  }, [token]);
+
+  const isSaved = (voucherId: string) =>
+    userVouchers.some(uv => uv.voucher.id === voucherId);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,6 +82,38 @@ export default function ShopPage() {
     if (seller_id) fetchData();
   }, [seller_id]);
 
+  useEffect(() => {
+    const loadVouchers = async () => {
+      if (!seller_id) {
+        setShopVouchers([]);
+        return;
+      }
+      try {
+        const data = await fetchPublicVouchers({ seller_id });
+        setShopVouchers(data.vouchers || []);
+      } catch (error) {
+        console.error("Không thể tải voucher của shop:", error);
+      }
+    };
+    loadVouchers();
+  }, [seller_id]);
+
+  const handleSaveVoucher = async (voucherId: string) => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    try {
+      setSavingVoucherId(voucherId);
+      await saveVoucher(voucherId, token);
+      alert("Đã lưu voucher vào kho của bạn");
+    } catch (error: any) {
+      alert(error?.message || "Không thể lưu voucher");
+    } finally {
+      setSavingVoucherId(null);
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     if (!selectedCategory) return products;
     return products.filter((p) => {
@@ -96,20 +144,44 @@ export default function ShopPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
           <div className="md:col-span-3 bg-white rounded-lg shadow-sm border p-4">
             <h3 className="text-lg font-semibold mb-3">🎟️ Voucher của shop</h3>
-            <div className="flex flex-wrap gap-3">
-              {shopInfo?.vouchers?.length ? (
-                shopInfo.vouchers.map((v) => (
-                  <div
-                    key={v.id}
-                    className="border border-dashed border-orange-400 px-4 py-2 rounded-md text-sm text-gray-700 flex items-center gap-2 bg-orange-50"
-                  >
-                    <span className="font-semibold text-orange-600">{v.discount}%</span>
-                    <span>cho đơn từ {v.min_order.toLocaleString()}₫</span>
-                  </div>
-                ))
+            <div className="flex flex-col gap-3">
+              {shopVouchers.length ? (
+                shopVouchers.map((v) => {
+                  const discountLabel =
+                    v.discount_type === "PERCENT"
+                      ? `${v.discount_value}%`
+                      : `${Number(v.discount_value).toLocaleString("vi-VN")}₫`;
+                  const minOrder = Number(v.min_order_amount ?? 0);
+
+                  // Kiểm tra đã lưu
+                  
+                  return (
+                    <div
+                      key={v.id}
+                      className="border border-dashed border-orange-400 px-4 py-2 rounded-md text-sm text-gray-700 flex items-center justify-between bg-orange-50 flex-wrap gap-3"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-orange-600">{discountLabel}</span>
+                        {minOrder > 0 && <span>Đơn tối thiểu {minOrder.toLocaleString("vi-VN")}₫</span>}
+                        <span className="text-xs text-gray-500">
+                          HSD: {new Date(v.end_at).toLocaleDateString("vi-VN")}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleSaveVoucher(v.id)}
+                        disabled={isSaved(v.id) || savingVoucherId === v.id}
+                        className="px-4 py-1 rounded-full border border-orange-500 text-orange-600 text-xs font-semibold hover:bg-orange-500 hover:text-white transition disabled:opacity-50"
+                      >
+                        {isSaved(v.id) ? "Đã lưu" : savingVoucherId === v.id ? "Đang lưu..." : "Lưu voucher"}
+                      </button>
+
+                    </div>
+                  );
+                })
               ) : (
                 <p className="text-gray-500 text-sm">Chưa có voucher nào</p>
               )}
+
             </div>
           </div>
 

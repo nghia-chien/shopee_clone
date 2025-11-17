@@ -1,5 +1,5 @@
-import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
-import { User, Bell, CreditCard, MapPin, Key, Settings, Package, Gift, Coins, LogOut, MessageSquare } from "lucide-react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { User, Bell, Package, Gift, Coins, LogOut, MessageSquare } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { useQuery } from "@tanstack/react-query";
 import { getAccount } from "../../api/userapi/account";
