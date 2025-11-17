@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { api } from "../../api/client";
+import { api } from "../../api/userapi/client";
 import FeaturedShops from "../../components/shops/FeaturedShops";
 import { ProductListSection } from "../../components/product/ProductListSection";
 import { Header } from "../../components/layout/Header";

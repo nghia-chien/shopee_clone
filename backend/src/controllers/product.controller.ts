@@ -67,8 +67,6 @@ export const getProductController = async (req: Request, res: Response) => {
           select: {
             id: true,
             name: true,
-            email: true,
-            phone_number: true,
           },
         },
       },

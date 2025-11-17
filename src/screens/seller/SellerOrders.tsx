@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSellerAuthStore } from "../../store/SellerAuth";
-import { getSellerSoldOrders, getSellerOrderDetails, updateSellerOrderStatus } from "../../api/sellerOrders";
+import { getSellerSoldOrders, getSellerOrderDetails, updateSellerOrderStatus } from "../../api/sellerapi/sellerOrders";
 import { Package, Eye } from "lucide-react";
 
 interface OrderItem {
@@ -74,7 +74,7 @@ export const SellerOrders = () => {
     }
   };
 
-  const handleUpdateStatus = async (seller_order_id: string, status: 'accepted' | 'cancelled') => {
+  const handleUpdateStatus = async (seller_order_id: string, status: 'accepted' | 'cancelled' | 'completed') => {
     try {
       setUpdatingId(seller_order_id);
       await updateSellerOrderStatus(token!, seller_order_id, status);
@@ -187,25 +187,49 @@ export const SellerOrders = () => {
                   <Eye className="w-4 h-4" />
                   Xem Chi Tiết
                 </button>
+{/* thêm trạng thai sau khi đã xác nhận thì hoàn thành /
+     xem được chi tiết đơn hàng */}
+                {/* Action Buttons */}
+<div className="grid grid-cols-2 gap-2 mt-3">
+  {order.seller_status === 'pending' && (
+    <>
+      <button
+        onClick={() => handleUpdateStatus(order.id, 'accepted')}
+        disabled={updatingId === order.id}
+        className="px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium disabled:opacity-50"
+      >
+        {updatingId === order.id ? 'Đang xác nhận...' : 'Xác nhận'}
+      </button>
+      <button
+        onClick={() => handleUpdateStatus(order.id, 'cancelled')}
+        disabled={updatingId === order.id}
+        className="px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium disabled:opacity-50"
+      >
+        {updatingId === order.id ? 'Đang hủy...' : 'Hủy đơn'}
+      </button>
+    </>
+  )}
 
-                {order.seller_status === 'pending' && (
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    <button
-                      onClick={() => handleUpdateStatus(order.id, 'accepted')}
-                      disabled={updatingId === order.id}
-                      className="px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium disabled:opacity-50"
-                    >
-                      {updatingId === order.id ? 'Đang xác nhận...' : 'Xác nhận'}
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(order.id, 'cancelled')}
-                      disabled={updatingId === order.id}
-                      className="px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium disabled:opacity-50"
-                    >
-                      {updatingId === order.id ? 'Đang hủy...' : 'Hủy đơn'}
-                    </button>
-                  </div>
-                )}
+  {order.seller_status === 'accepted' && (
+    <>
+      <button
+        onClick={() => handleUpdateStatus(order.id, 'completed')}
+        disabled={updatingId === order.id}
+        className="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium disabled:opacity-50"
+      >
+        {updatingId === order.id ? 'Đang hoàn thành...' : 'Hoàn thành đơn'}
+      </button>
+      <button
+        onClick={() => handleUpdateStatus(order.id, 'cancelled')}
+        disabled={updatingId === order.id}
+        className="px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium disabled:opacity-50"
+      >
+        Hủy đơn
+      </button>
+    </>
+  )}
+</div>
+
               </div>
             </div>
           ))}

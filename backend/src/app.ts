@@ -22,6 +22,8 @@ app.use(helmet());
 
 // ✅ Cho phép đọc JSON body
 app.use(express.json());
+// ✅ Cho phép đọc URL-encoded và FormData
+app.use(express.urlencoded({ extended: true }));
 
 // ✅ Ghi log HTTP requests
 app.use(morgan('dev'));

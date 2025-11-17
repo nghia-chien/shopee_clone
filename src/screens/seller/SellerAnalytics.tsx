@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSellerAuthStore } from "../../store/SellerAuth";
-import { getSellerStats, getSellerAnalytics } from "../../api/sellerOrders";
+import { getSellerStats, getSellerAnalytics } from "../../api/sellerapi/sellerOrders";
 import { TrendingUp, DollarSign, ShoppingBag, Package, BarChart3, Calendar } from "lucide-react";
 
 interface Stats {
