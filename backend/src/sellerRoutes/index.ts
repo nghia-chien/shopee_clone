@@ -35,3 +35,4 @@ router.use('/analytics', sellerAnalyticsRoutes);
 router.use('/settings', sellerSettingsRoutes);
 
 export default router;
+
