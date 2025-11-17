@@ -16,6 +16,7 @@ import ScrollToTop from "../components/home/ScrollToTop";
 import { AdminRoutes } from "./AdminRoutes";
 import  {UserLayout}  from "../components/layout/UserLayout";
 import {AuthGuard} from  "../components/auth/AuthGuard";
+import VoucherPage from "../screens/client/VoucherPage";
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -61,6 +62,7 @@ export function AppRoutes() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="profile" element={<AccountPage />} />
             <Route path="chat" element={<ChatPage />} />
+            <Route path="vouchers" element={<VoucherPage />} />
             {/* {<Route path="notifications" element={<NotificationsPage />} /> */}
           </Route>
       </Routes>

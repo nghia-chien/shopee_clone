@@ -16,14 +16,16 @@ export interface Seller {
   };
 }
 
-export interface PaginatedResponse<T> {
-  [key: string]: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface SellerListResponse {
+  sellers: Seller[];
+  pagination: PaginationMeta;
 }
 
 // Get all sellers
@@ -43,7 +45,7 @@ export async function getAdminSellers(token: string, page = 1, limit = 20, searc
   });
   
   if (!res.ok) throw new Error('Failed to fetch sellers');
-  return res.json() as Promise<PaginatedResponse<Seller>>;
+  return res.json() as Promise<SellerListResponse>;
 }
 
 // Get seller by ID

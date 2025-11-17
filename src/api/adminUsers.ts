@@ -9,14 +9,16 @@ export interface User {
   updated_at: string;
 }
 
-export interface PaginatedResponse<T> {
-  [key: string]: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface UserListResponse {
+  users: User[];
+  pagination: PaginationMeta;
 }
 
 // Get all users
@@ -35,7 +37,7 @@ export async function getAdminUsers(token: string, page = 1, limit = 20, search 
   });
   
   if (!res.ok) throw new Error('Failed to fetch users');
-  return res.json() as Promise<PaginatedResponse<User>>;
+  return res.json() as Promise<UserListResponse>;
 }
 
 // Get user by ID

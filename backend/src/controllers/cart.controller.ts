@@ -13,7 +13,7 @@ export async function listcart_itemsController(req: Request & { user?: { id: str
 		return res.json({ items });
 	} catch (error) {
 		console.error('Error fetching cart items:', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return res.status(500).json({ message: 'listcart_itemsController Internal server error' });
 	}
 }
 
@@ -58,7 +58,7 @@ export async function addToCartController(req: Request & { user?: { id: string }
 		return res.json(cart_item);
 	} catch (error) {
 		console.error('Error adding to cart:', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return res.status(500).json({ message: 'addToCartController Internal server error' });
 	}
 }
 
@@ -93,7 +93,7 @@ export async function updatecart_itemController(req: Request & { user?: { id: st
 		return res.json(updated);
 	} catch (error) {
 		console.error('Error updating cart item:', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return res.status(500).json({ message: 'updatecart_itemController Internal server error' });
 	}
 }
 
@@ -121,7 +121,7 @@ export async function removecart_itemController(req: Request & { user?: { id: st
 		return res.json({ message: 'Item removed from cart' });
 	} catch (error) {
 		console.error('Error removing cart item:', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return res.status(500).json({ message: 'removecart_itemController Internal server error' });
 	}
 }
 
@@ -143,6 +143,6 @@ export const getCartCountController = async (
     return res.json({ count });
   } catch (err) {
     console.error("Failed to get cart count:", err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "getCartCountController Internal server error" });
   }
 };

@@ -37,7 +37,7 @@ export async function getThreadsByUserController(req: AuthRequest, res: Response
     return res.json({ threads });
   } catch (error) {
     console.error('❌ getThreadsByUserController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getThreadsByUserController Internal server error' });
   }
 }
 
@@ -69,7 +69,7 @@ export async function getThreadsBySellerController(req: SellerRequest, res: Resp
     return res.json({ threads });
   } catch (error) {
     console.error('❌ getThreadsBySellerController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getThreadsBySellerController Internal server error' });
   }
 }
 
@@ -100,7 +100,7 @@ export async function createThreadController(req: AuthRequest, res: Response) {
     return res.json({ thread });
   } catch (error) {
     console.error('❌ createThreadController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'createThreadController Internal server error' });
   }
 }
 
@@ -126,7 +126,7 @@ export async function sendUserMessageController(req: AuthRequest, res: Response)
     return res.json({ message });
   } catch (error: any) {
     console.error('❌ sendUserMessageController error:', error);
-    return res.status(500).json({ message: error.message || 'Internal server error' });
+    return res.status(500).json({ message: error.message || 'sendUserMessageController Internal server error' });
   }
 }
 
@@ -152,7 +152,7 @@ export async function sendSellerMessageController(req: SellerRequest, res: Respo
     return res.json({ message });
   } catch (error: any) {
     console.error('❌ sendSellerMessageController error:', error);
-    return res.status(500).json({ message: error.message || 'Internal server error' });
+    return res.status(500).json({ message: error.message || 'sendSellerMessageController Internal server error' });
   }
 }
 
@@ -225,7 +225,7 @@ export async function getMessagesController(req: AuthRequest, res: Response) {
     });
   } catch (error) {
     console.error('❌ getMessagesController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getMessagesController Internal server error' });
   }
 }
 
@@ -298,7 +298,7 @@ export async function getSellerMessagesController(req: SellerRequest, res: Respo
     });
   } catch (error) {
     console.error('❌ getSellerMessagesController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getSellerMessagesController Internal server error' });
   }
 }
 
@@ -337,6 +337,6 @@ export async function sendSystemMessageController(req: SellerRequest, res: Respo
     return res.json({ message });
   } catch (error: any) {
     console.error('❌ sendSystemMessageController error:', error);
-    return res.status(500).json({ message: error.message || 'Internal server error' });
+    return res.status(500).json({ message: error.message || 'sendSystemMessageController Internal server error' });
   }
 }

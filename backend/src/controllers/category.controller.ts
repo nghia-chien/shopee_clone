@@ -17,7 +17,7 @@ export async function getCategoryTree(req: Request, res: Response) {
     return res.json({ categories: roots });
   } catch (e) {
     console.error('getCategoryTree error', e);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getCategoryTree Internal server error' });
   }
 }
 
@@ -38,7 +38,7 @@ export async function getCategoryAttributes(req: Request, res: Response) {
     return res.json({ attributes: schema });
   } catch (e) {
     console.error('getCategoryAttributes error', e);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getCategoryAttributes Internal server error' });
   }
 }
 export const getProductsByCategory = async (req: Request, res: Response) => {
@@ -99,7 +99,7 @@ export const getProductsByCategorySlug = async (req: Request, res: Response) => 
     res.json(products);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "getProductsByCategorySlug Internal server error" });
   }
 };
 

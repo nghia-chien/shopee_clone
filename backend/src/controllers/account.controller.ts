@@ -32,7 +32,7 @@ export async function getAccountController(req: AuthRequest, res: Response) {
     return res.json(user);
   } catch (error) {
     console.error('❌ getAccountController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getAccountController Internal server error' });
   }
 }
 
@@ -88,7 +88,7 @@ export async function updateAccountController(req: AuthRequest, res: Response) {
     if (error.code === 'P2002') {
       return res.status(400).json({ message: 'Phone number already exists' });
     }
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'updateAccountController Internal server error' });
   }
 }
 
@@ -150,7 +150,7 @@ export async function uploadAvatarController(req: AuthRequest & MulterRequest, r
     return res.json(updatedUser);
   } catch (error: any) {
     console.error('❌ uploadAvatarController error:', error);
-    return res.status(500).json({ message: error.message || 'Internal server error' });
+    return res.status(500).json({ message: error.message || 'uploadAvatarController Internal server error' });
   }
 }
 
@@ -199,7 +199,7 @@ export async function changePasswordController(req: AuthRequest, res: Response) 
     return res.json({ message: 'Password updated successfully' });
   } catch (error) {
     console.error('❌ changePasswordController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'changePasswordController Internal server error' });
   }
 }
 
@@ -219,7 +219,7 @@ export async function getAddressesController(req: AuthRequest, res: Response) {
     return res.json({ addresses });
   } catch (error) {
     console.error('❌ getAddressesController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'getAddressesController Internal server error' });
   }
 }
 
@@ -269,7 +269,7 @@ export async function createAddressController(req: AuthRequest, res: Response) {
     return res.status(201).json({ address });
   } catch (error) {
     console.error('❌ createAddressController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'createAddressController Internal server error' });
   }
 }
 
@@ -325,7 +325,7 @@ export async function updateAddressController(req: AuthRequest, res: Response) {
     return res.json({ address });
   } catch (error) {
     console.error('❌ updateAddressController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'updateAddressController Internal server error' });
   }
 }
 
@@ -364,7 +364,7 @@ export async function deleteAddressController(req: AuthRequest, res: Response) {
     return res.json({ message: 'Address deleted successfully' });
   } catch (error) {
     console.error('❌ deleteAddressController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'deleteAddressController Internal server error' });
   }
 }
 
@@ -402,7 +402,7 @@ export async function setDefaultAddressController(req: AuthRequest, res: Respons
     return res.json({ address });
   } catch (error) {
     console.error('❌ setDefaultAddressController error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'setDefaultAddressController Internal server error' });
   }
 }
 

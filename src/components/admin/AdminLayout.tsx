@@ -12,6 +12,7 @@ import {
   X,
   BarChart3,
   Store,
+  Gift,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -36,6 +37,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { icon: ShoppingCart, label: "Đơn Hàng", path: "/admin/orders" },
     { icon: BarChart3, label: "Thống Kê", path: "/admin/analytics" },
     { icon: Settings, label: "Cài Đặt", path: "/admin/settings" },
+    { icon: Gift, label: "Voucher", path: "/admin/vouchers" },
   ];
 
   return (

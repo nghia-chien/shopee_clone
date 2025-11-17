@@ -6,6 +6,7 @@ import sellerReviewRoutes from './modulesSeller/sellerReview.routes';
 import sellerOrderRoutes from './modulesSeller/sellerOrder.routes';
 import sellerAnalyticsRoutes from './modulesSeller/sellerAnalytics.routes';
 import sellerSettingsRoutes from './modulesSeller/sellerSettings.routes';
+import sellerVoucherRoutes from './modulesSeller/sellerVoucher.routes';
 import { requireAuthSeller } from "../middlewares/authSeller";
 import {
   updateSellerProfileController,
@@ -33,6 +34,7 @@ router.use('/', sellerReviewRoutes);
 router.use('/analytics', sellerAnalyticsRoutes);
 // ✅ Seller Settings
 router.use('/settings', sellerSettingsRoutes);
+router.use('/voucher', requireAuthSeller, sellerVoucherRoutes);
 
 export default router;
 
