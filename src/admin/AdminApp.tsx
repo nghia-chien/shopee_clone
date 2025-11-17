@@ -1,22 +1,34 @@
-import { Refine } from '@refinedev/core';
-import { BrowserRouter } from 'react-router-dom';
-import routerBindings from '@refinedev/react-router';
-import dataProvider from '@refinedev/simple-rest';
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AdminLogin } from "../components/admin/AdminLogin";
+import { AdminLayout } from "../components/admin/AdminLayout";
+import { AdminGuard } from "../components/admin/AdminGuard";
+import { AdminDashboard } from "../screens/admin/AdminDashboard";
+import { AdminUsers } from "../screens/admin/AdminUsers";
+import { AdminSellers } from "../screens/admin/AdminSellers";
 
 export function AdminApp() {
-	return (
-		<BrowserRouter>
-			<Refine
-				dataProvider={dataProvider(API_URL)}
-				routerProvider={routerBindings}
-				resources={[
-					{ name: 'products', list: '/', show: '/products/:id' },
-					{ name: 'orders', list: '/orders' },
-					{ name: 'users', list: '/users' },
-				]}
-			/>
-		</BrowserRouter>
-	);
+  return (
+    <Routes>
+      <Route path="/login" element={<AdminLogin />} />
+      <Route
+        path="/*"
+        element={
+          <AdminGuard>
+            <AdminLayout>
+              <Routes>
+                <Route path="/dashboard" element={<AdminDashboard />} />
+                <Route path="/products" element={<div className="p-6"><h1 className="text-2xl font-bold">Quản Lý Sản Phẩm</h1><p className="text-gray-600 mt-2">Tính năng đang được phát triển...</p></div>} />
+                <Route path="/sellers" element={<AdminSellers />} />
+                <Route path="/users" element={<AdminUsers />} />
+                <Route path="/orders" element={<div className="p-6"><h1 className="text-2xl font-bold">Quản Lý Đơn Hàng</h1><p className="text-gray-600 mt-2">Tính năng đang được phát triển...</p></div>} />
+                <Route path="/analytics" element={<div className="p-6"><h1 className="text-2xl font-bold">Thống Kê</h1><p className="text-gray-600 mt-2">Tính năng đang được phát triển...</p></div>} />
+                <Route path="/settings" element={<div className="p-6"><h1 className="text-2xl font-bold">Cài Đặt</h1><p className="text-gray-600 mt-2">Tính năng đang được phát triển...</p></div>} />
+                <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+              </Routes>
+            </AdminLayout>
+          </AdminGuard>
+        }
+      />
+    </Routes>
+  );
 }
