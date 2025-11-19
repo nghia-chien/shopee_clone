@@ -8,7 +8,7 @@ import categoryRoutes from './modules/category.routes';
 import shopRoutes from './modules/shop.routes';
 import adminRouter from './modules/admin.routes';
 import voucherRouter from './modules/voucher.routes';
-
+import paypalRouter from './modules/paypal.routes';
 import chatRouter from './modules/chat.routes';
 import reviewRouter from './modules/review.routes';
 import accountRouter from './modules/account.routes';
@@ -27,6 +27,7 @@ router.use('/categories', categoryRoutes);
 router.use('/shops', shopRoutes);
 router.use('/admin', adminRouter);
 router.use('/vouchers', voucherRouter);
+router.use('/paypal', paypalRouter);
 router.use('/chat', chatRouter);
 router.use('/reviews', reviewRouter);
 router.use('/account', accountRouter);
@@ -34,7 +35,21 @@ router.use('/account', accountRouter);
 router.get('/', (_req, res) => {
   res.json({
     message: 'API is running 🚀',
-    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller', '/categories','/shops', '/chat', '/reviews','/account', '/admin', '/vouchers'],
+    endpoints: [
+      '/auth',
+      '/products',
+      '/cart',
+      '/orders',
+      '/seller',
+      '/categories',
+      '/shops',
+      '/chat',
+      '/reviews',
+      '/account',
+      '/admin',
+      '/vouchers',
+      '/paypal',
+    ],
   });
 });
 

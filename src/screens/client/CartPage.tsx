@@ -6,6 +6,7 @@ import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { getUserVouchers } from '../../api/vouchers';
 import type { UserVoucherEntry, Voucher } from '../../api/vouchers';
+import { ProductListSection } from '../../components/product/ProductListSection';
 
 interface CartProduct {
   seller_id: string | null | undefined;
@@ -14,6 +15,15 @@ interface CartProduct {
   images?: string[];
   price: number;
   stock: number;
+}
+
+interface SuggestedProduct {
+  id: string;
+  title?: string;
+  price?: number;
+  images?: string[];
+  rating?: number;
+  sold?: number;
 }
 
 interface CartItem {
@@ -33,6 +43,8 @@ export function CartPage() {
   const [userVouchers, setUserVouchers] = useState<UserVoucherEntry[]>([]);
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [selectedVoucherCode, setSelectedVoucherCode] = useState<string>("");
+  const [suggestedProducts, setSuggestedProducts] = useState<SuggestedProduct[]>([]);
+  const [suggestedLoading, setSuggestedLoading] = useState(false);
 
   // Load giỏ hàng
   const loadCart = async () => {
@@ -132,6 +144,29 @@ export function CartPage() {
     };
     fetchVouchers();
   }, [token]);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        setSuggestedLoading(true);
+        const data = await api<{ items: any[] }>('/products?page=1&pageSize=12&sort=newest');
+        const normalized = data.items?.map((item) => ({
+          id: item.id,
+          title: item.title,
+          images: item.images,
+          price: Number(item.price ?? 0),
+          rating: item.rating,
+          sold: item.sold,
+        })) ?? [];
+        setSuggestedProducts(normalized);
+      } catch (error) {
+        console.error('Không thể tải gợi ý sản phẩm:', error);
+      } finally {
+        setSuggestedLoading(false);
+      }
+    };
+    fetchSuggestions();
+  }, []);
 
   // ✅ Tính tổng tiền dựa trên cart_item.id
   const total = useMemo(
@@ -300,25 +335,17 @@ export function CartPage() {
   }, [selectedItems, items]);
 
   // ✅ Gửi cart_item.id lên server khi checkout
-  const checkout = async () => {
+  const proceedToCheckout = () => {
     if (selectedItems.size === 0) {
       alert('Vui lòng chọn sản phẩm để thanh toán');
       return;
     }
-    try {
-      await api('/orders', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          cart_item_ids: Array.from(selectedItems),
-          voucher_code: selectedVoucherCode || undefined,
-        }),
-      });
-      alert('Đặt hàng thành công');
-      navigate('/orders');
-    } catch (err: any) {
-      alert(err?.message || 'Thanh toán thất bại');
-    }
+    navigate('/checkout', {
+      state: {
+        cartItemIds: Array.from(selectedItems),
+        voucherCode: selectedVoucherCode || null,
+      },
+    });
   };
 
   if (loading) {
@@ -326,10 +353,46 @@ export function CartPage() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">{/* Header */}
-        <Header />
-      <div className="max-w-7xl mx-auto p-4">
-        
+    <div className="bg-gray-50 min-h-screen">
+      <Header />
+      <div className="max-w-7xl mx-auto p-4 space-y-4">
+        <div className="bg-white rounded-sm shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-700">
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 text-xs font-semibold uppercase border border-orange-200 text-orange-500 rounded-full">
+              Ưu đãi vận chuyển
+            </span>
+            <p>Giảm 500.000đ phí vận chuyển cho đơn tối thiểu 0đ</p>
+          </div>
+          <button
+            onClick={() => navigate('/flash-sale')}
+            className="text-sm text-orange-500 hover:text-orange-600"
+          >
+            Tìm hiểu thêm
+          </button>
+        </div>
+
+        <div className="bg-white rounded-sm shadow-sm p-4 flex flex-wrap items-center gap-4 text-sm text-gray-700">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-900">Shopee Voucher</span>
+            <span className="text-xs text-gray-500">Chọn hoặc nhập mã</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedVoucherCode ? (
+              <span className="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-medium">
+                {selectedVoucherCode}
+              </span>
+            ) : (
+              <span className="text-xs text-gray-500">Chưa chọn voucher</span>
+            )}
+            <button
+              onClick={() => navigate('/user/vouchers')}
+              className="text-sm text-blue-500 hover:text-blue-600"
+            >
+              Chọn mã
+            </button>
+          </div>
+        </div>
+
         <div className="bg-white rounded-sm shadow-sm mb-3">
           <div className="px-5 py-4 grid grid-cols-12 gap-4 text-sm text-gray-600 font-medium">
             <div className="col-span-5 flex items-center">
@@ -574,8 +637,9 @@ export function CartPage() {
                     </div>
                   </div>
                   <button
-                    onClick={checkout}
-                    className="px-16 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-sm transition"
+                    onClick={proceedToCheckout}
+                    className="px-16 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-sm transition disabled:opacity-50"
+                    disabled={selectedItems.size === 0}
                   >
                     Mua Hàng
                   </button>
@@ -584,7 +648,17 @@ export function CartPage() {
             </div>
           </>
         )}
-      </div><Footer />
+        <div>
+          {suggestedLoading ? (
+            <div className="bg-white rounded-sm shadow-sm p-6 text-center text-sm text-gray-500">
+              Đang tải gợi ý sản phẩm...
+            </div>
+          ) : (
+            <ProductListSection title="Có thể bạn cũng thích" products={suggestedProducts} />
+          )}
+        </div>
+      </div>
+      <Footer />
     </div>
   );
 }
