@@ -8,6 +8,7 @@ import { AdminDashboard } from "../screens/admin/AdminDashboard";
 import { AdminUsers } from "../screens/admin/AdminUsers";
 import { AdminSellers } from "../screens/admin/AdminSellers";
 import { AdminVoucher } from "../screens/admin/AdminVoucher";
+import { AdminComplaints } from "../screens/admin/AdminComplaints";
 
 export function AdminRoutes() {
   return (
@@ -27,6 +28,7 @@ export function AdminRoutes() {
                 <Route path="/analytics" element={<div className="p-6"><h1 className="text-2xl font-bold">Thống Kê</h1><p className="text-gray-600 mt-2">Tính năng đang được phát triển...</p></div>} />
                 <Route path="/settings" element={<div className="p-6"><h1 className="text-2xl font-bold">Cài Đặt</h1><p className="text-gray-600 mt-2">Tính năng đang được phát triển...</p></div>} />
                 <Route path="/vouchers" element={<AdminVoucher />} />
+                <Route path="/complaints" element={<AdminComplaints />} />
                 <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
               </Routes>
             </AdminLayout>

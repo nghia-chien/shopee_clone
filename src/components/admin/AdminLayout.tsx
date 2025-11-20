@@ -13,6 +13,7 @@ import {
   BarChart3,
   Store,
   Gift,
+  AlertTriangle,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -38,6 +39,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { icon: BarChart3, label: "Thống Kê", path: "/admin/analytics" },
     { icon: Settings, label: "Cài Đặt", path: "/admin/settings" },
     { icon: Gift, label: "Voucher", path: "/admin/vouchers" },
+    { icon: AlertTriangle, label: "Khiếu nại", path: "/admin/complaints" },
   ];
 
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { createAdminVoucher, listAdminVouchers } from "../../api/adminVouchers";
-import type { AdminVoucherPayload } from "../../api/adminVouchers";
+import { createAdminVoucher, listAdminVouchers } from "../../api/adminapi/adminVouchers";
+import type { AdminVoucherPayload } from "../../api/adminapi/adminVouchers";
 
 export function AdminVoucher() {
   const [vouchers, setVouchers] = useState<any[]>([]);

@@ -6,7 +6,7 @@ import {
   updateAdminSeller,
   deleteAdminSeller,
   type Seller,
-} from "../../api/adminSellers";
+} from "../../api/adminapi/adminSellers";
 import { Store, Plus, Edit2, Trash2, Search, X } from "lucide-react";
 
 export function AdminSellers() {

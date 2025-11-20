@@ -4,6 +4,8 @@ import { getUserOrders } from '../../api/userapi/orders';
 import { Package, MessageCircle, Store, Truck } from 'lucide-react';
 import { ReviewForm } from '../../components/review/ReviewForm';
 import { useNavigate } from "react-router-dom";
+import { ComplaintModal } from '../../components/complaints/ComplaintModal';
+import type { ComplaintDraft } from '../../types/complaints';
 
 interface OrderItem {
   id: string;
@@ -18,7 +20,7 @@ interface OrderItem {
 interface SellerOrder {
   id: string;
   order_id: string;
-  seller: { id: string; name: string };
+  seller: { id: string; name: string ; shop_mall: string };
   total: number;
   status: 'pending' | 'accepted' | 'cancelled' | 'completed';
   created_at?: string;
@@ -34,6 +36,7 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [activeReviewOrder, setActiveReviewOrder] = useState<string | null>(null);
   const [activeReviewProduct, setActiveReviewProduct] = useState<string | null>(null);
+  const [complaintDraft, setComplaintDraft] = useState<ComplaintDraft | null>(null);
   const navigate = useNavigate();
 
   // Handler cho nút "Mua Lại"
@@ -99,6 +102,30 @@ export default function OrdersPage() {
     return statusInfo.tab === activeTab;
   });
 
+  const openComplaint = (order: SellerOrder, item?: OrderItem) => {
+    setComplaintDraft({
+      type: 'PRODUCT_SHOP',
+      seller_id: order.seller.id,
+      order_id: order.order_id,
+      product_id: item?.product_id,
+      meta: {
+        issueCode: 'WRONG_OR_MISSING',
+        reason: 'Nhận nhầm / thiếu hàng',
+        channel: 'ORDERS_PAGE',
+        context: {
+          orderId: order.order_id,
+          sellerId: order.seller.id,
+          productId: item?.product_id,
+          productTitle: item?.title,
+        },
+        autoFill: {
+          sourceOrder: order.id,
+          total: order.total,
+        },
+      },
+    });
+  };
+
   if (!token)
     return <div className="p-6 text-center text-gray-500">Vui lòng đăng nhập để xem đơn hàng.</div>;
 
@@ -106,6 +133,7 @@ export default function OrdersPage() {
     return <div className="p-6 text-center">Đang tải đơn hàng...</div>;
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       {/* Search Bar */}
       <div className="bg-white border-b">
@@ -154,9 +182,18 @@ export default function OrdersPage() {
                 {/* Header */}
                 <div className="px-4 py-3 border-b flex items-center justify-between">
                   <div className="flex items-center gap-2">
+                  {order.seller.shop_mall === 'mall' && (
                     <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded">
-                      {order.status === 'completed' ? 'Yêu thích' : order.status === 'pending' ? 'Mall' : 'Yêu thích'}
+                      Mall
                     </span>
+                  )}
+
+                  {order.seller.shop_mall === 'like' && (
+                    <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded">
+                      Yêu thích
+                    </span>
+                  )}
+
                     <Store className="w-4 h-4" />
                     <span className="font-medium text-sm">{order.seller.name}</span>
                     <button className="ml-2">
@@ -286,8 +323,11 @@ export default function OrdersPage() {
                           </div>
                         ))}
 
-                        <button className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50">
-                          Liên Hệ Người Bán
+                        <button
+                          className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50"
+                          onClick={() => openComplaint(order, order.items[0])}
+                        >
+                          Báo cáo
                         </button>
                         <button 
                           onClick={() => handleReorder(order.items)}
@@ -301,8 +341,11 @@ export default function OrdersPage() {
 
                     {order.status === 'pending' && (
                       <>
-                        <button className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50">
-                          Liên Hệ Người Bán
+                        <button
+                          className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50"
+                          onClick={() => openComplaint(order, order.items[0])}
+                        >
+                          Báo cáo
                         </button>
                         <button 
                           onClick={() => handleReorder(order.items)}
@@ -321,6 +364,12 @@ export default function OrdersPage() {
                         </button>
                         <button className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50">
                           Liên Hệ Người Bán
+                        </button>
+                        <button
+                          className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50"
+                          onClick={() => openComplaint(order, order.items[0])}
+                        >
+                          Báo cáo
                         </button>
                         <button 
                           onClick={() => handleReorder(order.items)}
@@ -358,5 +407,13 @@ export default function OrdersPage() {
         )}
       </div>
     </div>
+    <ComplaintModal
+      actor="USER"
+      open={!!complaintDraft}
+      defaultValues={complaintDraft ?? undefined}
+      onClose={() => setComplaintDraft(null)}
+      onSuccess={() => setComplaintDraft(null)}
+    />
+    </>
   );
 }

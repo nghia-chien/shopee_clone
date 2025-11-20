@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { User, Bell, Package, Gift, Coins, LogOut, MessageSquare } from "lucide-react";
+import { User, Bell, Package, Gift, Coins, LogOut, MessageSquare, AlertCircle } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { useQuery } from "@tanstack/react-query";
 import { getAccount } from "../../api/userapi/account";
@@ -82,9 +82,13 @@ export function UserLayout() {
                 <Coins className="w-4 h-4" />
                 Shopee Xu
               </NavLink>
-              <NavLink to="/user/chat" className={navItemClass}>
+              {/* <NavLink to="/user/chat" className={navItemClass}>
                 <MessageSquare className="w-4 h-4" />
                 Tin nhắn
+              </NavLink> */}
+              <NavLink to="/user/complaints" className={navItemClass}>
+                <AlertCircle className="w-4 h-4" />
+                Khiếu nại
               </NavLink>
             </div>
           </aside>

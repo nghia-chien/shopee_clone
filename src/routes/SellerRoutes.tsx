@@ -12,6 +12,7 @@ import { SellerLayout } from "../components/seller/SellerLayout";
 import { SellerAuthGuard } from "../components/seller/AuthGuard";
 import { SellerReview } from "../screens/seller/SellerReview";
 import { SellerVoucher } from "../screens/seller/SellerVoucher";
+import SellerComplaintsPage from "../screens/seller/SellerComplaints";
 export function SellerRoutes() {
   return (
     <Routes>
@@ -38,6 +39,7 @@ export function SellerRoutes() {
         <Route path="chats" element={<SellerChatPage />} />
         <Route path="reviews" element={<SellerReview />} />
         <Route path="voucher" element={<SellerVoucher />} />
+        <Route path="complaints" element={<SellerComplaintsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="login" replace />} />
     </Routes>

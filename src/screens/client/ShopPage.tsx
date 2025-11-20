@@ -5,10 +5,10 @@ import FeaturedShops from "../../components/shops/FeaturedShops";
 import { ProductListSection } from "../../components/product/ProductListSection";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
-import { fetchPublicVouchers, saveVoucher,getUserVouchers } from "../../api/vouchers";
-import type { Voucher } from "../../api/vouchers";
+import { fetchPublicVouchers, saveVoucher,getUserVouchers } from "../../api/userapi/vouchers";
+import type { Voucher } from "../../api/userapi/vouchers";
 import { useAuthStore } from "../../store/auth";
-import type { UserVoucherEntry } from "../../api/vouchers";
+import type { UserVoucherEntry } from "../../api/userapi/vouchers";
 
 interface Product {
   id: string;
