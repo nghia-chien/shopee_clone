@@ -4,8 +4,8 @@ import { api } from '../../api/userapi/client';
 import { useNavigate } from 'react-router-dom';
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
-import { getUserVouchers } from '../../api/vouchers';
-import type { UserVoucherEntry, Voucher } from '../../api/vouchers';
+import { getUserVouchers } from '../../api/userapi/vouchers';
+import type { UserVoucherEntry, Voucher } from '../../api/userapi/vouchers';
 
 interface CartProduct {
   seller_id: string | null | undefined;

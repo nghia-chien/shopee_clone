@@ -5,9 +5,13 @@
 ```
 - **app.ts** [File]
 - **controllers\account.controller.ts** [Controller]
+- **controllers\admin\auth.controller.ts** [Controller]
+- **controllers\admin\seller.controller.ts** [Controller]
+- **controllers\admin\user.controller.ts** [Controller]
+- **controllers\admin\voucher.controller.ts** [Controller]
 - **controllers\auth.controller.ts** [Controller]
 - **controllers\cart.controller.ts** [Controller] → Exports: getCartCountController
-- **controllers\category.controller.ts** [Controller] → Exports: getProductsByCategory, getCategories
+- **controllers\category.controller.ts** [Controller] → Exports: getProductsByCategory, getProductsByCategorySlug, getCategories
 - **controllers\chat.controller.ts** [Controller]
 - **controllers\complaint.controller.ts** [Controller]
 - **controllers\order.controller.ts** [Controller]
@@ -22,22 +26,33 @@
 - **controllers\seller\tempCodeRunnerFile.ts** [Controller]
 - **controllers\seller\updateOrderStatus.controller.ts** [Controller]
 - **controllers\seller\upload.controller.ts** [Controller] → Exports: uploadSellerImage
-- **controllers\shop.controller.ts** [Controller] → Exports: getShopSummaries, getProductsBySeller, getShopInfo
+- **controllers\seller\voucher.controller.ts** [Controller]
+- **controllers\shop.controller.ts** [Controller] → Exports: getShopSummaries, getProductsBySeller, getShopInfo, getMallShops
+- **controllers\voucher.controller.ts** [Controller]
 - **middlewares\auth.ts** [File]
+- **middlewares\authAdmin.ts** [File] → Exports: requireAuthAdmin
 - **middlewares\authSeller.ts** [File] → Exports: requireAuthSeller
 - **middlewares\errorHandler.ts** [File]
 - **middlewares\upload.ts** [File] → Exports: upload, authSeller
 - **prismaClient.ts** [File] → Exports: prisma
 - **routes\index.ts** [Router] → Routes: GET /
 - **routes\modules\account.routes.ts** [Router] → Routes: GET /, PUT /, POST /avatar, PUT /password, GET /addresses, POST /addresses, PUT /addresses/:id, DELETE /addresses/:id, PUT /addresses/:id/default
+- **routes\modules\admin.routes.ts** [Router] → Routes: POST /login, GET /me, GET /vouchers, POST /vouchers, GET /users, GET /users/:id, POST /users, PUT /users/:id, DELETE /users/:id, GET /sellers, GET /sellers/:id, POST /sellers, PUT /sellers/:id, DELETE /sellers/:id
 - **routes\modules\auth.routes.ts** [Router] → Routes: POST /login, POST /register, GET /me
 - **routes\modules\cart.routes.ts** [Router] → Routes: GET /, POST /items, PUT /items/:product_id, DELETE /items/:product_id, GET /count
-- **routes\modules\category.routes.ts** [Router] → Routes: GET /, GET /tree, GET /:id/attributes, GET /:categoryId/products
+- **routes\modules\category.routes.ts** [Router] → Routes: GET /, GET /tree, GET /:id/attributes, GET /:categoryId/products, GET /slug/:slug/products
 - **routes\modules\chat.routes.ts** [Router] → Routes: GET /threads/user, POST /threads, GET /threads/seller, POST /message, POST /message/seller, GET /messages/:threadId, GET /messages/:threadId/seller, POST /system-message
 - **routes\modules\order.routes.ts** [Router] → Routes: GET /orders, POST /, GET /all, GET /:id
 - **routes\modules\product.routes.ts** [Router] → Routes: GET /, GET /keywords, GET /search, GET /:id, GET /:id/reviews, POST /:id/reviews, POST /:id/feedback
 - **routes\modules\review.routes.ts** [Router] → Routes: POST /, GET /user, GET /:reviewId/media, POST /:reviewId/like, PUT /:reviewId, DELETE /:reviewId
-- **routes\modules\shop.routes.ts** [Router] → Routes: GET /summary, GET /:seller_id, GET /:seller_id/products
+- **routes\modules\shop.routes.ts** [Router] → Routes: GET /summary, GET /mall, GET /:seller_id, GET /:seller_id/products
+- **routes\modules\voucher.routes.ts** [Router] → Routes: GET /public, GET /me, POST /:voucherId/save
+- **scripts\check-admin-setup.ts** [File]
+- **scripts\create-admin-table.ts** [File]
+- **scripts\force-regenerate-prisma.ts** [File]
+- **scripts\setup-admin.ts** [File]
+- **scripts\update-admin-table.ts** [File]
+- **seeds\admin.ts** [File]
 - **seeds\categories.ts** [File]
 - **sellerRoutes\index.ts** [File]
 - **sellerRoutes\modulesSeller\sellerAnalytics.routes.ts** [Router] → Routes: GET /stats, GET /analytics, GET /export, POST /email-report
@@ -45,7 +60,8 @@
 - **sellerRoutes\modulesSeller\sellerOrder.routes.ts** [Router] → Routes: GET /sold, GET /:id, GET /:id/timeline, POST /:id/tracking, PATCH /:id/status
 - **sellerRoutes\modulesSeller\sellerProduct.ts** [File]
 - **sellerRoutes\modulesSeller\sellerReview.routes.ts** [Router] → Routes: GET /reviews, POST /reviews/:reviewId/reply
-- **sellerRoutes\modulesSeller\sellerSettings.routes.ts** [Router] → Routes: PUT /profile, PATCH /profile, PUT /payment, PATCH /payment, PUT /shipping, PATCH /shipping, POST /security/password
+- **sellerRoutes\modulesSeller\sellerSettings.routes.ts** [Router] → Routes: GET /profile, PUT /profile, PATCH /profile, PUT /payment, PATCH /payment, PUT /shipping, PATCH /shipping, POST /security/password
+- **sellerRoutes\modulesSeller\sellerVoucher.routes.ts** [Router] → Routes: GET /, POST /
 - **sellerRoutes\modulesSeller\uploadSeller.routes.ts** [Router] → Routes: POST /
 - **server.ts** [File]
 - **services\auth.service.ts** [Service]
@@ -136,6 +152,7 @@
   - category        category?         @relation(fields: [category_id], references: [id])
   - seller          seller            @relation(fields: [seller_id], references: [id])
   - product_reviews product_reviews[]
+  - vouchers        vouchers[]
   - 
   - @@index([category_id], map: "idx_product_category_id")
   - @@index([seller_id], map: "idx_product_seller_id")
@@ -149,9 +166,10 @@
   - rating                      Float?                        @default(0)
   - status                      String                        @default("active")
   - created_at                  DateTime                      @default(now())
-  - updated_at                  DateTime                      @default(now())
+  - updated_at                  DateTime                      @updatedAt
   - password                    String
   - avatar                      String?
+  - shop_mall                   shop_status?                  @default(normal)
   - chat_threads                chat_threads[]
   - complaints                  complaints[]
   - messages                    messages[]
@@ -160,6 +178,7 @@
   - seller_order                seller_order[]
   - seller_payout_settings      seller_payout_settings[]
   - seller_shipping_preferences seller_shipping_preferences[]
+  - vouchers                    vouchers[]
 
 ### Model: seller_payout_settings
   - id                String   @id @default(dbgenerated("gen_random_uuid()"))
@@ -212,6 +231,7 @@
   - orders                                  orders[]
   - product_reviews                         product_reviews[]
   - review_likes                            review_likes[]
+  - user_vouchers                           user_vouchers[]
 
 ### Model: seller_order
   - id                String    @id @default(dbgenerated("gen_random_uuid()"))
@@ -231,32 +251,42 @@
   - @@index([seller_id], map: "idx_seller_order_seller_id")
 
 ### Model: user_vouchers
-  - id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  - user_id    String    @db.Uuid
-  - voucher_id String    @db.Uuid
-  - saved_at   DateTime? @default(now()) @db.Timestamptz(6)
-  - used_at    DateTime? @db.Timestamptz(6)
+  - id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  - user_id     String
+  - saved_at    DateTime? @default(now()) @db.Timestamptz(6)
+  - used_at     DateTime? @db.Timestamptz(6)
+  - usage_count Int       @default(0)
+  - voucher_id  String    @db.Uuid
+  - user        user      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  - vouchers    vouchers  @relation(fields: [voucher_id], references: [id], onDelete: Cascade)
   - 
   - @@unique([user_id, voucher_id])
+  - @@index([voucher_id])
 
 ### Model: vouchers
-  - id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  - code                 String   @unique
+  - id                   String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  - code                 String          @unique
   - source               String
-  - seller_id            String?  @db.Uuid
+  - seller_id            String
   - type                 String
   - discount_type        String
-  - discount_value       Decimal  @db.Decimal(12, 2)
-  - max_discount_amount  Decimal? @db.Decimal(12, 2)
-  - min_order_amount     Decimal? @default(0) @db.Decimal(12, 2)
-  - product_id           String?  @db.Uuid
-  - applicable_user_id   String?  @db.Uuid
-  - usage_limit_per_user Int?     @default(1)
-  - usage_limit_total    Int?     @default(1000)
-  - used_count           Int?     @default(0)
-  - start_at             DateTime @db.Timestamptz(6)
-  - end_at               DateTime @db.Timestamptz(6)
-  - status               String?  @default("ACTIVE")
+  - discount_value       Decimal         @db.Decimal(12, 2)
+  - max_discount_amount  Decimal?        @db.Decimal(12, 2)
+  - min_order_amount     Decimal?        @default(0) @db.Decimal(12, 2)
+  - product_id           String?
+  - applicable_user_id   String?         @db.Uuid
+  - usage_limit_per_user Int?            @default(1)
+  - usage_limit_total    Int?            @default(1000)
+  - used_count           Int?            @default(0)
+  - start_at             DateTime        @db.Timestamptz(6)
+  - end_at               DateTime        @db.Timestamptz(6)
+  - status               String?         @default("ACTIVE")
+  - user_vouchers        user_vouchers[]
+  - product              product?        @relation(fields: [product_id], references: [id])
+  - seller               seller?          @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  - 
+  - @@index([seller_id], map: "idx_voucher_seller")
+  - @@index([status], map: "idx_voucher_status")
 
 ### Model: chat_threads
   - id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -396,19 +426,29 @@
 
 ## 🔹 Frontend Structure
 ```
-- admin\AdminApp.tsx
+- admin\AdminApp.tsx → Routes: /login, /*, /dashboard, /products, /sellers, /users, /orders, /analytics, /settings, /
+- api\admin.ts
+- api\adminSellers.ts
+- api\adminUsers.ts
+- api\adminVouchers.ts
 - api\chat.ts
 - api\reviews.ts
 - api\sellerapi\seller.ts
 - api\sellerapi\sellerCart.ts
 - api\sellerapi\sellerOrders.ts
 - api\sellerapi\sellerProducts.ts
+- api\sellerapi\sellerSettings.tsx
+- api\sellerapi\vouchers.ts
 - api\userapi\account.ts
 - api\userapi\client.ts
 - api\userapi\orders.ts
+- api\vouchers.ts
 - App.css
 - App.tsx
 - assets\react.svg
+- components\admin\AdminGuard.tsx
+- components\admin\AdminLayout.tsx
+- components\admin\AdminLogin.tsx
 - components\auth\AuthGuard.tsx
 - components\auth\AuthLayout.tsx
 - components\auth\PromotionalBanner.tsx
@@ -434,6 +474,7 @@
 - components\seller\UploadImage.tsx
 - components\shops\FeaturedShops.tsx
 - hooks\useChat.ts
+- hooks\useMall.ts
 - hooks\useReviews.ts
 - i18n\index.ts
 - i18n\locales\en.json
@@ -443,14 +484,21 @@
 - lib\react-query.ts
 - main.tsx
 - providers\AppProviders.tsx
-- routes\AdminRoutes.tsx → Routes: /admin/categories, /admin/products
-- routes\AppRoutes.tsx → Routes: /login, /register, /, /products/:id, /cart, /admin/*, /category, /shop/:seller_id, /seller/*, /search, *, /account, chat, orders, /user, orders, profile, chat, notifications
-- routes\SellerRoutes.tsx → Routes: register, login, home, dashboard, upload, orders, analytics, settings, chats, reviews, *
+- routes\AdminRoutes.tsx → Routes: /login, /*, /dashboard, /products, /sellers, /users, /orders, /analytics, /settings, /vouchers, /
+- routes\AppRoutes.tsx → Routes: /login, /register, /, /products/:id, /cart, /flash-sale, /admin/*, /category/:slug, /shop/:seller_id, /seller/*, /search, *, /account, chat, orders, /user, orders, profile, chat, vouchers, notifications
+- routes\SellerRoutes.tsx → Routes: register, login, home, dashboard, upload, orders, analytics, settings, chats, reviews, voucher, *
+- screens\admin\AdminDashboard.tsx
+- screens\admin\AdminEvent.tsx
+- screens\admin\AdminSellers.tsx
+- screens\admin\AdminUsers.tsx
+- screens\admin\AdminVoucher.tsx
 - screens\admin\CategoryPage.tsx
 - screens\client\AccountPage.tsx
 - screens\client\CartPage.tsx
-- screens\client\CategoryPage.jsx
+- screens\client\CategoryPage.tsx
 - screens\client\ChatPage.tsx
+- screens\client\EventPage.tsx
+- screens\client\FlashSalePage.tsx
 - screens\client\HomePage.tsx
 - screens\client\LoginPage.tsx
 - screens\client\OrdersPage.tsx
@@ -458,6 +506,7 @@
 - screens\client\RegisterPage.tsx
 - screens\client\SearchResultsPage.tsx
 - screens\client\ShopPage.tsx
+- screens\client\VoucherPage.tsx
 - screens\seller\Loginseller.tsx
 - screens\seller\SellerAnalytics.tsx
 - screens\seller\SellerChatPage.tsx
@@ -467,6 +516,8 @@
 - screens\seller\SellerReview.tsx
 - screens\seller\SellerSettings.tsx
 - screens\seller\SellerUploadPage.tsx
+- screens\seller\SellerVoucher.tsx
+- store\AdminAuth.ts
 - store\auth.ts
 - store\SellerAuth.ts
 ```

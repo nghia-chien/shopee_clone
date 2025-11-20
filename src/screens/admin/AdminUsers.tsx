@@ -6,7 +6,7 @@ import {
   updateAdminUser,
   deleteAdminUser,
   type User,
-} from "../../api/adminUsers";
+} from "../../api/adminapi/adminUsers";
 import { Plus, Edit2, Trash2, Search, X } from "lucide-react";
 
 export function AdminUsers() {

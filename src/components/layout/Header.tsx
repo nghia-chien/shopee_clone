@@ -220,7 +220,7 @@ export const Header: React.FC = () => {
                   <div className="absolute hidden group-hover:block right-0 top-full z-[9999]">
                     <div className="relative bg-white text-black rounded shadow-md min-w-[180px] border border-gray-200">
                       <div className="px-3 py-2 text-left hover:bg-gray-100 cursor-pointer"
-                        onClick={() => navigate("/account")}>{t("home.my_account")}
+                        onClick={() => navigate("/user/profile")}>{t("home.my_account")}
                       </div>
                       <div className="px-3 py-2 text-left hover:bg-gray-100 cursor-pointer"
                         onClick={() => navigate("/orders")}>{t("home.my_orders")}

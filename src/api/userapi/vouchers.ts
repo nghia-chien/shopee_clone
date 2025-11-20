@@ -1,4 +1,4 @@
-import { api } from './userapi/client';
+import { api } from './client';
 
 export interface Voucher {
   id: string;

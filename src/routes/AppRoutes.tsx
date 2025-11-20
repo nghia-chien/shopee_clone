@@ -10,13 +10,14 @@ import { CartPage } from "../screens/client/CartPage";
 import  OrdersPage  from "../screens/client/OrdersPage";
 import  CategoryPage  from "../screens/client/CategoryPage";
 import  AccountPage  from "../screens/client/AccountPage";
-import { ChatPage } from "../screens/client/ChatPage";
+// import { ChatPage } from "../screens/client/ChatPage";
 import  FlashSalePage  from "../screens/client/FlashSalePage";
 import ScrollToTop from "../components/home/ScrollToTop";
 import { AdminRoutes } from "./AdminRoutes";
 import  {UserLayout}  from "../components/layout/UserLayout";
 import {AuthGuard} from  "../components/auth/AuthGuard";
 import VoucherPage from "../screens/client/VoucherPage";
+import ComplaintsPage from "../screens/client/Complaints";
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -55,14 +56,15 @@ export function AppRoutes() {
             </AuthGuard>
           }
         >
-          <Route path="chat" element={<ChatPage />} />
+          {/* <Route path="chat" element={<ChatPage />} /> */}
           <Route path="orders" element={<OrdersPage />} />
       </Route>
       <Route path="/user" element={<UserLayout />}>           
             <Route path="orders" element={<OrdersPage />} />
             <Route path="profile" element={<AccountPage />} />
-            <Route path="chat" element={<ChatPage />} />
+            {/* <Route path="chat" element={<ChatPage />} /> */}
             <Route path="vouchers" element={<VoucherPage />} />
+            <Route path="complaints" element={<ComplaintsPage />} />
             {/* {<Route path="notifications" element={<NotificationsPage />} /> */}
           </Route>
       </Routes>
