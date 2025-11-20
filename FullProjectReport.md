@@ -15,6 +15,7 @@
 - **controllers\chat.controller.ts** [Controller]
 - **controllers\complaint.controller.ts** [Controller]
 - **controllers\order.controller.ts** [Controller]
+- **controllers\paypal.controller.ts** [Controller]
 - **controllers\product.controller.ts** [Controller] → Exports: getProductController, addProductReviewController, addProductFeedbackController, searchKeywords, searchHandler
 - **controllers\review.controller.ts** [Controller]
 - **controllers\seller\analytics.controller.ts** [Controller]
@@ -43,6 +44,7 @@
 - **routes\modules\category.routes.ts** [Router] → Routes: GET /, GET /tree, GET /:id/attributes, GET /:categoryId/products, GET /slug/:slug/products
 - **routes\modules\chat.routes.ts** [Router] → Routes: GET /threads/user, POST /threads, GET /threads/seller, POST /message, POST /message/seller, GET /messages/:threadId, GET /messages/:threadId/seller, POST /system-message
 - **routes\modules\order.routes.ts** [Router] → Routes: GET /orders, POST /, GET /all, GET /:id
+- **routes\modules\paypal.routes.ts** [Router] → Routes: POST /create-order, POST /capture-order
 - **routes\modules\product.routes.ts** [Router] → Routes: GET /, GET /keywords, GET /search, GET /:id, GET /:id/reviews, POST /:id/reviews, POST /:id/feedback
 - **routes\modules\review.routes.ts** [Router] → Routes: POST /, GET /user, GET /:reviewId/media, POST /:reviewId/like, PUT /:reviewId, DELETE /:reviewId
 - **routes\modules\shop.routes.ts** [Router] → Routes: GET /summary, GET /mall, GET /:seller_id, GET /:seller_id/products
@@ -213,25 +215,24 @@
   - @@index([seller_id], map: "idx_seller_shipping_preferences_seller_id")
 
 ### Model: user
-  - id                                      String               @id @default(dbgenerated("gen_random_uuid()"))
-  - email                                   String               @unique
-  - phone_number                            String?              @unique @db.VarChar(20)
-  - password                                String
-  - name                                    String?
-  - created_at                              DateTime             @default(now())
-  - updated_at                              DateTime             @default(now())
-  - avatar                                  String?
-  - address                                 address[]
-  - cart_item                               cart_item[]
-  - chat_threads                            chat_threads[]
-  - complaint_comments                      complaint_comments[]
-  - complaints_complaints_assigned_toTouser complaints[]         @relation("complaints_assigned_toTouser")
-  - complaints_complaints_user_idTouser     complaints[]         @relation("complaints_user_idTouser")
-  - messages                                messages[]
-  - orders                                  orders[]
-  - product_reviews                         product_reviews[]
-  - review_likes                            review_likes[]
-  - user_vouchers                           user_vouchers[]
+  - id                                  String               @id @default(dbgenerated("gen_random_uuid()"))
+  - email                               String               @unique
+  - phone_number                        String?              @unique @db.VarChar(20)
+  - password                            String
+  - name                                String?
+  - created_at                          DateTime             @default(now())
+  - updated_at                          DateTime             @default(now())
+  - avatar                              String?
+  - address                             address[]
+  - cart_item                           cart_item[]
+  - chat_threads                        chat_threads[]
+  - complaint_comments                  complaint_comments[]
+  - complaints_complaints_user_idTouser complaints[]         @relation("complaints_user_idTouser")
+  - messages                            messages[]
+  - orders                              orders[]
+  - product_reviews                     product_reviews[]
+  - review_likes                        review_likes[]
+  - user_vouchers                       user_vouchers[]
 
 ### Model: seller_order
   - id                String    @id @default(dbgenerated("gen_random_uuid()"))
@@ -267,7 +268,7 @@
   - id                   String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   - code                 String          @unique
   - source               String
-  - seller_id            String
+  - seller_id            String?
   - type                 String
   - discount_type        String
   - discount_value       Decimal         @db.Decimal(12, 2)
@@ -283,7 +284,7 @@
   - status               String?         @default("ACTIVE")
   - user_vouchers        user_vouchers[]
   - product              product?        @relation(fields: [product_id], references: [id])
-  - seller               seller?          @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  - seller               seller?         @relation(fields: [seller_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   - 
   - @@index([seller_id], map: "idx_voucher_seller")
   - @@index([status], map: "idx_voucher_status")
@@ -309,24 +310,22 @@
   - user         user       @relation(fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
 ### Model: complaints
-  - id                                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  - user_id                           String
-  - seller_id                         String
-  - order_id                          String?
-  - product_id                        String?
-  - type                              String               @db.VarChar(50)
-  - description                       String?
-  - attachments                       Json?                @db.Json
-  - status                            String               @default("NEW") @db.VarChar(20)
-  - assigned_to                       String?
-  - created_at                        DateTime?            @default(now()) @db.Timestamptz(6)
-  - updated_at                        DateTime?            @default(now()) @db.Timestamptz(6)
-  - complaint_comments                complaint_comments[]
-  - user_complaints_assigned_toTouser user?                @relation("complaints_assigned_toTouser", fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  - orders                            orders?              @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  - product                           product?             @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  - seller                            seller               @relation(fields: [seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  - user_complaints_user_idTouser     user                 @relation("complaints_user_idTouser", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  - id                            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  - user_id                       String?
+  - seller_id                     String?
+  - order_id                      String?
+  - product_id                    String?
+  - type                          String               @db.VarChar(50)
+  - description                   String?
+  - attachments                   Json?                @db.Json
+  - status                        String               @default("NEW") @db.VarChar(20)
+  - created_at                    DateTime?            @default(now()) @db.Timestamptz(6)
+  - updated_at                    DateTime?            @default(now()) @db.Timestamptz(6)
+  - complaint_comments            complaint_comments[]
+  - orders                        orders?              @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  - product                       product?             @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  - seller                        seller?              @relation(fields: [seller_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  - user_complaints_user_idTouser user?                @relation("complaints_user_idTouser", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
 ### Model: messages
   - id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -485,7 +484,7 @@
 - main.tsx
 - providers\AppProviders.tsx
 - routes\AdminRoutes.tsx → Routes: /login, /*, /dashboard, /products, /sellers, /users, /orders, /analytics, /settings, /vouchers, /
-- routes\AppRoutes.tsx → Routes: /login, /register, /, /products/:id, /cart, /flash-sale, /admin/*, /category/:slug, /shop/:seller_id, /seller/*, /search, *, /account, chat, orders, /user, orders, profile, chat, vouchers, notifications
+- routes\AppRoutes.tsx → Routes: /login, /register, /, /products/:id, /cart, /checkout, /flash-sale, /admin/*, /category/:slug, /shop/:seller_id, /seller/*, /search, *, /account, chat, orders, /user, orders, profile, chat, vouchers, notifications
 - routes\SellerRoutes.tsx → Routes: register, login, home, dashboard, upload, orders, analytics, settings, chats, reviews, voucher, *
 - screens\admin\AdminDashboard.tsx
 - screens\admin\AdminEvent.tsx
@@ -497,6 +496,7 @@
 - screens\client\CartPage.tsx
 - screens\client\CategoryPage.tsx
 - screens\client\ChatPage.tsx
+- screens\client\CheckoutPage.tsx
 - screens\client\EventPage.tsx
 - screens\client\FlashSalePage.tsx
 - screens\client\HomePage.tsx

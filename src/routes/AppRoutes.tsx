@@ -7,6 +7,7 @@ import SearchResultsPage from "../screens/client/SearchResultsPage";
 import ShopPage from "../screens/client/ShopPage";
 import { SellerRoutes } from "./SellerRoutes"; // import routes riêng cho seller
 import { CartPage } from "../screens/client/CartPage";
+import CheckoutPage from "../screens/client/CheckoutPage";
 import  OrdersPage  from "../screens/client/OrdersPage";
 import  CategoryPage  from "../screens/client/CategoryPage";
 import  AccountPage  from "../screens/client/AccountPage";
@@ -31,6 +32,7 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/products/:id" element={<ProductPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/flash-sale" element={<FlashSalePage />} />
 
         
