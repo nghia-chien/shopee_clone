@@ -47,6 +47,7 @@
 - **routes\modules\paypal.routes.ts** [Router] → Routes: POST /create-order, POST /capture-order
 - **routes\modules\product.routes.ts** [Router] → Routes: GET /, GET /keywords, GET /search, GET /:id, GET /:id/reviews, POST /:id/reviews, POST /:id/feedback
 - **routes\modules\review.routes.ts** [Router] → Routes: POST /, GET /user, GET /:reviewId/media, POST /:reviewId/like, PUT /:reviewId, DELETE /:reviewId
+- **routes\modules\shipping.routes.ts** [Router] → Routes: GET /provinces, GET /districts/:province_id, GET /wards/:district_id, POST /fee, POST /create-order, POST /cancel-order
 - **routes\modules\shop.routes.ts** [Router] → Routes: GET /summary, GET /mall, GET /:seller_id, GET /:seller_id/products
 - **routes\modules\voucher.routes.ts** [Router] → Routes: GET /public, GET /me, POST /:voucherId/save
 - **scripts\check-admin-setup.ts** [File]
@@ -124,6 +125,9 @@
   - user_id        String?
   - system_voucher Json?
   - payment_method String?
+  - shipping_fee   Decimal?       @db.Decimal(10, 2)
+  - shipping_code  String?        @db.VarChar
+  - address_id     String?        @db.VarChar
   - complaints     complaints[]
   - order_item     order_item[]
   - user           user?          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -275,7 +279,7 @@
   - max_discount_amount  Decimal?        @db.Decimal(12, 2)
   - min_order_amount     Decimal?        @default(0) @db.Decimal(12, 2)
   - product_id           String?
-  - applicable_user_id   String?         @db.Uuid
+  - applicable_user_id   String?
   - usage_limit_per_user Int?            @default(1)
   - usage_limit_total    Int?            @default(1000)
   - used_count           Int?            @default(0)
@@ -438,6 +442,7 @@
 - api\sellerapi\sellerProducts.ts
 - api\sellerapi\sellerSettings.tsx
 - api\sellerapi\vouchers.ts
+- api\shippingApi.ts
 - api\userapi\account.ts
 - api\userapi\client.ts
 - api\userapi\orders.ts
@@ -471,10 +476,14 @@
 - components\seller\SellerLogin.tsx
 - components\seller\SellerRegister.tsx
 - components\seller\UploadImage.tsx
+- components\shipping\AddressSelector.tsx
+- components\shipping\ShippingMethodSelector.tsx
+- components\shipping\ShippingSection.tsx
 - components\shops\FeaturedShops.tsx
 - hooks\useChat.ts
 - hooks\useMall.ts
 - hooks\useReviews.ts
+- hooks\useShipping.ts
 - i18n\index.ts
 - i18n\locales\en.json
 - i18n\locales\vi.json

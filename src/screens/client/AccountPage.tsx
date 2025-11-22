@@ -8,7 +8,6 @@ import {
   Package,
   Phone,
   ShieldCheck,
-  User2,
   X,
   Camera,
 } from "lucide-react";
@@ -26,6 +25,7 @@ import {
 } from "../../api/userapi/account";
 import { useAuthStore } from "../../store/auth";
 import { getUserOrders } from "../../api/userapi/orders";
+import { AddressSelector } from "../../components/shipping/AddressSelector";
 
 type TabId = "overview" | "addresses" | "security" | "bank";
 
@@ -74,6 +74,9 @@ export default function AccountPage() {
     city: "",
     district: "",
     ward: "",
+    province_id: undefined as number | undefined,
+    district_id: undefined as number | undefined,
+    ward_code: undefined as string | undefined,
     is_default: false,
   });
 
@@ -122,29 +125,78 @@ export default function AccountPage() {
   }, [user]);
 
   // Update address form when editing
-  useEffect(() => {
-    if (editingAddress) {
-      setAddressForm({
+// Update address form when editing
+useEffect(() => {
+  if (editingAddress) {
+    setAddressForm((prev) => {
+      // chỉ set khi có khác biệt
+      if (
+        prev.full_name === editingAddress.full_name &&
+        prev.phone === editingAddress.phone &&
+        prev.address_line === editingAddress.address_line &&
+        prev.city === editingAddress.city &&
+        prev.district === editingAddress.district &&
+        prev.ward === editingAddress.ward &&
+        prev.is_default === editingAddress.is_default
+      ) {
+        return prev;
+      }
+      return {
         full_name: editingAddress.full_name,
         phone: editingAddress.phone,
         address_line: editingAddress.address_line,
         city: editingAddress.city,
         district: editingAddress.district,
         ward: editingAddress.ward,
+        province_id: editingAddress.province_id || undefined,
+        district_id: editingAddress.district_id || undefined,
+        ward_code: editingAddress.ward_code || undefined,
         is_default: editingAddress.is_default,
-      });
-    } else {
-      setAddressForm({
+      };
+    });
+  } else {
+    setAddressForm((prev) => {
+      if (
+        prev.full_name === "" &&
+        prev.phone === "" &&
+        prev.address_line === "" &&
+        prev.city === "" &&
+        prev.district === "" &&
+        prev.ward === "" &&
+        prev.is_default === false
+      ) {
+        return prev;
+      }
+      return {
         full_name: "",
         phone: "",
         address_line: "",
         city: "",
         district: "",
         ward: "",
+        province_id: undefined,
+        district_id: undefined,
+        ward_code: undefined,
         is_default: false,
-      });
-    }
-  }, [editingAddress]);
+      };
+    });
+  }
+}, [editingAddress]);
+
+  const memoizedDefaults = useMemo(() => ({
+    city: addressForm.city,
+    district: addressForm.district,
+    ward: addressForm.ward,
+    province_id: addressForm.province_id,
+    district_id: addressForm.district_id,
+    ward_code: addressForm.ward_code,
+    streetAddress: addressForm.address_line,
+  }), [addressForm.city, addressForm.district, addressForm.ward, addressForm.province_id, addressForm.district_id, addressForm.ward_code, addressForm.address_line]);
+
+const addressSelectorKey = useMemo(() => editingAddress ? `edit-${editingAddress.id}` : "new-address", [editingAddress]);
+
+  
+
 
   // Mutations
   const updateAccountMutation = useMutation({
@@ -269,8 +321,6 @@ export default function AccountPage() {
   const joinDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("vi-VN")
     : "Chưa cập nhật";
-
-  const displayName = user?.name || "Khách hàng";
 
   // Handle avatar upload
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,37 +512,37 @@ export default function AccountPage() {
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none"
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tỉnh/Thành phố *</label>
-                    <input
-                      type="text"
-                      value={addressForm.city}
-                      onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                      placeholder="TP. Hồ Chí Minh"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Quận/Huyện *</label>
-                    <input
-                      type="text"
-                      value={addressForm.district}
-                      onChange={(e) => setAddressForm({ ...addressForm, district: e.target.value })}
-                      placeholder="Quận Bình Thạnh"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phường/Xã *</label>
-                    <input
-                      type="text"
-                      value={addressForm.ward}
-                      onChange={(e) => setAddressForm({ ...addressForm, ward: e.target.value })}
-                      placeholder="Phường 13"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tỉnh/Thành phố - Quận/Huyện - Phường/Xã *</label>
+                  <AddressSelector
+                    key={addressSelectorKey}
+                    includeStreetInput={false}
+                    onAddressChange={(location) => {
+                      setAddressForm((prev) => {
+                        if (
+                          prev.city === location.provinceName &&
+                          prev.district === location.districtName &&
+                          prev.ward === location.wardName &&
+                          prev.province_id === location.provinceId &&
+                          prev.district_id === location.districtId &&
+                          prev.ward_code === location.wardCode
+                        ) {
+                          return prev;
+                        }
+                        return {
+                          ...prev,
+                          city: location.provinceName || "",
+                          district: location.districtName || "",
+                          ward: location.wardName || "",
+                          province_id: location.provinceId || undefined,
+                          district_id: location.districtId || undefined,
+                          ward_code: location.wardCode || undefined,
+                        };
+                      });
+                    }}
+                    defaultValues={memoizedDefaults}
+                  />
+
                 </div>
                 <div className="flex items-center gap-2">
                   <input

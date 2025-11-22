@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
+import { AddressSelector } from '../../components/shipping/AddressSelector';
 import { useAuthStore } from '../../store/auth';
 import { api } from '../../api/userapi/client';
 import { getUserVouchers } from '../../api/vouchers';
@@ -143,6 +144,9 @@ export function CheckoutPage() {
     city: '',
     district: '',
     ward: '',
+    province_id: undefined as number | undefined,
+    district_id: undefined as number | undefined,
+    ward_code: undefined as string | undefined,
     is_default: true,
   });
   const [savingAddress, setSavingAddress] = useState(false);
@@ -302,7 +306,7 @@ export function CheckoutPage() {
             payment_method: paymentMethod,
             shipping_option: shippingOption,
             note: note?.trim() || undefined,
-            shipping_address_id: defaultAddress.id,
+            address_id: defaultAddress.id,
             paypal_order_id: options?.paymentIntent,
           }),
         });
@@ -352,6 +356,9 @@ export function CheckoutPage() {
         city: '',
         district: '',
         ward: '',
+        province_id: undefined,
+        district_id: undefined,
+        ward_code: undefined,
         is_default: false,
       });
     } catch (error: any) {
@@ -544,27 +551,41 @@ export function CheckoutPage() {
                 onChange={(e) => setAddressForm((prev) => ({ ...prev, address_line: e.target.value }))}
                 className="border rounded-sm px-3 py-2 text-sm md:col-span-2"
               />
-              <input
-                required
-                placeholder="Phường/Xã"
-                value={addressForm.ward}
-                onChange={(e) => setAddressForm((prev) => ({ ...prev, ward: e.target.value }))}
-                className="border rounded-sm px-3 py-2 text-sm"
-              />
-              <input
-                required
-                placeholder="Quận/Huyện"
-                value={addressForm.district}
-                onChange={(e) => setAddressForm((prev) => ({ ...prev, district: e.target.value }))}
-                className="border rounded-sm px-3 py-2 text-sm"
-              />
-              <input
-                required
-                placeholder="Tỉnh/Thành phố"
-                value={addressForm.city}
-                onChange={(e) => setAddressForm((prev) => ({ ...prev, city: e.target.value }))}
-                className="border rounded-sm px-3 py-2 text-sm"
-              />
+              <div className="md:col-span-2 space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Khu vực (Tỉnh/Thành phố - Quận/Huyện - Phường/Xã) *
+                </label>
+                <AddressSelector
+                  key="checkout-address-form"
+                  includeStreetInput={false}
+                  showLabels={false}
+                  onAddressChange={(location) => {
+                    setAddressForm((prev) => {
+                      // chỉ update nếu dữ liệu thực sự khác
+                      if (
+                        prev.city === location.provinceName &&
+                        prev.district === location.districtName &&
+                        prev.ward === location.wardName &&
+                        prev.province_id === location.provinceId &&
+                        prev.district_id === location.districtId &&
+                        prev.ward_code === location.wardCode
+                      ) {
+                        return prev;
+                      }
+                      return {
+                        ...prev,
+                        city: location.provinceName || "",
+                        district: location.districtName || "",
+                        ward: location.wardName || "",
+                        province_id: location.provinceId || undefined,
+                        district_id: location.districtId || undefined,
+                        ward_code: location.wardCode || undefined,
+                      };
+                    });
+                  }}
+                />
+
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

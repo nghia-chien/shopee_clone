@@ -12,6 +12,8 @@ import paypalRouter from './modules/paypal.routes';
 import chatRouter from './modules/chat.routes';
 import reviewRouter from './modules/review.routes';
 import accountRouter from './modules/account.routes';
+import shippingRouter from './modules/shipping.routes';
+import shopSettingsRouter from './modules/shopSettings.routes';
 const router = Router();
 
 /**
@@ -30,7 +32,9 @@ router.use('/vouchers', voucherRouter);
 router.use('/paypal', paypalRouter);
 router.use('/chat', chatRouter);
 router.use('/reviews', reviewRouter);
+router.use('/shipping', shippingRouter);
 router.use('/account', accountRouter);
+router.use('/shop-settings', shopSettingsRouter);
 // ✅ Route mặc định (test API)
 router.get('/', (_req, res) => {
   res.json({
@@ -45,6 +49,7 @@ router.get('/', (_req, res) => {
       '/shops',
       '/chat',
       '/reviews',
+      '/shipping',
       '/account',
       '/admin',
       '/vouchers',

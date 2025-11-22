@@ -24,6 +24,7 @@ export async function getThreadsByUserController(req: AuthRequest, res: Response
             id: true,
             name: true,
             email: true,
+            
           },
         },
         messages: {
