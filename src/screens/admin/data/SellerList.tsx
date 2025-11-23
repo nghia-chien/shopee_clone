@@ -1,7 +1,7 @@
 import { useList, useShow, useCreate, useUpdate, useDelete } from "@refinedev/core";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit2, Trash2, Eye, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function SellerList() {
   const navigate = useNavigate();
@@ -145,12 +145,29 @@ export function SellerShow() {
     id: id!,
   });
 
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const seller = (showResult as any).data?.data;
-  const isLoading = (showResult as any).isLoading || (showResult as any).isFetching || false;
+  // In Refine v4, useShow might return different structures
+  const seller = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoading = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
+    
+  const error = 
+    (showResult as any).error || 
+    (showResult as any).query?.error;
 
-  if (isLoading) return <div>Đang tải...</div>;
-  if (!seller) return <div>Không tìm thấy seller</div>;
+  if (isLoading) return <div className="text-center py-8">Đang tải...</div>;
+  if (error) return <div className="text-center py-8 text-red-600">Lỗi: {error?.message || "Không thể tải dữ liệu"}</div>;
+  if (!seller) return <div className="text-center py-8">Không tìm thấy seller</div>;
 
   return (
     <div className="space-y-4">
@@ -304,14 +321,39 @@ export function SellerEdit() {
   const showResult = useShow({ resource: "sellers", id: id! });
   const { mutate, isLoading } = useUpdate();
   
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const seller = (showResult as any).data?.data;
+  // In Refine v4, useShow might return different structures
+  const seller = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoadingSeller = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
   const [formData, setFormData] = useState({
-    name: seller?.name || "",
-    email: seller?.email || "",
-    phone_number: seller?.phone_number || "",
-    status: seller?.status || "active",
+    name: "",
+    email: "",
+    phone_number: "",
+    status: "active",
   });
+
+  // Update formData when seller is loaded
+  useEffect(() => {
+    if (seller) {
+      setFormData({
+        name: seller.name || "",
+        email: seller.email || "",
+        phone_number: seller.phone_number || "",
+        status: seller.status || "active",
+      });
+    }
+  }, [seller]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,7 +371,8 @@ export function SellerEdit() {
     );
   };
 
-  if (!seller) return <div>Đang tải...</div>;
+  if (isLoadingSeller) return <div>Đang tải...</div>;
+  if (!seller) return <div>Không tìm thấy seller</div>;
 
   return (
     <div className="space-y-4">

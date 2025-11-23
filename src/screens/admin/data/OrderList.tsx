@@ -1,7 +1,7 @@
-import { useList, useShow, useUpdate } from "@refinedev/core";
+import { useList, useShow, useUpdate, useDelete } from "@refinedev/core";
 import { useNavigate, useParams } from "react-router-dom";
-import { Edit2, Eye, Search } from "lucide-react";
-import { useState } from "react";
+import { Edit2, Eye, Search, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export function OrderList() {
   const navigate = useNavigate();
@@ -19,6 +19,17 @@ export function OrderList() {
   // In Refine v4, listData has structure: { data: [...], total: number }
   const orders = listData?.data || [];
   const total = listData?.total || 0;
+
+  const { mutate: deleteOrder } = useDelete();
+
+  const handleDelete = (id: string) => {
+    if (confirm("Bạn có chắc chắn muốn xóa đơn hàng này? (Sẽ xóa cả seller_orders liên quan)")) {
+      deleteOrder({
+        resource: "orders",
+        id,
+      });
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -107,6 +118,12 @@ export function OrderList() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
+                        <button
+                          onClick={() => handleDelete(order.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -130,12 +147,54 @@ export function OrderShow() {
     id: id!,
   });
 
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const order = (showResult as any).data?.data;
-  const isLoading = (showResult as any).isLoading || (showResult as any).isFetching || false;
+  // Debug logging - check all possible structures
+  console.log("[OrderShow] useShow result:", showResult);
+  console.log("[OrderShow] showResult keys:", Object.keys(showResult || {}));
+  console.log("[OrderShow] showResult.data:", (showResult as any).data);
+  console.log("[OrderShow] showResult.data?.data:", (showResult as any).data?.data);
+  console.log("[OrderShow] showResult.query?.data:", (showResult as any).query?.data);
+  console.log("[OrderShow] showResult.query?.data?.data:", (showResult as any).query?.data?.data);
+  console.log("[OrderShow] showResult.result:", (showResult as any).result);
+  console.log("[OrderShow] showResult.result?.data:", (showResult as any).result?.data);
 
-  if (isLoading) return <div>Đang tải...</div>;
-  if (!order) return <div>Không tìm thấy đơn hàng</div>;
+  // In Refine v4, useShow might return different structures
+  // Try multiple ways to access the data
+  const order = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoading = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
+    
+  const error = 
+    (showResult as any).error || 
+    (showResult as any).query?.error;
+
+  console.log("[OrderShow] extracted:", { 
+    order, 
+    isLoading, 
+    error, 
+    hasOrder: !!order,
+    orderKeys: order ? Object.keys(order) : []
+  });
+
+  if (isLoading) return <div className="text-center py-8">Đang tải...</div>;
+  if (error) {
+    console.error("[OrderShow] Error:", error);
+    return <div className="text-center py-8 text-red-600">Lỗi: {error?.message || "Không thể tải dữ liệu"}</div>;
+  }
+  if (!order) {
+    console.warn("[OrderShow] No order found, showResult:", showResult);
+    return <div className="text-center py-8">Không tìm thấy đơn hàng (ID: {id})</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -204,6 +263,54 @@ export function OrderShow() {
             </div>
           </div>
         )}
+
+        {order.seller_order && order.seller_order.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Seller Orders</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Seller</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Tổng tiền</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Trạng thái</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Fulfillment</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Ngày tạo</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {order.seller_order.map((sellerOrder: any) => (
+                    <tr key={sellerOrder.id}>
+                      <td className="px-4 py-2 text-sm">{sellerOrder.seller?.name || "N/A"}</td>
+                      <td className="px-4 py-2 text-sm">₫{Number(sellerOrder.total).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          sellerOrder.seller_status === "completed" ? "bg-green-100 text-green-800" :
+                          sellerOrder.seller_status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}>
+                          {sellerOrder.seller_status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          sellerOrder.fulfillment_status === "delivered" ? "bg-green-100 text-green-800" :
+                          sellerOrder.fulfillment_status === "shipped" ? "bg-blue-100 text-blue-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}>
+                          {sellerOrder.fulfillment_status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        {new Date(sellerOrder.created_at).toLocaleString("vi-VN")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -215,12 +322,35 @@ export function OrderEdit() {
   const showResult = useShow({ resource: "orders", id: id! });
   const { mutate, isLoading } = useUpdate();
   
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const order = (showResult as any).data?.data;
+  // In Refine v4, useShow might return different structures
+  const order = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoadingOrder = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
   const [formData, setFormData] = useState({
-    status: order?.status || "pending",
-    fulfillment_status: order?.fulfillment_status || "pending",
+    status: "pending",
+    fulfillment_status: "pending",
   });
+
+  // Update formData when order is loaded
+  useEffect(() => {
+    if (order) {
+      setFormData({
+        status: order.status || "pending",
+        fulfillment_status: order.fulfillment_status || "pending",
+      });
+    }
+  }, [order]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,7 +368,8 @@ export function OrderEdit() {
     );
   };
 
-  if (!order) return <div>Đang tải...</div>;
+  if (isLoadingOrder) return <div>Đang tải...</div>;
+  if (!order) return <div>Không tìm thấy đơn hàng</div>;
 
   return (
     <div className="space-y-4">

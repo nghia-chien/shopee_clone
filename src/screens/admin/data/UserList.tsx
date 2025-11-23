@@ -1,7 +1,7 @@
 import { useList, useShow, useCreate, useUpdate, useDelete } from "@refinedev/core";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit2, Trash2, Eye, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function UserList() {
   const navigate = useNavigate();
@@ -133,12 +133,29 @@ export function UserShow() {
     id: id!,
   });
 
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const user = (showResult as any).data?.data;
-  const isLoading = (showResult as any).isLoading || (showResult as any).isFetching || false;
+  // In Refine v4, useShow might return different structures
+  const user = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoading = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
+    
+  const error = 
+    (showResult as any).error || 
+    (showResult as any).query?.error;
 
-  if (isLoading) return <div>Đang tải...</div>;
-  if (!user) return <div>Không tìm thấy user</div>;
+  if (isLoading) return <div className="text-center py-8">Đang tải...</div>;
+  if (error) return <div className="text-center py-8 text-red-600">Lỗi: {error?.message || "Không thể tải dữ liệu"}</div>;
+  if (!user) return <div className="text-center py-8">Không tìm thấy user</div>;
 
   return (
     <div className="space-y-4">
@@ -283,13 +300,37 @@ export function UserEdit() {
   const showResult = useShow({ resource: "users", id: id! });
   const { mutate, isLoading } = useUpdate();
   
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const user = (showResult as any).data?.data;
+  // In Refine v4, useShow might return different structures
+  const user = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoadingUser = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
   const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone_number: user?.phone_number || "",
+    name: "",
+    email: "",
+    phone_number: "",
   });
+
+  // Update formData when user is loaded
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone_number: user.phone_number || "",
+      });
+    }
+  }, [user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -310,7 +351,8 @@ export function UserEdit() {
     );
   };
 
-  if (!user) return <div>Đang tải...</div>;
+  if (isLoadingUser) return <div>Đang tải...</div>;
+  if (!user) return <div>Không tìm thấy user</div>;
 
   return (
     <div className="space-y-4">

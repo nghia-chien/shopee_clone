@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { adminLoginController, adminMeController } from '../../controllers/admin/auth.controller';
-import { createAdminVoucherController, listAdminVouchersController } from '../../controllers/admin/voucher.controller';
+import { createAdminVoucherController, listAdminVouchersController, getVoucherByIdController, updateVoucherController } from '../../controllers/admin/voucher.controller';
 // Data Management Controllers (CRUD operations)
 import {
   getAllUsersController,
@@ -30,6 +30,7 @@ import {
   deleteCategoryController,
 } from '../../controllers/admin/category.controller';
 import {
+  deleteOrderController,
   getAllOrdersController,
   getOrderByIdController,
   updateOrderController,
@@ -40,6 +41,7 @@ import {
   deleteReviewController,
 } from '../../controllers/admin/review.controller';
 import { requireAuthAdmin } from '../../middlewares/authAdmin';
+import { getDashboardStatsController } from '../../controllers/admin/dashboard.controller';
 
 const router = Router();
 
@@ -51,6 +53,11 @@ const router = Router();
  */
 router.post('/login', adminLoginController);
 router.get('/me', requireAuthAdmin, adminMeController);
+
+/**
+ * 📊 Dashboard Routes
+ */
+router.get('/dashboard/stats', requireAuthAdmin, getDashboardStatsController);
 
 /**
  * ============================================
@@ -100,6 +107,7 @@ router.delete('/categories/:id', requireAuthAdmin, deleteCategoryController);
 router.get('/orders', requireAuthAdmin, getAllOrdersController);
 router.get('/orders/:id', requireAuthAdmin, getOrderByIdController);
 router.put('/orders/:id', requireAuthAdmin, updateOrderController);
+router.delete('/orders/:id', requireAuthAdmin, deleteOrderController);
 
 /**
  * ⭐ Review Management Routes
@@ -112,6 +120,8 @@ router.delete('/reviews/:id', requireAuthAdmin, deleteReviewController);
  * 🎁 Voucher Management Routes
  */
 router.get('/vouchers', requireAuthAdmin, listAdminVouchersController);
+router.get('/vouchers/:id', requireAuthAdmin, getVoucherByIdController);
 router.post('/vouchers', requireAuthAdmin, createAdminVoucherController);
+router.put('/vouchers/:id', requireAuthAdmin, updateVoucherController);
 
 export default router;

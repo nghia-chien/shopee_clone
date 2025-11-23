@@ -14,7 +14,7 @@ import { OrderList, OrderShow, OrderEdit } from "../screens/admin/data/OrderList
 import { ReviewList, ReviewShow } from "../screens/admin/data/ReviewList";
 import { UserList, UserShow, UserCreate, UserEdit } from "../screens/admin/data/UserList";
 import { SellerList, SellerShow, SellerCreate, SellerEdit } from "../screens/admin/data/SellerList";
-import { VoucherList, VoucherCreate } from "../screens/admin/data/VoucherList";
+import { VoucherList, VoucherShow, VoucherCreate, VoucherEdit } from "../screens/admin/data/VoucherList";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 /**
@@ -75,12 +75,14 @@ export function RefineApp() {
                 edit: "/admin/sellers/edit/:id",
                 meta: { label: "Sellers" },
               },
-              {
-                name: "vouchers",
-                list: "/admin/vouchers",
-                create: "/admin/vouchers/create",
-                meta: { label: "Voucher" },
-              },
+                    {
+                      name: "vouchers",
+                      list: "/admin/vouchers",
+                      show: "/admin/vouchers/show/:id",
+                      create: "/admin/vouchers/create",
+                      edit: "/admin/vouchers/edit/:id",
+                      meta: { label: "Voucher" },
+                    },
               {
                 name: "reviews",
                 list: "/admin/reviews",
@@ -129,9 +131,11 @@ export function RefineApp() {
                   <Route path="sellers/create" element={<SellerCreate />} />
                   <Route path="sellers/edit/:id" element={<SellerEdit />} />
                   
-                  {/* Vouchers */}
-                  <Route path="vouchers" element={<VoucherList />} />
-                  <Route path="vouchers/create" element={<VoucherCreate />} />
+                        {/* Vouchers */}
+                        <Route path="vouchers" element={<VoucherList />} />
+                        <Route path="vouchers/show/:id" element={<VoucherShow />} />
+                        <Route path="vouchers/create" element={<VoucherCreate />} />
+                        <Route path="vouchers/edit/:id" element={<VoucherEdit />} />
                   
                   {/* Reviews */}
                   <Route path="reviews" element={<ReviewList />} />

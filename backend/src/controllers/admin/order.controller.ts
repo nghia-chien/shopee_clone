@@ -132,3 +132,20 @@ export async function updateOrderController(req: Request, res: Response) {
   }
 }
 
+// DELETE ORDER (cascade delete seller_orders)
+export async function deleteOrderController(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    // Delete order (cascade will delete seller_orders automatically due to onDelete: Cascade)
+    await prisma.orders.delete({
+      where: { id },
+    });
+
+    return res.json({ message: 'Xóa đơn hàng thành công' });
+  } catch (err: any) {
+    console.error('deleteOrderController error:', err);
+    return res.status(500).json({ error: 'Lỗi server' });
+  }
+}
+

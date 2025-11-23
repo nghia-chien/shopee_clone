@@ -134,12 +134,29 @@ export function ReviewShow() {
     id: id!,
   });
 
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const review = (showResult as any).data?.data;
-  const isLoading = (showResult as any).isLoading || (showResult as any).isFetching || false;
+  // In Refine v4, useShow might return different structures
+  const review = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoading = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
+    
+  const error = 
+    (showResult as any).error || 
+    (showResult as any).query?.error;
 
-  if (isLoading) return <div>Đang tải...</div>;
-  if (!review) return <div>Không tìm thấy đánh giá</div>;
+  if (isLoading) return <div className="text-center py-8">Đang tải...</div>;
+  if (error) return <div className="text-center py-8 text-red-600">Lỗi: {error?.message || "Không thể tải dữ liệu"}</div>;
+  if (!review) return <div className="text-center py-8">Không tìm thấy đánh giá</div>;
 
   return (
     <div className="space-y-4">

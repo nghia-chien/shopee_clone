@@ -64,6 +64,16 @@ export async function getCategoryByIdController(req: Request, res: Response) {
         _count: {
           select: { product: true },
         },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            images: true,
+            price: true,
+            status: true,
+          },
+          take: 20, // Limit to 20 products for display
+        },
       },
     });
 
@@ -83,13 +93,29 @@ export async function createCategoryController(req: Request, res: Response) {
   try {
     const { name, slug, parent_id, level, path, image } = req.body;
 
+    // Auto-generate path if not provided
+    let finalPath: string[] = [];
+    if (parent_id) {
+      const parent = await prisma.category.findUnique({
+        where: { id: parent_id },
+        select: { path: true, name: true },
+      });
+      if (parent) {
+        finalPath = [...parent.path, parent.name];
+      } else {
+        finalPath = [name];
+      }
+    } else {
+      finalPath = [name];
+    }
+
     const category = await prisma.category.create({
       data: {
         name,
         slug,
         parent_id: parent_id || null,
         level: level || 1,
-        path: path || [],
+        path: finalPath,
         image: image || null,
       },
     });

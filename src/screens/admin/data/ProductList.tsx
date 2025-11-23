@@ -1,7 +1,7 @@
 import { useList, useShow, useUpdate, useDelete } from "@refinedev/core";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit2, Trash2, Eye, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function ProductList() {
   const navigate = useNavigate();
@@ -89,9 +89,11 @@ export function ProductList() {
                             className="h-10 w-10 rounded object-cover mr-3"
                           />
                         )}
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{product.title}</div>
-                          <div className="text-sm text-gray-500">{product.category?.name}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 truncate max-w-xs" title={product.title}>
+                            {product.title}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate max-w-xs">{product.category?.name}</div>
                         </div>
                       </div>
                     </td>
@@ -158,12 +160,30 @@ export function ProductShow() {
     id: id!,
   });
 
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const product = (showResult as any).data?.data;
-  const isLoading = (showResult as any).isLoading || (showResult as any).isFetching || false;
+  // In Refine v4, useShow might return different structures
+  // Try multiple ways to access the data
+  const product = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoading = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
+    
+  const error = 
+    (showResult as any).error || 
+    (showResult as any).query?.error;
 
-  if (isLoading) return <div>Đang tải...</div>;
-  if (!product) return <div>Không tìm thấy sản phẩm</div>;
+  if (isLoading) return <div className="text-center py-8">Đang tải...</div>;
+  if (error) return <div className="text-center py-8 text-red-600">Lỗi: {error?.message || "Không thể tải dữ liệu"}</div>;
+  if (!product) return <div className="text-center py-8">Không tìm thấy sản phẩm</div>;
 
   return (
     <div className="space-y-4">
@@ -226,23 +246,54 @@ export function ProductEdit() {
   const showResult = useShow({ resource: "products", id: id! });
   const { mutate, isLoading } = useUpdate();
   
-  // In Refine v4, useShow returns QueryObserverResult with data: { data: TData }
-  const product = (showResult as any).data?.data;
+  // In Refine v4, useShow might return different structures
+  const product = 
+    (showResult as any).data?.data || 
+    (showResult as any).data || 
+    (showResult as any).query?.data?.data ||
+    (showResult as any).query?.data ||
+    (showResult as any).result?.data ||
+    (showResult as any).result;
+    
+  const isLoadingProduct = 
+    (showResult as any).isLoading || 
+    (showResult as any).isFetching || 
+    (showResult as any).query?.isLoading ||
+    (showResult as any).query?.isFetching ||
+    false;
   const [formData, setFormData] = useState({
-    title: product?.title || "",
-    description: product?.description || "",
-    price: product?.price || "",
-    stock: product?.stock || 0,
-    status: product?.status || "active",
-    discount: product?.discount || 0,
+    title: "",
+    description: "",
+    price: "",
+    stock: 0,
+    status: "active",
+    discount: 0,
   });
+
+  // Update formData when product is loaded
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        title: product.title || "",
+        description: product.description || "",
+        price: product.price?.toString() || "",
+        stock: product.stock || 0,
+        status: product.status || "active",
+        discount: product.discount || 0,
+      });
+    }
+  }, [product]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     mutate({
       resource: "products",
       id: id!,
-      values: formData,
+      values: {
+        ...formData,
+        price: parseFloat(formData.price.toString()),
+        stock: parseInt(formData.stock.toString()),
+      },
     }, {
       onSuccess: () => {
         navigate("/admin/products");
@@ -250,7 +301,8 @@ export function ProductEdit() {
     });
   };
 
-  if (!product) return <div>Đang tải...</div>;
+  if (isLoadingProduct) return <div>Đang tải...</div>;
+  if (!product) return <div>Không tìm thấy sản phẩm</div>;
 
   return (
     <div className="space-y-4">

@@ -39,6 +39,14 @@ export const dataProvider: DataProvider = {
       params.set("search", searchFilter.value as string);
     }
 
+    // Add source filter for vouchers
+    if (resource === "vouchers") {
+      const sourceFilter = filters?.find((f: any) => f.field === "source");
+      if (sourceFilter && "value" in sourceFilter) {
+        params.set("source", sourceFilter.value as string);
+      }
+    }
+
     // Add sorters
     if (sorters && sorters.length > 0) {
       const sorter = sorters[0];
@@ -125,13 +133,39 @@ export const dataProvider: DataProvider = {
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[DataProvider] getOne error for ${resource}/${id}:`, response.status, errorText);
+      throw new Error(`API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    return {
-      data: data.user || data.seller || data.product || data.category || data.order || data.voucher || data.review || data,
-    };
+    console.log(`[DataProvider] getOne response for ${resource}/${id}:`, { dataKeys: Object.keys(data), data });
+    
+    // Backend returns { voucher }, { user }, { seller }, { order }, etc.
+    // Check for specific resource keys first
+    let resultData;
+    if (data.order) {
+      resultData = data.order;
+    } else if (data.voucher) {
+      resultData = data.voucher;
+    } else if (data.user) {
+      resultData = data.user;
+    } else if (data.seller) {
+      resultData = data.seller;
+    } else if (data.product) {
+      resultData = data.product;
+    } else if (data.category) {
+      resultData = data.category;
+    } else if (data.review) {
+      resultData = data.review;
+    } else {
+      // Fallback to data itself if it's already the resource object
+      resultData = data;
+    }
+    
+    const result = { data: resultData };
+    console.log(`[DataProvider] getOne transformed for ${resource}/${id}:`, { hasData: !!result.data, resultKeys: result.data ? Object.keys(result.data) : [] });
+    return result;
   },
 
   create: async ({ resource, variables, meta }) => {
