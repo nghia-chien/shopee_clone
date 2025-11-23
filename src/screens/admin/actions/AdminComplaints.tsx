@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, RefreshCw } from 'lucide-react';
-import { useAdminAuthStore } from '../../store/AdminAuth';
-import { fetchAdminComplaints, respondAdminComplaint } from '../../api/adminapi/complaints';
-import { ComplaintCard } from '../../components/complaints/ComplaintCard';
-import type { ComplaintStatus } from '../../types/complaints';
-import type { AdminComplaintFilters } from '../../api/adminapi/complaints';
+import { useAdminAuthStore } from '../../../store/AdminAuth';
+import { fetchAdminComplaints, respondAdminComplaint } from '../../../api/adminapi/actions/complaints';
+import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
+import type { ComplaintStatus } from '../../../types/complaints';
+import type { AdminComplaintFilters } from '../../../api/adminapi/actions/complaints';
 
 const STATUS_OPTIONS: ComplaintStatus[] = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'];
 const TYPE_OPTIONS = [

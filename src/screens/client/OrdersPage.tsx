@@ -6,7 +6,8 @@ import { ReviewForm } from '../../components/review/ReviewForm';
 import { useNavigate } from "react-router-dom";
 import { ComplaintModal } from '../../components/complaints/ComplaintModal';
 import type { ComplaintDraft } from '../../types/complaints';
-
+import { useChatWidgetStore } from "../../store/chatWidget";
+import { ChatWidget } from "../../components/chat/ChatWidget";
 interface OrderItem {
   id: string;
   product_id: string;
@@ -37,6 +38,7 @@ export default function OrdersPage() {
   const [activeReviewOrder, setActiveReviewOrder] = useState<string | null>(null);
   const [activeReviewProduct, setActiveReviewProduct] = useState<string | null>(null);
   const [complaintDraft, setComplaintDraft] = useState<ComplaintDraft | null>(null);
+  const openChat = useChatWidgetStore((s) => s.openChat);
   const navigate = useNavigate();
 
   // Handler cho nút "Mua Lại"
@@ -196,7 +198,15 @@ export default function OrdersPage() {
 
                     <Store className="w-4 h-4" />
                     <span className="font-medium text-sm">{order.seller.name}</span>
-                    <button className="ml-2">
+                    <button
+                      className="ml-2"
+                      onClick={() =>
+                        useChatWidgetStore.getState().openChat(
+                          order.seller.id,
+                          order.seller.name
+                        )
+                      }
+                    >
                       <MessageCircle className="w-4 h-4 text-orange-600" />
                     </button>
                     <button
@@ -405,7 +415,7 @@ export default function OrdersPage() {
             );
           })
         )}
-      </div>
+      </div><ChatWidget />
     </div>
     <ComplaintModal
       actor="USER"
