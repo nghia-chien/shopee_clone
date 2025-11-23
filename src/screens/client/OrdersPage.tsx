@@ -15,12 +15,31 @@ interface OrderItem {
   variant?: string;
 }
 
+interface ShippingEvent {
+  ghn_status?: string | null;
+  internal_status?: string | null;
+  note?: string | null;
+  happened_at?: string | null;
+}
+
+interface ShippingInfo {
+  shipping_order_id: string;
+  ghn_order_code?: string | null;
+  ghn_status?: string | null;
+  internal_status?: string | null;
+  expected_delivery_time?: string | null;
+  synced_at?: string | null;
+  latest_event?: ShippingEvent | null;
+}
+
 interface SellerOrder {
   id: string;
   order_id: string;
   seller: { id: string; name: string };
   total: number;
   status: 'pending' | 'accepted' | 'cancelled' | 'completed';
+  fulfillment_status?: string | null;
+  shipping?: ShippingInfo | null;
   created_at?: string;
   items: OrderItem[];
   rating_deadline?: string;
@@ -54,7 +73,6 @@ export default function OrdersPage() {
     navigate('/cart');
   };
 
-
   useEffect(() => {
     if (!token) return;
     loadOrders();
@@ -73,14 +91,29 @@ export default function OrdersPage() {
     }
   };
 
-  const getStatusInfo = (status: string) => {
-    const configs: any = {
-      pending: { label: 'Chờ xác nhận', tab: 'pending' },
-      accepted: { label: 'Vận chuyển', tab: 'shipping' },
-      completed: { label: 'Hoàn thành', tab: 'completed', deliverySuccess: true },
-      cancelled: { label: 'Đã hủy', tab: 'cancelled' }
-    };
-    return configs[status] || configs.pending;
+  const STATUS_MAP: Record<string, { label: string; tab: string; deliverySuccess?: boolean }> = {
+    pending: { label: 'Chờ xác nhận', tab: 'pending' },
+    accepted: { label: 'Shop đã xác nhận', tab: 'pending' },
+    processing: { label: 'Đang chuẩn bị hàng', tab: 'shipping' },
+    delivering: { label: 'Đang giao hàng', tab: 'delivering' },
+    delivered: { label: 'Giao hàng thành công', tab: 'completed', deliverySuccess: true },
+    cancelled: { label: 'Đã hủy', tab: 'cancelled' },
+    returned: { label: 'Hoàn hàng', tab: 'refund' },
+    completed: { label: 'Hoàn thành', tab: 'completed', deliverySuccess: true },
+  };
+
+  const getStatusInfo = (order: SellerOrder) => {
+    const key = order.fulfillment_status || order.status;
+    return STATUS_MAP[key] || STATUS_MAP.pending;
+  };
+
+  const formatDateTime = (value?: string | null) => {
+    if (!value) return null;
+    try {
+      return new Date(value).toLocaleString('vi-VN');
+    } catch (e) {
+      return value;
+    }
   };
 
   const tabs = [
@@ -95,7 +128,7 @@ export default function OrdersPage() {
 
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
-    const statusInfo = getStatusInfo(order.status);
+    const statusInfo = getStatusInfo(order);
     return statusInfo.tab === activeTab;
   });
 
@@ -147,8 +180,10 @@ export default function OrdersPage() {
           </div>
         ) : (
           filteredOrders.map(order => {
-            const statusInfo = getStatusInfo(order.status);
-            
+            const statusInfo = getStatusInfo(order);
+            const shippingInfo = order.shipping;
+            const latestEvent = shippingInfo?.latest_event;
+
             return (
               <div key={order.id} className="bg-white rounded shadow-sm">
                 {/* Header */}
@@ -175,14 +210,39 @@ export default function OrdersPage() {
                       <>
                         <Truck className="w-4 h-4 text-green-600" />
                         <span className="text-green-600 text-sm">Giao hàng thành công</span>
+
                         <span className="w-2 h-2 rounded-full bg-gray-300"></span>
                       </>
                     )}
-                    <span className="text-orange-600 font-medium text-sm uppercase">
-                      {statusInfo.label}
-                    </span>
+                    <div className="text-right">
+                      <span className="text-orange-600 font-medium text-sm uppercase block">
+                        {statusInfo.label}
+                      </span>
+                      {shippingInfo?.ghn_order_code && (
+                        <span className="text-xs text-gray-500">GHN: {shippingInfo.ghn_order_code}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {shippingInfo && (
+                  <div className="px-4 py-2 bg-orange-50 text-sm text-gray-700 border-b">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-orange-500" />
+                        {latestEvent?.note || STATUS_MAP[shippingInfo.internal_status || 'processing']?.label || 'Đang xử lý'}
+                      </span>
+                      <div className="text-xs text-gray-500 flex flex-wrap gap-3">
+                        {latestEvent?.happened_at && (
+                          <span>Cập nhật: {formatDateTime(latestEvent.happened_at)}</span>
+                        )}
+                        {shippingInfo.expected_delivery_time && (
+                          <span>Giao dự kiến: {formatDateTime(shippingInfo.expected_delivery_time)}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Items */}
                 <div className="px-4 py-3">
@@ -190,9 +250,9 @@ export default function OrdersPage() {
                     <div key={item.id} className="flex gap-3 py-2">
                       <div className="w-20 h-20 flex-shrink-0 border rounded overflow-hidden bg-gray-50">
                         {item.images?.[0] ? (
-                          <img 
-                            src={item.images[0]} 
-                            alt={item.title} 
+                          <img
+                            src={item.images[0]}
+                            alt={item.title}
                             className="w-full h-full object-cover"
                           />
                         ) : (

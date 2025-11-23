@@ -10,6 +10,11 @@ import {
   retryAllFailedShippingOrdersController,
   getShippingOrdersController,
 } from '../../controllers/shipping.controller';
+import {
+  ghnWebhookController,
+  syncShippingOrderController,
+  getShippingOrderTrackingController,
+} from '../../controllers/shippingStatus.controller';
 
 const router = Router();
 
@@ -19,6 +24,11 @@ router.get('/wards/:district_id', getWards);
 router.post('/fee', calculateShippingFee);
 router.post('/create-order', createShippingOrder);
 router.post('/cancel-order', cancelShippingOrder);
+
+// GHN status sync
+router.post('/ghn/webhook', ghnWebhookController);
+router.post('/orders/:shippingOrderId/sync', syncShippingOrderController);
+router.get('/orders/:shippingOrderId/tracking', getShippingOrderTrackingController);
 
 // Retry endpoints
 router.post('/retry/:shippingOrderId', retryShippingOrderController);

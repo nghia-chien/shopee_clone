@@ -1,5 +1,6 @@
 import 'dotenv/config'; // Ensure dotenv is loaded
 import app from "./app"; // <-- dùng app.ts, KHÔNG tạo app mới
+import { setupShippingStatusSyncJob } from './jobs/shippingStatus.job';
 
 const PORT = process.env.PORT || 4000;
 
@@ -17,6 +18,9 @@ const server = app.listen(PORT, () => {
   // Uncomment dòng sau để enable:
   // import { setupShippingRetryCron } from './jobs/shippingRetry.job';
   // setupShippingRetryCron();
+
+  // Bật cron đồng bộ trạng thái GHN → DB
+  setupShippingStatusSyncJob();
 });
 
 // Handle EADDRINUSE gracefully
