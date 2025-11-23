@@ -33,6 +33,7 @@ interface ShippingInfo {
   expected_delivery_time?: string | null;
   synced_at?: string | null;
   latest_event?: ShippingEvent | null;
+  error_message? : string | null;
 }
 
 interface SellerOrder {
@@ -277,7 +278,7 @@ export default function OrdersPage() {
                     <div className="flex flex-col gap-1">
                       <span className="font-medium flex items-center gap-2">
                         <Truck className="w-4 h-4 text-orange-500" />
-                        {latestEvent?.note || STATUS_MAP[shippingInfo.internal_status || 'processing']?.label || 'Đang xử lý'}
+                        {latestEvent?.note || STATUS_MAP[shippingInfo.internal_status || 'processing']?.label || shippingInfo.error_message ||'Đang xử lý'}
                       </span>
                       <div className="text-xs text-gray-500 flex flex-wrap gap-3">
                         {latestEvent?.happened_at && (

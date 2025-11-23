@@ -39,10 +39,129 @@ export function validateAndFormatPhone(phone: string | null | undefined): string
 
   // Validate: phải bắt đầu bằng 0 và có 10 số
   if (!/^0\d{9}$/.test(cleaned)) {
-    throw new Error(`Số điện thoại không đúng định dạng: ${phone}. Yêu cầu: 10 số, bắt đầu bằng 0 (ví dụ: 0123456789)`);
+    throw new Error(`Số điện thoại "" ${phone} "" không có thực . Yêu cầu: 10 số, bắt đầu bằng 0 (ví dụ: 0123456789)`);
   }
 
   return cleaned;
+}
+
+/**
+ * Validate đầy đủ thông tin địa chỉ và số điện thoại trước khi tạo đơn GHN
+ * Đảm bảo tất cả các trường bắt buộc đều có giá trị hợp lệ
+ */
+export function validateGhnOrderParams(params: {
+  to_name?: string | null;
+  to_phone?: string | null;
+  to_address?: string | null;
+  to_ward_code?: string | null;
+  to_district_id?: number | null;
+  from_name?: string | null;
+  from_phone?: string | null;
+  from_address?: string | null;
+  from_ward_code?: string | null;
+  from_district_id?: number | null;
+  weight?: number | null;
+  items?: Array<any> | null;
+}): { valid: boolean; error?: string; validatedParams?: any } {
+  const errors: string[] = [];
+
+  // Validate thông tin người nhận (to_*)
+  if (!params.to_name || params.to_name.trim() === '') {
+    errors.push('Tên người nhận (to_name) là bắt buộc');
+  }
+
+  if (!params.to_phone) {
+    errors.push('Số điện thoại người nhận (to_phone) là bắt buộc');
+  } else {
+    try {
+      validateAndFormatPhone(params.to_phone);
+    } catch (error: any) {
+      errors.push(`Số điện thoại người nhận không hợp lệ: ${error.message}`);
+    }
+  }
+
+  if (!params.to_address || params.to_address.trim() === '') {
+    errors.push('Địa chỉ người nhận (to_address) là bắt buộc');
+  }
+
+  if (!params.to_ward_code || params.to_ward_code.trim() === '') {
+    errors.push('Mã phường/xã người nhận (to_ward_code) là bắt buộc');
+  }
+
+  if (!params.to_district_id || Number.isNaN(Number(params.to_district_id)) || Number(params.to_district_id) <= 0) {
+    errors.push('Mã quận/huyện người nhận (to_district_id) là bắt buộc và phải là số hợp lệ');
+  }
+
+  // Validate thông tin người gửi (from_*)
+  if (!params.from_name || params.from_name.trim() === '') {
+    errors.push('Tên người gửi (from_name) là bắt buộc');
+  }
+
+  if (!params.from_phone) {
+    errors.push('Số điện thoại người gửi (from_phone) là bắt buộc');
+  } else {
+    try {
+      validateAndFormatPhone(params.from_phone);
+    } catch (error: any) {
+      errors.push(`Số điện thoại người gửi không hợp lệ: ${error.message}`);
+    }
+  }
+
+  if (!params.from_address || params.from_address.trim() === '') {
+    errors.push('Địa chỉ người gửi (from_address) là bắt buộc');
+  }
+
+  if (!params.from_ward_code || params.from_ward_code.trim() === '') {
+    errors.push('Mã phường/xã người gửi (from_ward_code) là bắt buộc');
+  }
+
+  if (!params.from_district_id || Number.isNaN(Number(params.from_district_id)) || Number(params.from_district_id) <= 0) {
+    errors.push('Mã quận/huyện người gửi (from_district_id) là bắt buộc và phải là số hợp lệ');
+  }
+
+  // Validate weight
+  if (!params.weight || Number.isNaN(Number(params.weight)) || Number(params.weight) <= 0) {
+    errors.push('Trọng lượng (weight) là bắt buộc và phải là số lớn hơn 0 (đơn vị: gram)');
+  }
+
+  // Validate items
+  if (!params.items || !Array.isArray(params.items) || params.items.length === 0) {
+    errors.push('Danh sách sản phẩm (items) là bắt buộc và phải có ít nhất 1 sản phẩm');
+  } else {
+    params.items.forEach((item, index) => {
+      if (!item.name || item.name.trim() === '') {
+        errors.push(`Sản phẩm thứ ${index + 1} thiếu tên (name)`);
+      }
+      if (!item.quantity || Number.isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+        errors.push(`Sản phẩm thứ ${index + 1} có số lượng (quantity) không hợp lệ`);
+      }
+    });
+  }
+
+  if (errors.length > 0) {
+    return {
+      valid: false,
+      error: `Validation failed: ${errors.join('; ')}`,
+    };
+  }
+
+  // Trả về validated params với số điện thoại đã được format
+  return {
+    valid: true,
+    validatedParams: {
+      to_name: params.to_name!.trim(),
+      to_phone: validateAndFormatPhone(params.to_phone!),
+      to_address: params.to_address!.trim(),
+      to_ward_code: params.to_ward_code!.trim(),
+      to_district_id: Number(params.to_district_id!),
+      from_name: params.from_name!.trim(),
+      from_phone: validateAndFormatPhone(params.from_phone!),
+      from_address: params.from_address!.trim(),
+      from_ward_code: params.from_ward_code!.trim(),
+      from_district_id: Number(params.from_district_id!),
+      weight: Number(params.weight!),
+    },
+  };
 }
 
 
@@ -160,26 +279,6 @@ export async function createShippingOrder(req: Request, res: Response) {
     items = [],
   } = req.body || {};
 
-  if (
-    !to_name ||
-    !to_phone ||
-    !to_address ||
-    !to_ward_code ||
-    Number.isNaN(Number(to_district_id)) ||
-    Number.isNaN(Number(weight))
-  ) {
-    console.log('Thiếu thông tin khách hàng hoặc địa chỉ:', req.body);
-    return res.status(400).json({ error: 'Thiếu thông tin khách hàng hoặc địa chỉ' });
-  }
-
-  // Validate và format số điện thoại
-  let validatedToPhone: string;
-  try {
-    validatedToPhone = validateAndFormatPhone(to_phone);
-  } catch (error: any) {
-    return res.status(400).json({ error: error.message || 'Số điện thoại không hợp lệ' });
-  }
-
   // Lấy shop config từ env
   const shopConfig = {
     from_name: process.env.SHIP_FROM_NAME || 'Shop',
@@ -189,37 +288,50 @@ export async function createShippingOrder(req: Request, res: Response) {
     from_district_id: Number(process.env.SHIP_FROM_DISTRICT_ID || 1450),
   };
 
-  // Validate shop phone
-  let validatedFromPhone: string;
-  try {
-    validatedFromPhone = validateAndFormatPhone(shopConfig.from_phone);
-  } catch (error: any) {
-    return res.status(500).json({ 
-      error: `Shop phone number is invalid: ${error.message}. Please configure SHIP_FROM_PHONE in environment variables.` 
-    });
+  // Validate đầy đủ thông tin trước khi tạo đơn
+  const validation = validateGhnOrderParams({
+    to_name,
+    to_phone,
+    to_address,
+    to_ward_code,
+    to_district_id,
+    from_name: shopConfig.from_name,
+    from_phone: shopConfig.from_phone,
+    from_address: shopConfig.from_address,
+    from_ward_code: shopConfig.from_ward_code,
+    from_district_id: shopConfig.from_district_id,
+    weight,
+    items,
+  });
+
+  if (!validation.valid) {
+    console.error('❌ Validation failed:', validation.error);
+    return res.status(400).json({ error: validation.error || 'Validation failed' });
   }
+
+  const validated = validation.validatedParams!;
 
   try {
     const orderPayload = {
       payment_type_id: 2,
       note,
       required_note,
-      to_name,
-      to_phone: validatedToPhone,
-      to_address,
-      to_ward_code,
-      to_district_id: Number(to_district_id),
-      weight: Number(weight),
+      to_name: validated.to_name,
+      to_phone: validated.to_phone,
+      to_address: validated.to_address,
+      to_ward_code: validated.to_ward_code,
+      to_district_id: validated.to_district_id,
+      weight: validated.weight,
       content: req.body?.content ?? '',
       items,
-      from_name: shopConfig.from_name,
-      from_phone: validatedFromPhone,
-      from_address: shopConfig.from_address,
-      from_ward_code: shopConfig.from_ward_code,
-      from_district_id: shopConfig.from_district_id,
+      from_name: validated.from_name,
+      from_phone: validated.from_phone,
+      from_address: validated.from_address,
+      from_ward_code: validated.from_ward_code,
+      from_district_id: validated.from_district_id,
     };
 
-    console.log('Payload gửi lên GHN:', JSON.stringify(orderPayload, null, 2));
+    console.log('✅ Validated payload gửi lên GHN:', JSON.stringify(orderPayload, null, 2));
 
     const ghnOrder = await callGhnApi('/v2/shipping-order/create', {
       method: 'POST',
@@ -287,34 +399,54 @@ export async function createGhnOrderInternal(params: {
   from_ward_code: string;
   from_district_id: number;
 }): Promise<any> {
-  // Validate và format số điện thoại
-  const to_phone = validateAndFormatPhone(params.to_phone);
-  const from_phone = validateAndFormatPhone(params.from_phone);
+  // Validate đầy đủ thông tin trước khi tạo đơn GHN
+  const validation = validateGhnOrderParams({
+    to_name: params.to_name,
+    to_phone: params.to_phone,
+    to_address: params.to_address,
+    to_ward_code: params.to_ward_code,
+    to_district_id: params.to_district_id,
+    from_name: params.from_name,
+    from_phone: params.from_phone,
+    from_address: params.from_address,
+    from_ward_code: params.from_ward_code,
+    from_district_id: params.from_district_id,
+    weight: params.weight,
+    items: params.items,
+  });
+
+  if (!validation.valid) {
+    console.error('❌ GHN order validation failed:', validation.error);
+    throw new Error(validation.error || 'Validation failed');
+  }
+
+  // Sử dụng validated params để đảm bảo dữ liệu đã được format đúng
+  const validated = validation.validatedParams!;
 
   const orderPayload = {
     payment_type_id: params.payment_type_id,
     note: params.note || '',
     required_note: params.required_note || 'KHONGCHOXEMHANG',
     service_type_id: params.service_type_id || 2,
-    to_name: params.to_name,
-    to_phone: to_phone,
-    to_address: params.to_address,
-    to_ward_code: params.to_ward_code,
-    to_district_id: params.to_district_id,
-    weight: params.weight,
+    to_name: validated.to_name,
+    to_phone: validated.to_phone,
+    to_address: validated.to_address,
+    to_ward_code: validated.to_ward_code,
+    to_district_id: validated.to_district_id,
+    weight: validated.weight,
     length: params.length || 10,
     width: params.width || 10,
     height: params.height || 10,
     content: '',
     items: params.items,
-    from_name: params.from_name,
-    from_phone: from_phone,
-    from_address: params.from_address,
-    from_ward_code: params.from_ward_code,
-    from_district_id: params.from_district_id,
+    from_name: validated.from_name,
+    from_phone: validated.from_phone,
+    from_address: validated.from_address,
+    from_ward_code: validated.from_ward_code,
+    from_district_id: validated.from_district_id,
   };
 
-  console.log('Payload gửi lên GHN:', JSON.stringify(orderPayload, null, 2));
+  console.log('✅ Validated payload gửi lên GHN:', JSON.stringify(orderPayload, null, 2));
 
   const ghnOrder = await callGhnApi('/v2/shipping-order/create', {
     method: 'POST',
@@ -324,6 +456,127 @@ export async function createGhnOrderInternal(params: {
   console.log('GHN trả về:', JSON.stringify(ghnOrder, null, 2));
 
   return ghnOrder;
+}
+
+/**
+ * Pre-validate GHN order trước khi tạo đơn hàng
+ * Test xem GHN có chấp nhận địa chỉ này không bằng cách tính phí vận chuyển
+ * Nếu tính được phí → địa chỉ hợp lệ
+ */
+export async function preValidateGhnOrder(params: {
+  to_name: string;
+  to_phone: string;
+  to_address: string;
+  to_ward_code: string;
+  to_district_id: number;
+  from_name: string;
+  from_phone: string;
+  from_address: string;
+  from_ward_code: string;
+  from_district_id: number;
+  weight: number;
+}): Promise<{ valid: boolean; error?: string; details?: any }> {
+  try {
+    // 1. Validate params trước
+    const validation = validateGhnOrderParams({
+      to_name: params.to_name,
+      to_phone: params.to_phone,
+      to_address: params.to_address,
+      to_ward_code: params.to_ward_code,
+      to_district_id: params.to_district_id,
+      from_name: params.from_name,
+      from_phone: params.from_phone,
+      from_address: params.from_address,
+      from_ward_code: params.from_ward_code,
+      from_district_id: params.from_district_id,
+      weight: params.weight,
+      items: [{ name: 'Test', quantity: 1 }], // Dummy item để test
+    });
+
+    if (!validation.valid) {
+      return {
+        valid: false,
+        error: validation.error || 'Validation failed',
+      };
+    }
+
+    const validated = validation.validatedParams!;
+
+    // 2. Test tính phí vận chuyển (để validate địa chỉ)
+    // Nếu GHN tính được phí → địa chỉ hợp lệ
+    try {
+      const feeResponse = await callGhnApi('/v2/shipping-order/fee', {
+        method: 'POST',
+        body: {
+          from_district_id: validated.from_district_id,
+          to_district_id: validated.to_district_id,
+          weight: validated.weight,
+          service_id: 53321, // Standard service
+        },
+      });
+
+      // Kiểm tra response structure
+      const total = feeResponse?.total || feeResponse?.data?.total;
+      const leadtime = feeResponse?.leadtime || feeResponse?.data?.leadtime;
+
+      // Nếu tính được phí → địa chỉ hợp lệ
+      if (total !== undefined && total !== null) {
+        console.log('✅ Pre-validation passed:', {
+          shippingFee: total,
+          estimatedTime: leadtime,
+        });
+
+        return {
+          valid: true,
+          details: {
+            shippingFee: total,
+            estimatedTime: leadtime,
+          },
+        };
+      }
+
+      return {
+        valid: false,
+        error: 'Không thể tính phí vận chuyển. Địa chỉ có thể không hợp lệ với GHN.',
+      };
+    } catch (feeError: any) {
+      // Nếu lỗi tính phí → địa chỉ không hợp lệ
+      const errorMessage = feeError.message || 'Unknown error';
+      
+      console.error('❌ Pre-validation failed (fee calculation):', {
+        error: errorMessage,
+        from_district_id: validated.from_district_id,
+        to_district_id: validated.to_district_id,
+      });
+
+      // Phân tích lỗi cụ thể
+      if (errorMessage.includes('district') || errorMessage.includes('ward') || 
+          errorMessage.includes('District') || errorMessage.includes('Ward')) {
+        return {
+          valid: false,
+          error: `Địa chỉ không hợp lệ với GHN: ${errorMessage}. Vui lòng kiểm tra lại địa chỉ.`,
+        };
+      }
+
+      if (errorMessage.includes('service') || errorMessage.includes('Service')) {
+        return {
+          valid: false,
+          error: `Dịch vụ vận chuyển không khả dụng cho địa chỉ này: ${errorMessage}.`,
+        };
+      }
+
+      return {
+        valid: false,
+        error: `Không thể validate địa chỉ với GHN: ${errorMessage}. Vui lòng thử lại sau.`,
+      };
+    }
+  } catch (error: any) {
+    console.error('❌ Pre-validation error:', error);
+    return {
+      valid: false,
+      error: `Lỗi khi validate địa chỉ: ${error.message || 'Unknown error'}`,
+    };
+  }
 }
 
 /**
