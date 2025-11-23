@@ -1,5 +1,5 @@
 import { prisma } from '../utils/prisma';
-import { createGhnOrderInternal, validateAndFormatPhone } from '../controllers/shipping.controller';
+import { createGhnOrderInternal, validateAndFormatPhone, validateGhnOrderParams } from '../controllers/shipping.controller';
 import { notifyGhnOrderFailure, notifyMultipleGhnFailures } from './notification.service';
 
 interface RetryShippingOrderParams {
@@ -62,16 +62,28 @@ export async function retryShippingOrder({ shippingOrderId, maxRetries = 3 }: Re
     from_district_id: Number(process.env.SHIP_FROM_DISTRICT_ID || 1450),
   };
 
-  // Validate số điện thoại trước khi retry
-  let validatedToPhone: string;
-  let validatedFromPhone: string;
-  
-  try {
-    validatedToPhone = validateAndFormatPhone(order.to_phone);
-    validatedFromPhone = validateAndFormatPhone(shopConfig.from_phone);
-  } catch (error: any) {
-    throw new Error(`Phone number validation failed: ${error.message}`);
+  // Validate đầy đủ thông tin trước khi retry để tránh retry không cần thiết
+  const validation = validateGhnOrderParams({
+    to_name: order.to_name,
+    to_phone: order.to_phone,
+    to_address: order.to_address,
+    to_ward_code: shippingOrder.to_ward_code,
+    to_district_id: shippingOrder.to_district_id,
+    from_name: shopConfig.from_name,
+    from_phone: shopConfig.from_phone,
+    from_address: shopConfig.from_address,
+    from_ward_code: shopConfig.from_ward_code,
+    from_district_id: shopConfig.from_district_id,
+    weight: totalWeight,
+    items: items,
+  });
+
+  if (!validation.valid) {
+    console.error('❌ Validation failed before retry:', validation.error);
+    throw new Error(`Validation failed: ${validation.error}`);
   }
+
+  const validated = validation.validatedParams!;
 
   // Retry với exponential backoff
   let lastError: string | null = null;
@@ -81,12 +93,12 @@ export async function retryShippingOrder({ shippingOrderId, maxRetries = 3 }: Re
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const ghnOrder = await createGhnOrderInternal({
-        to_name: order.to_name || '',
-        to_phone: validatedToPhone,
-        to_address: order.to_address || '',
-        to_ward_code: shippingOrder.to_ward_code || '',
-        to_district_id: shippingOrder.to_district_id || 0,
-        weight: totalWeight,
+        to_name: validated.to_name,
+        to_phone: validated.to_phone,
+        to_address: validated.to_address,
+        to_ward_code: validated.to_ward_code,
+        to_district_id: validated.to_district_id,
+        weight: validated.weight,
         length: shippingOrder.length || 10,
         width: shippingOrder.width || 10,
         height: shippingOrder.height || 10,
@@ -95,11 +107,11 @@ export async function retryShippingOrder({ shippingOrderId, maxRetries = 3 }: Re
         required_note: 'KHONGCHOXEMHANG',
         note: '',
         items: items,
-        from_name: shopConfig.from_name,
-        from_phone: validatedFromPhone,
-        from_address: shopConfig.from_address,
-        from_ward_code: shopConfig.from_ward_code,
-        from_district_id: shopConfig.from_district_id,
+        from_name: validated.from_name,
+        from_phone: validated.from_phone,
+        from_address: validated.from_address,
+        from_ward_code: validated.from_ward_code,
+        from_district_id: validated.from_district_id,
       });
 
       const orderCode = ghnOrder?.order_code || ghnOrder?.data?.order_code || null;
