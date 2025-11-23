@@ -227,7 +227,14 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
             }
           }
         },
-        seller: true
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            shop_mall: true
+          }
+        }
       },
       orderBy: { created_at: 'desc' }
     });

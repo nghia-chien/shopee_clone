@@ -6,8 +6,8 @@ import { Footer } from '../../components/layout/Footer';
 import { AddressSelector } from '../../components/shipping/AddressSelector';
 import { useAuthStore } from '../../store/auth';
 import { api } from '../../api/userapi/client';
-import { getUserVouchers } from '../../api/vouchers';
-import type { UserVoucherEntry, Voucher } from '../../api/vouchers';
+import { getUserVouchers } from '../../api/userapi/vouchers';
+import type { UserVoucherEntry, Voucher } from '../../api/userapi/vouchers';
 import {
   type Address,
   createAddress,

@@ -128,31 +128,43 @@ export function ProductPage() {
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center text-yellow-500">
               <Star className="w-4 h-4 fill-yellow-500" />{" "}
-              <span className="ml-1">{data.rating ?? "Chưa có"}</span>
+              <span className="ml-1">{data.ratingAvg ?? "Chưa có"}</span>
             </div>
             <span>|</span>
             {/* Giả định data.reviews là số lượng đánh giá */}
-            <span>{t("product.reviews")}: {data.reviews ?? "0"}</span> 
+            <span>{t("product.reviews")}: {data.reviewCount ?? "0"}</span> 
             <span>|</span>
-            <span>{t("product.sold")}: {data.sold ?? "0"}</span>
+            <span>{t("product.sold")}: {data.soldCount ?? "0"}</span>
           </div>
 
           {/* (Yêu cầu 3) Giá tiền */}
           <div className="flex items-baseline gap-3 bg-gray-100 p-4 rounded">
+            {/* Giá chính (sau giảm hoặc giá gốc) */}
             <span className="text-3xl font-bold text-orange-600">
-              {priceAfterDiscount.toLocaleString()} ₫
+              {Number(data.discount ? priceAfterDiscount : data.price)
+                .toString()
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+              <span className="text-[16px] relative top-[-8px] ml-0.5">₫</span>
             </span>
-            {data.discount && (
+
+            {/* Chỉ hiện giá gốc + % giảm khi có discount */}
+            {data.discount > 0 && (
               <>
                 <span className="text-gray-400 line-through">
-                  {data.price.toLocaleString()} ₫
+                  {Number(data.price)
+                    .toString()
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                  <span className="text-[16px] relative top-[-8px] ml-0.5">₫</span>
                 </span>
+
                 <span className="text-red-600 text-sm font-semibold">
                   -{data.discount}%
                 </span>
               </>
             )}
           </div>
+
+
 
           {/* (Yêu cầu 4) Voucher + vận chuyển */}
           <div className="border-t border-b py-2 text-sm text-left text-gray-700">
@@ -198,16 +210,19 @@ export function ProductPage() {
         <div className="flex items-center justify-between mt-5 border-t pt-3">
           <div className="flex items-center gap-3">
             <img
-              src={data.seller?.logo || "https://placehold.co/60x60"}
+              src={data.seller?.avatar || "https://placehold.co/60x60"}
               alt="shop logo"
               className="w-12 h-12 rounded-full border"
             />
             <div>
               <div className="font-semibold text-gray-800">{data.seller?.name}</div>
-              <div className="text-sm text-gray-500">{data.seller?.address || "Đang cập nhật"}</div>
             </div>
             <button className="border px-4 py-1 rounded hover:bg-gray-100">{t("product.chat_now")}</button>
-            <button className="border px-4 py-1 rounded hover:bg-gray-100">{t("product.view_shop")}</button>
+            <button className="border px-4 py-1 rounded hover:bg-gray-100"
+            onClick={() => navigate(`/shop/${data?.seller?.id}`)}
+            >{t("product.view_shop")}
+              
+            </button>
           </div>
         </div>
       </div>

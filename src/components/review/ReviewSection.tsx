@@ -5,6 +5,8 @@ import { ReviewForm } from './ReviewForm';
 import { useAuthStore } from '../../store/auth';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api/userapi/client';
+import { ComplaintModal } from '../complaints/ComplaintModal';
+import type { ComplaintDraft } from '../../types/complaints';
 
 interface ReviewSectionProps {
   productId: string;
@@ -16,6 +18,7 @@ export function ReviewSection({ productId, sellerId }: ReviewSectionProps) {
   const { user, token } = useAuthStore();
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedSellerOrderId, setSelectedSellerOrderId] = useState<string | null>(null);
+  const [complaintDraft, setComplaintDraft] = useState<ComplaintDraft | null>(null);
 
   // Lấy các seller_order completed của user cho product này
   const { data: completedOrders } = useQuery({
@@ -65,17 +68,38 @@ export function ReviewSection({ productId, sellerId }: ReviewSectionProps) {
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">{t('review.reviews')}</h2>
-        {canReview && (
+        <div className="flex gap-2">
+          {canReview && (
+            <button
+              onClick={() => {
+                setSelectedSellerOrderId(completedOrders[0].id);
+                setShowReviewForm(true);
+              }}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+            >
+              {t('review.write_review')}
+            </button>
+          )}
           <button
-            onClick={() => {
-              setSelectedSellerOrderId(completedOrders[0].id);
-              setShowReviewForm(true);
-            }}
-            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+            onClick={() =>
+              setComplaintDraft({
+                type: 'PRODUCT_SHOP',
+                seller_id: sellerId,
+                product_id: productId,
+                meta: {
+                  issueCode: 'PRODUCT_DEFECT',
+                  reason: 'Sản phẩm lỗi / khác mô tả',
+                  channel: 'REVIEW',
+                  context: { sellerId, productId },
+                  autoFill: { source: 'review-section' },
+                },
+              })
+            }
+            className="px-4 py-2 border border-gray-300 text-sm rounded-lg hover:bg-gray-50"
           >
-            {t('review.write_review')}
+            Báo cáo shop
           </button>
-        )}
+        </div>
       </div>
 
       {showReviewForm && selectedSellerOrderId && (
@@ -96,6 +120,14 @@ export function ReviewSection({ productId, sellerId }: ReviewSectionProps) {
       )}
 
       <ReviewList productId={productId} />
+
+      <ComplaintModal
+        actor="USER"
+        open={!!complaintDraft}
+        defaultValues={complaintDraft ?? undefined}
+        onClose={() => setComplaintDraft(null)}
+        onSuccess={() => setComplaintDraft(null)}
+      />
     </div>
   );
 }

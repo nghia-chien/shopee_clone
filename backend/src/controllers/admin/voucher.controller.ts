@@ -33,15 +33,51 @@ const parseDate = (value: any) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-export async function listAdminVouchersController(_req: Request, res: Response) {
+export async function listAdminVouchersController(req: Request, res: Response) {
   try {
-    const vouchers = await prisma.vouchers.findMany({
-      where: { source: 'ADMIN' },
-      orderBy: { start_at: 'desc' },
-      select: baseSelect,
-    });
+    const { page = '1', limit = '50', search = '', source } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
 
-    return res.json({ vouchers });
+    const where: any = {};
+    if (source === 'ADMIN' || source === 'SELLER') {
+      where.source = source;
+    }
+    if (search) {
+      where.code = { contains: search as string, mode: 'insensitive' };
+    }
+
+    const [vouchers, total] = await Promise.all([
+      prisma.vouchers.findMany({
+        where,
+        skip,
+        take: limitNum,
+        select: {
+          ...baseSelect,
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { start_at: 'desc' },
+      }),
+      prisma.vouchers.count({ where }),
+    ]);
+
+    return res.json({
+      items: vouchers,
+      total,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     console.error('listAdminVouchersController error:', error);
     return res.status(500).json({ message: 'listAdminVouchersController Internal server error' });
@@ -128,6 +164,124 @@ export async function createAdminVoucherController(req: Request, res: Response) 
       return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
     }
     return res.status(500).json({ message: 'createAdminVoucherController Internal server error' });
+  }
+}
+
+export async function getVoucherByIdController(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const voucher = await prisma.vouchers.findUnique({
+      where: { id },
+      select: {
+        ...baseSelect,
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+          },
+        },
+      },
+    });
+
+    if (!voucher) {
+      return res.status(404).json({ error: 'Voucher not found' });
+    }
+
+    return res.json({ voucher });
+  } catch (error) {
+    console.error('getVoucherByIdController error:', error);
+    return res.status(500).json({ message: 'getVoucherByIdController Internal server error' });
+  }
+}
+
+export async function updateVoucherController(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const {
+      code,
+      type,
+      discount_type,
+      discount_value,
+      max_discount_amount,
+      min_order_amount,
+      usage_limit_per_user,
+      usage_limit_total,
+      start_at,
+      end_at,
+      status,
+    } = req.body as Record<string, any>;
+
+    const updateData: any = {};
+
+    if (code !== undefined) {
+      updateData.code = String(code).trim().toUpperCase();
+    }
+    if (type !== undefined) {
+      updateData.type = type;
+    }
+    if (discount_type !== undefined) {
+      updateData.discount_type = String(discount_type).toUpperCase();
+    }
+    if (discount_value !== undefined) {
+      const discountValueNumber = toNumberOrNull(discount_value);
+      if (discountValueNumber && discountValueNumber > 0) {
+        updateData.discount_value = discountValueNumber;
+      }
+    }
+    if (max_discount_amount !== undefined) {
+      updateData.max_discount_amount = toNumberOrNull(max_discount_amount);
+    }
+    if (min_order_amount !== undefined) {
+      updateData.min_order_amount = toNumberOrNull(min_order_amount);
+    }
+    if (usage_limit_per_user !== undefined) {
+      updateData.usage_limit_per_user = toNumberOrNull(usage_limit_per_user);
+    }
+    if (usage_limit_total !== undefined) {
+      updateData.usage_limit_total = toNumberOrNull(usage_limit_total);
+    }
+    if (start_at !== undefined) {
+      const startDate = parseDate(start_at);
+      if (startDate) updateData.start_at = startDate;
+    }
+    if (end_at !== undefined) {
+      const endDate = parseDate(end_at);
+      if (endDate) updateData.end_at = endDate;
+    }
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+
+    const voucher = await prisma.vouchers.update({
+      where: { id },
+      data: updateData,
+      select: {
+        ...baseSelect,
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return res.json({ voucher, message: 'Cập nhật voucher thành công' });
+  } catch (error: any) {
+    console.error('updateVoucherController error:', error);
+    if (error?.code === 'P2002') {
+      return res.status(400).json({ message: 'Mã voucher đã tồn tại' });
+    }
+    return res.status(500).json({ message: 'updateVoucherController Internal server error' });
   }
 }
 

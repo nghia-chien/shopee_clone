@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../api/userapi/client";
-import { useAuthStore } from "../../store/auth";
 
 
 interface Product {
@@ -20,15 +18,14 @@ interface Product {
 interface Props {
   title?: string;
   products: Product[];
-  horizontal?: boolean; // true => hiển thị ngang (cuộn ngang)
-  lazyLoad?: boolean;   // true => bật chế độ cuộn vô hạn (lazy load)
+  horizontal?: boolean; 
+  lazyLoad?: boolean;   
 }
 
 
 export function ProductListSection({title = "Gợi Ý Hôm Nay", products,horizontal = false,lazyLoad = false,
 }: Props) {
   const navigate = useNavigate();
-  const { token } = useAuthStore();
   const [visibleCount, setVisibleCount] = useState(lazyLoad ? 30 : products.length);
 
 
@@ -45,24 +42,6 @@ export function ProductListSection({title = "Gợi Ý Hôm Nay", products,horizo
     const displayedProducts = horizontal
     ? products.slice(0, 10)
     : products.slice(0, visibleCount);
-
-
-  const addToCart = async (product_id: string) => {
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    try {
-      await api(`/cart/items`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ product_id, quantity: 1 }),
-      });
-      alert('Đã thêm vào giỏ hàng');
-    } catch (err: any) {
-      alert(err?.message || 'Lỗi thêm giỏ hàng');
-    }
-  };
   
   if (!products || products.length === 0)
     return (
@@ -75,7 +54,7 @@ export function ProductListSection({title = "Gợi Ý Hôm Nay", products,horizo
     );
 
   return (
-    <section className="bg-white rounded-lg shadow-sm p-6 w-full">
+    <section className=" rounded-lg  p-6 w-full">
       <div className="flex items-center  justify-between mb-4">
         <h2 className="text-gray-600 text-lg uppercase font-bold">{title}</h2>
       </div>
@@ -148,7 +127,8 @@ function ProductCard({ product }: { product: Product }) {
         <div className="flex items-center justify-between mb-2">
           {product.price ? (
             <span className="text-orange-500 font-bold text-base">
-              {Number(product.price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}₫
+              {Number(product.price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+              <span className="text-[10px] relative top-[-4px] ml-0.5">₫</span>
             </span>
           ) : (
             <span className="text-gray-400 text-sm">Đang cập nhật</span>
@@ -184,25 +164,6 @@ function ProductCard({ product }: { product: Product }) {
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>{product.location ?? "Việt Nam"}</span>
         </div>
-        {/* <div className="flex gap-2 mt-2">
-          <button
-            className="flex-1 text-center border border-gray-300 rounded py-2 hover:bg-gray-50"
-            onClick={(e) => { e.stopPropagation(); navigate(`/products/${product.id}`); }}
-          >
-            Xem chi tiết
-          </button>
-          <button
-            className="flex-1 text-center bg-orange-500 text-white rounded py-2 hover:bg-orange-600"
-            onClick={(e) => { e.stopPropagation(); addToCart(product.id); }}
-          >
-            Thêm vào giỏ
-          </button>
-        </div> */} 
-        {/*<div className="flex justify-center mt-6">
-          <button className="px-8 py-3 border border-gray-300 rounded-sm hover:bg-gray-50 hover:border-orange-500 transition font-medium">
-          Xem thêm
-          </button>
-        </div> */}
       </div>
           </div>
 </>

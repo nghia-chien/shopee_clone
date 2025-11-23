@@ -60,6 +60,7 @@ export const getProductController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    // 1) Lấy product + seller
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -67,19 +68,57 @@ export const getProductController = async (req: Request, res: Response) => {
           select: {
             id: true,
             name: true,
+            avatar: true,
           },
         },
       },
     });
 
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
 
-    res.json(product);
+    // 2) Tổng số lượng đã bán (tính theo order_item)
+    const sold = await prisma.order_item.aggregate({
+  where: {
+    product_id: id,
+    orders: {
+      status: { in: ["paid", "completed"] }
+    }
+  },
+  _sum: {
+    quantity: true
+  }
+});
+
+const soldCount = sold._sum.quantity ?? 0;
+
+
+    // 3) Review count + rating avg (dùng bảng product_reviews)
+    const reviewStats = await prisma.product_reviews.aggregate({
+      where: { product_id: id },
+      _count: { id: true },
+      _avg: { rating: true },
+    });
+
+    const reviewCount = reviewStats._count.id;
+    const ratingAvg = reviewStats._avg.rating ?? 0;
+
+    // 4) Trả về
+    res.json({
+      ...product,
+      soldCount,
+      reviewCount,
+      ratingAvg,
+    });
+
   } catch (err) {
     console.error("getProductController error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 
 // 📝 Minimal review endpoint: update rating average and reviews_count
 export const addProductReviewController = async (req: Request & { user?: { id: string } }, res: Response) => {
@@ -179,43 +218,194 @@ export const searchKeywords = async (req: Request, res: Response) => {
 };
 
 
-export const searchHandler = async (req: Request, res: Response) => {
+export const searchHandler = async (req: Request & { user?: { id: string } }, res: Response) => {
   try {
-    const { q, type } = req.query;
+    const { 
+      q, 
+      type,
+      price_min,
+      price_max,
+      rating,
+      voucher_product,
+      voucher_platform,
+      voucher_saved,
+      shop_type,
+      sort,
+      order,
+    } = req.query as Record<string, string | undefined>;
+    
     if (!q || typeof q !== "string") {
       return res.status(400).json({ message: "Query không hợp lệ" });
     }
 
-    const query = (req.query.q || req.query.query || "").toString().trim();
-if (!query) return res.status(400).json({ message: "Query không hợp lệ" });
+    const query = q.toString().trim();
+    if (!query) return res.status(400).json({ message: "Query không hợp lệ" });
 
     let products: any[] = [];
     let shops: any[] = [];
 
-    // Nếu type === 'shop', chỉ tìm shop
-    if (type === 'shop') {
-      shops = await prisma.seller.findMany({
-        where: { name: { contains: query, mode: "insensitive" } },
-        take: 50,
-      });
-    } else {
-      // Tìm cả product và shop
-      products = await prisma.product.findMany({
-        where: {
-          OR: [
-            { title: { contains: query, mode: "insensitive" } },
-            { description: { contains: query, mode: "insensitive" } },
-          ],
-        },
-        include: { seller: true },
-        take: 50,
-      });
+    // ===============================
+    // 1) SEARCH SHOP (shop_summary)
+    // ===============================
+    if (type === "shop") {
+      shops = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT * 
+        FROM shop_summary 
+        WHERE shop_name ILIKE '%${query}%'
+        LIMIT 50
+      `);
 
-      shops = await prisma.seller.findMany({
-        where: { name: { contains: query, mode: "insensitive" } },
-        take: 50,
-      });
+      shops = JSON.parse(
+        JSON.stringify(shops, (_, v) =>
+          typeof v === "bigint" ? v.toString() : v
+        )
+      );
+
+      return res.json({ products: [], shops });
     }
+
+    // ===============================
+    // 2) SEARCH PRODUCT WITH FILTERS
+    // ===============================
+    const where: any = {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+        ],
+    };
+
+    // Price filter
+    if (price_min || price_max) {
+      where.price = {};
+      if (price_min) where.price.gte = Number(price_min);
+      if (price_max) where.price.lte = Number(price_max);
+    }
+
+    // Rating filter
+    if (rating) {
+      where.rating = { gte: Number(rating) };
+    }
+
+    // Shop type filter (shop_mall)
+    if (shop_type && (shop_type === 'mall' || shop_type === 'like')) {
+      where.seller = {
+        shop_mall: shop_type,
+      };
+    }
+
+    // Voucher filters - OR logic (nếu chọn nhiều, lấy sản phẩm có ít nhất 1 trong các loại voucher)
+    const now = new Date();
+    if (voucher_product === "1" || voucher_platform === "1" || voucher_saved === "1") {
+      const voucherConditions: any[] = [];
+
+      if (voucher_product === "1") {
+        // Sản phẩm có voucher riêng (product_id không null)
+        voucherConditions.push({
+          status: 'ACTIVE',
+          start_at: { lte: now },
+          end_at: { gte: now },
+          product_id: { not: null },
+        });
+      }
+
+      if (voucher_platform === "1") {
+        // Sản phẩm có voucher chung (source='ADMIN')
+        voucherConditions.push({
+          status: 'ACTIVE',
+          start_at: { lte: now },
+          end_at: { gte: now },
+          source: 'ADMIN',
+        });
+      }
+
+      if (voucher_saved === "1" && req.user?.id) {
+        // Sản phẩm có voucher shop đã lưu
+        const savedVoucherIds = await prisma.user_vouchers.findMany({
+          where: { user_id: req.user.id },
+          select: { voucher_id: true },
+        });
+        const voucherIds = savedVoucherIds.map(uv => uv.voucher_id);
+        if (voucherIds.length > 0) {
+          voucherConditions.push({
+            status: 'ACTIVE',
+            start_at: { lte: now },
+            end_at: { gte: now },
+            id: { in: voucherIds },
+          });
+        }
+      }
+
+      if (voucherConditions.length === 0) {
+        // Nếu không có điều kiện nào hợp lệ, trả về empty
+        return res.json({ products: [], shops: [] });
+      }
+
+      // Lấy product_ids từ vouchers (OR các điều kiện)
+      const allProductIds = new Set<string>();
+      
+      for (const condition of voucherConditions) {
+        const vouchers = await prisma.vouchers.findMany({
+          where: condition,
+          select: { product_id: true },
+        });
+
+        vouchers.forEach(v => {
+          if (v.product_id) {
+            allProductIds.add(v.product_id);
+          }
+        });
+      }
+
+      const productIds = Array.from(allProductIds);
+
+      if (productIds.length > 0) {
+        where.id = { in: productIds };
+      } else {
+        // Nếu không có voucher nào match, trả về empty
+        return res.json({ products: [], shops: [] });
+      }
+    }
+
+    // Sort logic
+    let orderBy: any = { created_at: 'desc' };
+    if (sort === 'newest') {
+      orderBy = { created_at: 'desc' };
+    } else if (sort === 'rating_desc') {
+      orderBy = { rating: 'desc' };
+    } else if (sort === 'price') {
+      orderBy = { price: order === 'asc' ? 'asc' : 'desc' };
+    }
+
+    products = await prisma.product.findMany({
+      where,
+      include: { 
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            shop_mall: true,
+          },
+        },
+      },
+      orderBy,
+      take: 50,
+    });
+
+    // ===============================
+    // 3) SEARCH SHOP SUMMARY (FULL INFO)
+    // ===============================
+    shops = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT * 
+      FROM shop_summary 
+      WHERE shop_name ILIKE '%${query}%'
+      LIMIT 50
+    `);
+
+    shops = JSON.parse(
+      JSON.stringify(shops, (_, v) =>
+        typeof v === "bigint" ? v.toString() : v
+      )
+    );
 
     res.json({ products, shops });
   } catch (error) {
@@ -223,3 +413,127 @@ if (!query) return res.status(400).json({ message: "Query không hợp lệ" });
     res.status(500).json({ message: "Lỗi server" });
   }
 };
+
+/**
+ * ⚡ Flash Sale Products Controller
+ * Lấy sản phẩm flash sale có voucher còn hạn, tính giá sau khi trừ voucher
+ */
+export async function getFlashSaleProductsController(req: Request, res: Response) {
+  try {
+    const { shop_status, limit = '20' } = req.query as { shop_status?: string; limit?: string };
+    const now = new Date();
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+
+    // 1. Lấy vouchers còn hạn có product_id
+    const activeVouchers = await prisma.vouchers.findMany({
+      where: {
+        status: 'ACTIVE',
+        product_id: { not: null },
+        start_at: { lte: now },
+        end_at: { gte: now },
+      },
+      include: {
+        product: {
+          include: {
+            seller: {
+              select: {
+                id: true,
+                name: true,
+                shop_mall: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // 2. Lọc theo shop_status nếu có
+    let filteredVouchers = activeVouchers;
+    if (shop_status && shop_status !== 'all') {
+      filteredVouchers = activeVouchers.filter(
+        (v) => v.product?.seller?.shop_mall === shop_status
+      );
+    }
+
+    // 3. Tính giá sau khi trừ voucher và format dữ liệu
+    const flashSaleProducts = filteredVouchers
+      .map((voucher) => {
+        if (!voucher.product) return null;
+
+        const product = voucher.product;
+        const originalPrice = Number(product.price);
+        
+        // Tính discount
+        let discount = 0;
+        if (voucher.discount_type === 'PERCENT') {
+          discount = (originalPrice * Number(voucher.discount_value)) / 100;
+          if (voucher.max_discount_amount) {
+            discount = Math.min(discount, Number(voucher.max_discount_amount));
+          }
+        } else {
+          discount = Number(voucher.discount_value);
+        }
+        discount = Math.min(discount, originalPrice);
+        
+        const finalPrice = Math.max(0, originalPrice - discount);
+        const discountPercent = originalPrice > 0 
+          ? Math.round((discount / originalPrice) * 100) 
+          : 0;
+
+        return {
+          id: product.id,
+          title: product.title,
+          price: finalPrice,
+          originalPrice: originalPrice,
+          discount: discountPercent,
+          images: product.images || [],
+          stock: product.stock || 0,
+          seller: {
+            id: product.seller?.id,
+            name: product.seller?.name,
+            shop_mall: product.seller?.shop_mall,
+          },
+          voucher: {
+            id: voucher.id,
+            code: voucher.code,
+            end_at: voucher.end_at,
+          },
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+      .slice(0, limitNum);
+
+    // 4. Lấy số lượng đã bán cho mỗi sản phẩm
+    const productIds = flashSaleProducts.map((p) => p.id);
+    const soldCounts = await Promise.all(
+      productIds.map(async (productId) => {
+        const sold = await prisma.order_item.aggregate({
+          where: {
+            product_id: productId,
+            orders: {
+              status: { in: ['paid', 'completed'] },
+            },
+          },
+          _sum: {
+            quantity: true,
+          },
+        });
+        return { productId, sold: sold._sum.quantity ?? 0 };
+      })
+    );
+
+    const soldMap = new Map(soldCounts.map((s) => [s.productId, s.sold]));
+
+    // 5. Thêm thông tin sold vào products
+    const productsWithSold = flashSaleProducts.map((product) => ({
+      ...product,
+      sold: soldMap.get(product.id) || 0,
+    }));
+
+    res.json({ products: productsWithSold, total: productsWithSold.length });
+  } catch (error) {
+    console.error('getFlashSaleProductsController error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+

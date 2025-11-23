@@ -25,16 +25,20 @@ export const Footer: React.FC = () => {
             CHĂM SÓC KHÁCH HÀNG
           </h3>
           <ul className="space-y-2 text-xs text-gray-600">
-            <li className="hover:text-orange-500 cursor-pointer transition">
+          <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => window.open("https://help.shopee.vn/portal/4", "_blank")}
+            >
               Trung Tâm Trợ Giúp
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+
+            <li className="hover:text-orange-500 cursor-pointer transition" onClick={() => window.open("https://help.shopee.vn/portal/4", "_blank")}>
               Shopee Blog
             </li>
             <li className="hover:text-orange-500 cursor-pointer transition">
               Shopee Mall
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li className="hover:text-orange-500 cursor-pointer transition ">
               Hướng Dẫn Mua Hàng
             </li>
             <li className="hover:text-orange-500 cursor-pointer transition">

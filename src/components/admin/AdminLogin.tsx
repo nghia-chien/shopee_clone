@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Mail, Lock, Shield, Settings, BarChart3, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuthStore } from "../../store/AdminAuth";
-import { loginAdmin } from "../../api/admin";
+import { loginAdmin } from "../../api/adminapi/admin";
 
 export const AdminLogin = () => {
   const navigate = useNavigate();

@@ -8,6 +8,7 @@ import categoryRoutes from './modules/category.routes';
 import shopRoutes from './modules/shop.routes';
 import adminRouter from './modules/admin.routes';
 import voucherRouter from './modules/voucher.routes';
+import complaintRouter from './modules/complaint.routes';
 import paypalRouter from './modules/paypal.routes';
 import chatRouter from './modules/chat.routes';
 import reviewRouter from './modules/review.routes';
@@ -35,26 +36,12 @@ router.use('/reviews', reviewRouter);
 router.use('/shipping', shippingRouter);
 router.use('/account', accountRouter);
 router.use('/shop-settings', shopSettingsRouter);
+router.use('/complaints', complaintRouter);
 // ✅ Route mặc định (test API)
 router.get('/', (_req, res) => {
   res.json({
     message: 'API is running 🚀',
-    endpoints: [
-      '/auth',
-      '/products',
-      '/cart',
-      '/orders',
-      '/seller',
-      '/categories',
-      '/shops',
-      '/chat',
-      '/reviews',
-      '/shipping',
-      '/account',
-      '/admin',
-      '/vouchers',
-      '/paypal',
-    ],
+    endpoints: ['/auth', '/products', '/cart', '/orders', '/seller', '/categories','/shops', '/chat', '/reviews', '/shipping','/account', '/admin', '/vouchers', '/paypal','/complaints'],
   });
 });
 
