@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "../../store/auth";
 import { useNavigate } from "react-router-dom";
 import "slick-carousel/slick/slick.css"; 
@@ -7,7 +8,9 @@ import Slider from "react-slick";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { ChatWidget } from "../chat/ChatWidget";
-import {useMallShops} from "../../hooks/useMall"
+import {useMallShops} from "../../hooks/useMall";
+import { getFlashSaleProducts } from "../../api/userapi/client";
+import type { FlashSaleProduct } from "../../api/userapi/client";
 interface HomeLayoutProps {
   children?: ReactNode;
 }
@@ -49,18 +52,10 @@ export function HomeLayout({ children }: HomeLayoutProps) {
 
 
 
-  // TODO: API Integration - GET /api/products?type=flash-sale&limit=6
-  // Add real-time countdown timer integration
-  const flashSaleProducts = Array.from({ length: 6 }, (_, i) => ({
-    id: `fs-${i + 1}`,
-    name: `Sản phẩm Flash Sale ${i + 1}`,
-    price: 99000,
-    originalPrice: 299000,
-    discount: 67,
-    sold: 75 + Math.floor(Math.random() * 20),
-    image: "", // TODO: Add CDN image URLs
-    stock: 100
-  }));
+  // Flash Sale Products State
+  const [flashSaleProducts, setFlashSaleProducts] = useState<FlashSaleProduct[]>([]);
+  const [flashSaleLoading, setFlashSaleLoading] = useState(true);
+  const [flashSaleEndTime, setFlashSaleEndTime] = useState<Date | null>(null);
 
   // TODO: API Integration - GET /api/banners?position=main
   const mainBanners = [
@@ -74,19 +69,14 @@ export function HomeLayout({ children }: HomeLayoutProps) {
   ];
   // Quick action items - can be made dynamic via API
   const quickActions = [
+    { name: "Ngày hội săn sale", icon: "💰", link: "/cheap" },
     { name: "Shopee Mall", icon: "🏪", link: "/mall" },
-    { name: "Bắt Deal 0Đ", icon: "⚡", link: "/deals" },
+    { name: "Bắt Deal 0Đ", icon: "⚡", link: "/flash-sale" },
     { name: "Miễn Phí Ship", icon: "🚚", link: "/freeship" },
     { name: "Voucher 50%", icon: "🎟️", link: "/vouchers" },
-    { name: "Hàng Quốc Tế", icon: "🌍", link: "/international" },
-    { name: "Nạp Thẻ", icon: "💳", link: "/topup" },
-    { name: "Shopee Siêu Rẻ", icon: "💰", link: "/cheap" },
-    { name: "Shopee Xu", icon: "💎", link: "/coins" }
+    { name: "khách Hàng thân thiết", icon: "💰", link: "/cheap" },
+    
   ];
-
-  // ============================================================================
-  // HELPER FUNCTIONS
-  // ============================================================================
 
   const formatPrice = (price: number) => {
     return price.toLocaleString("vi-VN");
@@ -97,10 +87,66 @@ export function HomeLayout({ children }: HomeLayoutProps) {
     return sold.toString();
   };
 
-  // TODO: Implement real countdown timer
+  // Fetch Flash Sale Products
+  useEffect(() => {
+    const fetchFlashSaleProducts = async () => {
+      try {
+        setFlashSaleLoading(true);
+        const response = await getFlashSaleProducts({ limit: 6 });
+        setFlashSaleProducts(response.products);
+        
+        // Tìm thời gian kết thúc sớm nhất từ các vouchers
+        if (response.products.length > 0) {
+          const endTimes = response.products
+            .map(p => new Date(p.voucher.end_at))
+            .filter(d => !isNaN(d.getTime()));
+          if (endTimes.length > 0) {
+            const earliestEnd = new Date(Math.min(...endTimes.map(d => d.getTime())));
+            setFlashSaleEndTime(earliestEnd);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching flash sale products:", error);
+      } finally {
+        setFlashSaleLoading(false);
+      }
+    };
+    
+    fetchFlashSaleProducts();
+  }, []);
+
+  // Real-time countdown timer
   const getFlashSaleCountdown = () => {
-    return { hours: 12, minutes: 34, seconds: 56 };
+    if (!flashSaleEndTime) {
+      return { hours: 0, minutes: 0, seconds: 0 };
+    }
+    
+    const now = new Date().getTime();
+    const end = flashSaleEndTime.getTime();
+    const distance = end - now;
+    
+    if (distance <= 0) {
+      return { hours: 0, minutes: 0, seconds: 0 };
+    }
+    
+    const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((distance / (1000 * 60)) % 60);
+    const seconds = Math.floor((distance / 1000) % 60);
+    
+    return { hours, minutes, seconds };
   };
+
+  // Update countdown every second
+  const [countdown, setCountdown] = useState(getFlashSaleCountdown());
+  useEffect(() => {
+    if (!flashSaleEndTime) return;
+    
+    const interval = setInterval(() => {
+      setCountdown(getFlashSaleCountdown());
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [flashSaleEndTime]);
 
   // ============================================================================
   // EVENT HANDLERS
@@ -114,7 +160,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
 
   const handleProductClick = (product_id: string) => {
     // TODO: Navigate to product detail page
-    navigate(`/product/${product_id}`);
+    navigate(`/products/${product_id}`);
   };
 
   const handleShopClick = (shopId: string) => {
@@ -137,22 +183,9 @@ export function HomeLayout({ children }: HomeLayoutProps) {
   // ============================================================================
 
   return (
-    <div className="bg-gray-50 ">  <Header></Header>
-   
+    <div className="bg-gray-50 ">  <Header/>
+        <section className="bg-white rounded-sm shadow-sm mt-4 pb-6">
 
-      {/* ========================================================================
-          MAIN CONTENT AREA
-      ======================================================================== */}
-        {/* ======================================================================
-            BANNER CAROUSEL SECTION
-            TODO: 
-            - Implement auto-slide with react-slick or swiper
-            - Add navigation dots
-            - Add prev/next buttons
-            - Lazy load images
-            - Add click tracking analytics
-        ====================================================================== */}
-        <section className="bg-white rounded-sm shadow-sm mt-4">
           
           {/* banner chính  */}
           <section className="flex gap-2 justify-center max-w-[1200px] mx-auto mt-4">
@@ -187,16 +220,10 @@ export function HomeLayout({ children }: HomeLayoutProps) {
               </a>
             ))}
           </div>
-        </section>
+          </section>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mt-4 justify-items-center px-16 mx-auto">
 
-
-
-          {/* ======================================================================
-              QUICK ACTIONS SECTION
-              TODO: Add icons, make items clickable with proper routing
-          ====================================================================== */}
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 mt-4">
-            {quickActions.map((action) => (
+            {quickActions.slice(0, 6).map((action) => (
               <div
                 key={action.name}
                 className="flex flex-col items-center gap-2 cursor-pointer group"
@@ -253,28 +280,24 @@ export function HomeLayout({ children }: HomeLayoutProps) {
               
               {/* Countdown Timer */}
               <div className="flex items-center gap-2">
-                {(() => {
-                  const time = getFlashSaleCountdown();
-                  return (
-                    <>
-                      <div className="bg-black text-white text-sm px-2.5 py-1 rounded font-mono">
-                        {String(time.hours).padStart(2, '0')}
-                      </div>
-                      <span className="text-black font-bold">:</span>
-                      <div className="bg-black text-white text-sm px-2.5 py-1 rounded font-mono">
-                        {String(time.minutes).padStart(2, '0')}
-                      </div>
-                      <span className="text-black font-bold">:</span>
-                      <div className="bg-black text-white text-sm px-2.5 py-1 rounded font-mono">
-                        {String(time.seconds).padStart(2, '0')}
-                      </div>
-                    </>
-                  );
-                })()}
+                <div className="bg-black text-white text-sm px-2.5 py-1 rounded font-mono">
+                  {String(countdown.hours).padStart(2, '0')}
+                </div>
+                <span className="text-black font-bold">:</span>
+                <div className="bg-black text-white text-sm px-2.5 py-1 rounded font-mono">
+                  {String(countdown.minutes).padStart(2, '0')}
+                </div>
+                <span className="text-black font-bold">:</span>
+                <div className="bg-black text-white text-sm px-2.5 py-1 rounded font-mono">
+                  {String(countdown.seconds).padStart(2, '0')}
+                </div>
               </div>
             </div>
             
-            <button className="text-orange-500 hover:text-orange-600 flex items-center gap-1 font-medium transition">
+            <button 
+              onClick={() => navigate("/flash-sale")}
+              className="text-orange-500 hover:text-orange-600 flex items-center gap-1 font-medium transition"
+            >
               Xem tất cả
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
@@ -283,46 +306,81 @@ export function HomeLayout({ children }: HomeLayoutProps) {
           </div>
           
           {/* Flash Sale Products Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-px bg-gray-100 p-px">
-            {flashSaleProducts.map((product) => (
-              <div 
-                key={product.id}
-                className="bg-white p-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
-                onClick={() => handleProductClick(product.id)}
-              >
-                {/* Product Image */}
-                <div className="relative">
-                  <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded mb-2"></div>
-                  
-                  {/* Discount Badge */}
-                  <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-bl shadow">
-                    -{product.discount}%
-                  </div>
+          {flashSaleLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-px bg-gray-100 p-px">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white p-4 animate-pulse">
+                  <div className="w-full aspect-square bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded"></div>
                 </div>
+              ))}
+            </div>
+          ) : flashSaleProducts.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              Không có sản phẩm flash sale nào
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-px bg-gray-100 p-px">
+              {flashSaleProducts.map((product) => {
+                const soldPercent = product.stock > 0 
+                  ? Math.min(100, Math.round((product.sold / (product.sold + product.stock)) * 100))
+                  : 0;
                 
-                {/* Price */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-orange-500 text-lg font-bold">
-                    ₫{formatPrice(product.price)}
-                  </span>
-                </div>
-                
-                {/* Sold Progress Bar */}
-                <div className="relative mt-3">
-                  <div className="h-4 bg-pink-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-orange-400 to-pink-500 flex items-center justify-center transition-all duration-300"
-                      style={{ width: `${product.sold}%` }}
-                    >
-                      <span className="text-xs text-white font-bold">
-                        ĐÃ BÁN {product.sold}%
+                return (
+                  <div 
+                    key={product.id}
+                    className="bg-white p-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
+                    onClick={() => handleProductClick(product.id)}
+                  >
+                    {/* Product Image */}
+                    <div className="relative">
+                      {product.images && product.images.length > 0 ? (
+                        <img 
+                          src={product.images[0]} 
+                          alt={product.title}
+                          className="w-full aspect-square object-cover rounded mb-2"
+                        />
+                      ) : (
+                        <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded mb-2"></div>
+                      )}
+                      
+                      {/* Discount Badge */}
+                      <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-bl shadow">
+                        -{product.discount}%
+                      </div>
+                    </div>
+                    
+                    {/* Price */}
+                    <div className="flex flex-col gap-1 mb-2">
+                      <span className="text-orange-500 text-lg font-bold">
+                        ₫{formatPrice(product.price)}
                       </span>
+                      {product.originalPrice > product.price && (
+                        <span className="text-gray-400 text-xs line-through">
+                          ₫{formatPrice(product.originalPrice)}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Sold Progress Bar */}
+                    <div className="relative mt-3">
+                      <div className="h-4 bg-pink-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-orange-400 to-pink-500 flex items-center justify-center transition-all duration-300"
+                          style={{ width: `${soldPercent}%` }}
+                        >
+                          <span className="text-xs text-white font-bold">
+                            ĐÃ BÁN {soldPercent}%
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* ======================================================================
@@ -365,55 +423,11 @@ export function HomeLayout({ children }: HomeLayoutProps) {
 
         
 
-        {/* ======================================================================
-            ADDITIONAL SECTIONS (Can be added as needed)
-            
-            TODO: Consider adding these sections:
-            
-            1. DAILY DISCOVER SECTION
-               - New products daily
-               - Personalized recommendations
-               
-            2. TOP BRANDS SECTION
-               - Featured brand partnerships
-               - Brand sale events
-               
-            3. RECENT VIEWED PRODUCTS
-               - Track user browsing history
-               - Show in sidebar or separate section
-               
-            4. SHOPEE LIVE SECTION
-               - Live streaming shopping
-               - Show active streams with viewer count
-               
-            5. BLOG/INSPIRATION SECTION
-               - Shopping guides
-               - Trend articles
-               - Style inspiration
-               
-            6. SEASONAL/PROMOTIONAL BANNERS
-               - Holiday sales
-               - Special events (11.11, 12.12, etc.)
-               
-            7. USER REVIEWS HIGHLIGHT
-               - Featured customer reviews
-               - Photo reviews showcase
-        ====================================================================== */}
-
-        {/* Custom children content - allows extending the layout */}
+        
         {children}
 
       </main>
       <Footer/>
-      {/* ========================================================================
-          FLOATING ACTION BUTTONS (Optional)
-          TODO: Add these floating elements:
-          - Back to top button (appears on scroll)
-          - Live chat support button
-          - App download prompt (mobile)
-          - Recently viewed products sidebar
-      ======================================================================== */}
-      
       {/* Back to Top Button */}
       {/* TODO: Show only when scrolled down */}
       <button 
@@ -434,83 +448,3 @@ export function HomeLayout({ children }: HomeLayoutProps) {
     </div>
   );
 }
-
-/* ==============================================================================
-   EXPORT AND USAGE NOTES
-   
-   This HomeLayout component provides a complete Shopee-style e-commerce homepage.
-   
-   KEY FEATURES IMPLEMENTED:
-   ✅ Responsive header with search and cart
-   ✅ Banner carousel section (placeholder)
-   ✅ Quick action buttons
-   ✅ Category grid navigation
-   ✅ Flash sale section with countdown
-   ✅ Shopee Mall section
-   ✅ Trending products grid
-   ✅ Comprehensive footer
-   ✅ Floating action buttons
-   
-   FEATURES TO IMPLEMENT:
-   ⏳ Real API integration for all data
-   ⏳ Image lazy loading
-   ⏳ Infinite scroll / pagination
-   ⏳ Real-time countdown timer
-   ⏳ Search autocomplete
-   ⏳ Shopping cart functionality
-   ⏳ Product quick view modal
-   ⏳ Wishlist/favorites
-   ⏳ User authentication flow
-   ⏳ Notification system
-   ⏳ Analytics tracking
-   ⏳ SEO optimization
-   ⏳ Performance optimization (code splitting, etc.)
-   
-   RECOMMENDED FOLDER STRUCTURE:
-   /components
-     /layout
-       HomeLayout.tsx (this file)
-       Header.tsx (extracted)
-       Footer.tsx (extracted)
-     /home
-       BannerCarousel.tsx
-       QuickActions.tsx
-       CategoryGrid.tsx
-       FlashSaleSection.tsx
-       MallSection.tsx
-       ProductGrid.tsx
-     /product
-       ProductCard.tsx
-       ProductQuickView.tsx
-     /common
-       Button.tsx
-       Badge.tsx
-       StarRating.tsx
-   
-   PERFORMANCE TIPS:
-   1. Use React.memo() for product cards
-   2. Implement virtual scrolling for long product lists
-   3. Lazy load images with intersection observer
-   4. Use code splitting for sections below the fold
-   5. Implement service worker for offline support
-   6. Use CDN for images and static assets
-   7. Implement proper caching strategy
-   
-   ACCESSIBILITY CHECKLIST:
-   ☐ Add proper ARIA labels
-   ☐ Ensure keyboard navigation works
-   ☐ Add alt text to all images
-   ☐ Test with screen readers
-   ☐ Ensure proper color contrast
-   ☐ Add focus indicators
-   ☐ Make clickable areas large enough (44x44px minimum)
-   
-   TESTING CHECKLIST:
-   ☐ Unit tests for utility functions
-   ☐ Integration tests for user flows
-   ☐ E2E tests for critical paths
-   ☐ Visual regression tests
-   ☐ Performance testing
-   ☐ Mobile responsiveness testing
-   ☐ Cross-browser testing
-============================================================================== */

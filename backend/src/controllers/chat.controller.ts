@@ -23,8 +23,7 @@ export async function getThreadsByUserController(req: AuthRequest, res: Response
           select: {
             id: true,
             name: true,
-            email: true,
-            
+            avatar: true,
           },
         },
         messages: {
@@ -56,7 +55,7 @@ export async function getThreadsBySellerController(req: SellerRequest, res: Resp
           select: {
             id: true,
             name: true,
-            email: true,
+            avatar: true,
           },
         },
         messages: {

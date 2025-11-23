@@ -84,3 +84,39 @@ export async function getMallShops(): Promise<MallShop[]> {
   if (!res.ok) throw new Error("Failed to fetch mall shops");
   return res.json();
 }
+
+// Flash Sale Product interface
+export interface FlashSaleProduct {
+  id: string;
+  title: string;
+  price: number;
+  originalPrice: number;
+  discount: number;
+  images: string[];
+  stock: number;
+  sold: number;
+  seller: {
+    id: string;
+    name: string;
+    shop_mall: string | null;
+  };
+  voucher: {
+    id: string;
+    code: string;
+    end_at: string;
+  };
+}
+
+export interface FlashSaleProductsResponse {
+  products: FlashSaleProduct[];
+  total: number;
+}
+
+// Lấy flash sale products
+export async function getFlashSaleProducts(params?: { shop_status?: string; limit?: number }): Promise<FlashSaleProductsResponse> {
+  const query = new URLSearchParams();
+  if (params?.shop_status) query.append('shop_status', params.shop_status);
+  if (params?.limit) query.append('limit', params.limit.toString());
+  const qs = query.toString();
+  return api<FlashSaleProductsResponse>(`/products/flash-sale${qs ? `?${qs}` : ''}`);
+}

@@ -227,6 +227,7 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
             }
           }
         },
+<<<<<<< HEAD
         seller: true,
         shipping_order: {
           include: {
@@ -236,6 +237,16 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
             },
           },
         },
+=======
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            shop_mall: true
+          }
+        }
+>>>>>>> 8490ecb82f2aa57e4b6aa1fc93425a867a840ec8
       },
       orderBy: { created_at: 'desc' }
     });

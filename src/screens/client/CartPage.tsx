@@ -4,8 +4,9 @@ import { api } from '../../api/userapi/client';
 import { useNavigate } from 'react-router-dom';
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
-import { getUserVouchers } from '../../api/vouchers';
-import type { UserVoucherEntry, Voucher } from '../../api/vouchers';
+import { getUserVouchers } from '../../api/userapi/vouchers';
+import type { UserVoucherEntry, Voucher } from '../../api/userapi/vouchers';
+
 import { ProductListSection } from '../../components/product/ProductListSection';
 
 interface CartProduct {
@@ -356,20 +357,7 @@ export function CartPage() {
     <div className="bg-gray-50 min-h-screen">
       <Header />
       <div className="max-w-7xl mx-auto p-4 space-y-4">
-        <div className="bg-white rounded-sm shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-700">
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 text-xs font-semibold uppercase border border-orange-200 text-orange-500 rounded-full">
-              Ưu đãi vận chuyển
-            </span>
-            <p>Giảm 500.000đ phí vận chuyển cho đơn tối thiểu 0đ</p>
-          </div>
-          <button
-            onClick={() => navigate('/flash-sale')}
-            className="text-sm text-orange-500 hover:text-orange-600"
-          >
-            Tìm hiểu thêm
-          </button>
-        </div>
+        
 
         <div className="bg-white rounded-sm shadow-sm p-4 flex flex-wrap items-center gap-4 text-sm text-gray-700">
           <div className="flex items-center gap-2">

@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Star,
   Gift,
+  AlertTriangle,
 } from "lucide-react";
 
 export function SellerLayout() {
@@ -88,6 +89,10 @@ export function SellerLayout() {
             <NavLink to="/seller/voucher" className={navItemClass}>
               <Gift className="w-4 h-4" />
               Tạo voucher 
+            </NavLink>
+            <NavLink to="/seller/complaints" className={navItemClass}>
+              <AlertTriangle className="w-4 h-4" />
+              Khiếu nại
             </NavLink>
           </div>
           <div className="mt-4 bg-white rounded-lg border p-3">

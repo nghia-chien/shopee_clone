@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "../../store/auth";
-import { getUserVouchers, saveVoucher } from "../../api/vouchers";
-import type { UserVoucherEntry } from "../../api/vouchers";
+import { getUserVouchers, saveVoucher } from "../../api/userapi/vouchers";
+import type { UserVoucherEntry } from "../../api/userapi/vouchers";
 import { useNavigate } from "react-router-dom";
 
 export default function VoucherPage() {
@@ -37,6 +37,9 @@ export default function VoucherPage() {
       if (limit && entry.usage_count >= limit) {
         return false; // Voucher đã dùng hết, không hiển thị
       }
+      else if (entry.usage_count >= 1) return false;
+      else if (entry.voucher.source === "SELLER" && entry.saved_at === null) return false;
+      
       return true;
     });
     
@@ -58,22 +61,9 @@ export default function VoucherPage() {
     return <div className="p-6 text-gray-500">Đang tải voucher...</div>;
   }
 
-  const handleSaveVoucher = async (voucherId: string) => {
-    if (!token) return;
-    try {
-      await saveVoucher(voucherId, token);
-      // Reload vouchers after saving
-      const data = await getUserVouchers(token);
-      setVouchers(data.vouchers || []);
-      alert("Đã lưu voucher thành công!");
-    } catch (error: any) {
-      alert(error?.message || "Không thể lưu voucher");
-    }
-  };
 
   const renderVoucherCard = (entry: UserVoucherEntry) => {
     const v = entry.voucher;
-    const isSaved = entry.saved_at !== null;
     const discountLabel =
       v.discount_type === "PERCENT"
         ? `${v.discount_value}%`
@@ -87,12 +77,9 @@ export default function VoucherPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <p className="text-lg font-semibold text-orange-600">{discountLabel}</p>
-            {!isSaved && (
-              <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                Chưa lưu
-              </span>
-            )}
+            
           </div>
+
           {minOrder > 0 && (
             <p className="text-sm text-gray-600">
               Đơn tối thiểu {minOrder.toLocaleString("vi-VN")}₫
@@ -103,28 +90,16 @@ export default function VoucherPage() {
             {new Date(v.end_at).toLocaleDateString("vi-VN")}
           </p>
           <p className="text-xs text-gray-500">
-            Nguồn: {v.source === "ADMIN" ? "Shopee" : "Shop"} {v.seller_id ? `(ID: ${v.seller_id})` : ""}
+            Nguồn: {v.source === "ADMIN" ? "Shopee" : "ShopBrand"} 
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 text-sm text-gray-600">
-          {isSaved ? (
-            <>
-              <span>Đã dùng: {entry.usage_count} lần</span>
-              <button
+          <button
                 onClick={() => navigate("/cart")}
                 className="px-4 py-2 rounded-full bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition"
               >
                 Sử dụng ngay
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => handleSaveVoucher(entry.voucher_id)}
-              className="px-4 py-2 rounded-full bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 transition"
-            >
-              Lưu voucher
-            </button>
-          )}
+              </button>    
         </div>
       </div>
     );
