@@ -18,12 +18,13 @@ import {
   useCreateThread,
 } from '../../hooks/useChat';
 import { parseSystemMessage, type Message } from '../../api/chat';
+import { useChatWidgetStore } from "../../store/chatWidget";
 
-interface ChatWidgetProps {
-  sellerId?: string;
-  sellerName?: string;
-}
-export function ChatWidget({ sellerId, sellerName }: ChatWidgetProps) {
+
+
+export function ChatWidget() {
+  const { open, sellerId, sellerName, closeChat } = useChatWidgetStore();
+  
   const { t } = useTranslation();
   const { user, token } = useAuthStore();
 
@@ -51,7 +52,11 @@ export function ChatWidget({ sellerId, sellerName }: ChatWidgetProps) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen, isMinimized]);
-
+  useEffect(() => {
+      if (isOpen) {
+        setIsOpen(true);
+      }
+    }, [isOpen]);
   // Auto create/select thread if sellerId is provided
   useEffect(() => {
     if (!token) return;
@@ -254,19 +259,6 @@ export function ChatWidget({ sellerId, sellerName }: ChatWidgetProps) {
                 <div className="flex items-center gap-3">
                   <div className="text-orange-500 font-bold text-xl">Chat</div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsMinimized(true)}
-                    className="p-1 hover:bg-gray-100 rounded"
-                    title="Minimize"
-                  >
-                    <Minimize2 className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button onClick={closeWidget} className="p-1 hover:bg-gray-100 rounded">
-                    <X className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
               </div>
 
               {/* Search & filter */}
@@ -283,12 +275,6 @@ export function ChatWidget({ sellerId, sellerName }: ChatWidgetProps) {
                     />
                   </div>
 
-                  {/* <div className="ml-2">
-                    <button className="h-10 px-3 rounded border border-gray-200 flex items-center gap-2 text-sm">
-                      {t('chat.filter')}
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </div> */}
                 </div>
               </div>
 
@@ -366,19 +352,32 @@ export function ChatWidget({ sellerId, sellerName }: ChatWidgetProps) {
                       if (sel?.seller?.avatar) {
                         return <img src={sel.seller.avatar} alt={sel.seller?.name} className="w-full h-full object-cover" />;
                       }
-                      return <div className="text-sm font-semibold text-orange-500">{(sel?.seller?.name?.charAt(0) || 'S').toUpperCase()}</div>;
+                      if (sel?.seller?.name) {
+                        return (
+                          <div className="text-sm font-semibold text-orange-500">
+                            {sel.seller.name.charAt(0).toUpperCase()}
+                          </div>
+                        );
+                      }
+                      return null; // không có gì
                     })()
                   ) : (
-                    <div className="text-sm font-semibold text-orange-500">{(sellerName?.charAt(0) || 'C').toUpperCase()}</div>
+                    sellerName ? (
+                      <div className="text-sm font-semibold text-orange-500">
+                        {sellerName.charAt(0).toUpperCase()}
+                      </div>
+                    ) : null // không có sellerName → không render gì
                   )}
+
                 </div>
 
                 <div>
-                  <div className="font-semibold text-gray-900 text-sm">
-                    {selectedThreadId ? (threads.find((t) => t.id === selectedThreadId)?.seller?.name ?? t('chat.seller')) : (sellerName ?? t('chat.title'))}
-                  </div>
-                  <div className="text-xs text-green-600">{t('chat.online')}</div>
+                <div className="font-semibold text-gray-900 text-sm">
+                  {selectedThreadId
+                    ? threads.find((t) => t.id === selectedThreadId)?.seller?.name || null
+                    : sellerName || null}
                 </div>
+                </div>  
               </div>
 
               <div className="flex items-center gap-2">
@@ -422,14 +421,7 @@ export function ChatWidget({ sellerId, sellerName }: ChatWidgetProps) {
                 {/* Input area */}
                 <div className="border-t bg-white p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 rounded hover:bg-gray-100" title={t('chat.emoji')}>
-                        😊
-                      </button>
-                      <button className="p-2 rounded hover:bg-gray-100" title={t('chat.attach')}>
-                        📎
-                      </button>
-                    </div>
+                    
 
                     <input
                       ref={inputRef}

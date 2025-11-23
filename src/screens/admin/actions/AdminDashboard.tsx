@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAdminAuthStore } from "../../store/AdminAuth";
+import { useAdminAuthStore } from "../../../store/AdminAuth";
 import {
   Package,
   Users,

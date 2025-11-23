@@ -147,19 +147,7 @@ export const SellerUploadPage = () => {
   return (
     <div className="min-h-screen bg-[#f5f5f5] w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-12 gap-6">
-        {/* Steps */}
-        <aside className="hidden md:block col-span-3 lg:col-span-3">
-          <div className="bg-white border rounded-lg p-4">
-            <h3 className="font-semibold mb-3">Gợi ý đến Thông tin</h3>
-            <ol className="space-y-3 text-sm text-gray-700">
-              <li>Thêm ít nhất 3 hình ảnh</li>
-              <li>Thêm video sản phẩm</li>
-              <li>Tên sản phẩm rõ ràng</li>
-              <li>Thêm thuộc tính và mô tả</li>
-              <li>Chọn ngành hàng</li>
-            </ol>
-          </div>
-        </aside>
+        
 
         {/* Form */}
         <section className="col-span-12 md:col-span-9 lg:col-span-9">

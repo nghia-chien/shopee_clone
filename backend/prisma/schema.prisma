@@ -44,18 +44,35 @@ model order_item {
 }
 
 model orders {
-  id             String         @id @default(dbgenerated("gen_random_uuid()"))
-  total          Decimal        @db.Decimal(10, 2)
-  status         String         @default("pending")
-  created_at     DateTime       @default(now())
-  updated_at     DateTime       @default(now())
-  user_id        String?
-  system_voucher Json?
-  payment_method String?
-  complaints     complaints[]
-  order_item     order_item[]
-  user           user?          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  seller_order   seller_order[]
+  id                 String         @id @default(dbgenerated("gen_random_uuid()"))
+  total              Decimal        @db.Decimal(10, 2)
+  status             String         @default("pending")
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @default(now())
+  user_id            String?
+  system_voucher     Json?
+  payment_method     String?
+  shipping_fee       Decimal?       @db.Decimal(10, 2)
+  shipping_code      String?        @db.VarChar
+  address_id         String?        @db.VarChar
+  to_name            String?        @db.VarChar(1024)
+  to_phone           String?        @db.VarChar(50)
+  to_address         String?        @db.VarChar(1024)
+  to_ward_name       String?        @db.VarChar(255)
+  to_district_name   String?        @db.VarChar(255)
+  to_province_name   String?        @db.VarChar(255)
+  service_type_id    Int?
+  payment_type_id    Int?
+  required_note      String?        @db.VarChar(500)
+  weight             Int?
+  length             Int?
+  width              Int?
+  height             Int?
+  fulfillment_status String?        @default("pending") @db.VarChar(30)
+  complaints         complaints[]
+  order_item         order_item[]
+  user               user?          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  seller_order       seller_order[]
 }
 
 model product {
@@ -169,18 +186,20 @@ model user {
 }
 
 model seller_order {
-  id                String    @id @default(dbgenerated("gen_random_uuid()"))
-  order_id          String
-  seller_id         String
-  total             Decimal   @db.Decimal
-  shop_voucher      Json?
-  shipping_provider String?
-  shipping_fee      Decimal?  @default(0) @db.Decimal
-  seller_status     String?   @default("pending")
-  created_at        DateTime? @default(now()) @db.Timestamp(6)
-  updated_at        DateTime? @default(now()) @db.Timestamp(6)
-  orders            orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  seller            seller    @relation(fields: [seller_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id           String
+  seller_id          String
+  total              Decimal         @db.Decimal
+  shop_voucher       Json?
+  shipping_provider  String?
+  shipping_fee       Decimal?        @default(0) @db.Decimal
+  seller_status      String?         @default("pending")
+  created_at         DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?       @default(now()) @db.Timestamp(6)
+  fulfillment_status String?         @default("pending") @db.VarChar(30)
+  orders             orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  seller             seller          @relation(fields: [seller_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  shipping_order     shipping_order?
 
   @@index([order_id], map: "idx_seller_order_order_id")
   @@index([seller_id], map: "idx_seller_order_seller_id")
@@ -371,7 +390,84 @@ model address {
   is_default   Boolean   @default(false)
   created_at   DateTime? @default(now()) @db.Timestamp(6)
   updated_at   DateTime? @default(now()) @db.Timestamp(6)
+  province_id  Int?
+  district_id  Int?
+  ward_code    String?   @db.VarChar(20)
   user         user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_user")
+
+  @@index([district_id], map: "idx_address_district_id")
+  @@index([is_default], map: "idx_address_is_default")
+  @@index([province_id], map: "idx_address_province_id")
+  @@index([user_id], map: "idx_address_user_id")
+  @@index([ward_code], map: "idx_address_ward_code")
+}
+
+model shipping_order {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seller_order_id         String                    @unique @db.Uuid
+  ghn_order_code          String?                   @db.VarChar(50)
+  to_ward_code            String?                   @db.VarChar(20)
+  to_district_id          Int?
+  to_province_id          Int?
+  weight                  Int?
+  length                  Int?
+  width                   Int?
+  height                  Int?
+  service_type_id         Int?                      @default(2)
+  payment_type_id         Int?
+  items                   Json?                     @db.Json
+  created_at              DateTime?                 @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamp(6)
+  status                  shipping_status?          @default(pending)
+  error_message           String?                   @db.VarChar(500)
+  retry_count             Int?                      @default(0)
+  last_retry_at           DateTime?                 @db.Timestamp(6)
+  ghn_status              String?                   @db.VarChar(50)
+  status_history          Json?                     @default("[]")
+  synced_at               DateTime?                 @db.Timestamptz(6)
+  expected_delivery_time  DateTime?                 @db.Timestamptz(6)
+  seller_order            seller_order              @relation(fields: [seller_order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shipping_order_seller_order")
+  shipping_tracking_event shipping_tracking_event[]
+
+  @@index([ghn_order_code], map: "idx_shipping_order_ghn_order_code")
+  @@index([retry_count], map: "idx_shipping_order_retry_count")
+  @@index([status], map: "idx_shipping_order_status")
+}
+
+model shop_settings {
+  id            String    @id @default("shop_settings_singleton") @db.VarChar(255)
+  name          String?   @default("Shop") @db.VarChar(255)
+  phone         String    @db.VarChar(20)
+  address_line  String    @db.VarChar(500)
+  province_id   Int?
+  province_name String?   @db.VarChar(255)
+  district_id   Int?
+  district_name String?   @db.VarChar(255)
+  ward_code     String?   @db.VarChar(20)
+  ward_name     String?   @db.VarChar(255)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model shipping_tracking_event {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipping_order_id String?         @db.Uuid
+  ghn_status        String          @db.VarChar(50)
+  internal_status   String          @db.VarChar(50)
+  note              String?
+  happened_at       DateTime        @default(now()) @db.Timestamptz(6)
+  created_at        DateTime        @default(now()) @db.Timestamptz(6)
+  shipping_order    shipping_order? @relation(fields: [shipping_order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([shipping_order_id], map: "idx_tracking_order")
+  @@index([ghn_status, happened_at], map: "idx_tracking_status_time")
+}
+
+enum shipping_status {
+  pending
+  created
+  failed
+  retrying
 }
 
 enum shop_status {

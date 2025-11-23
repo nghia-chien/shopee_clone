@@ -35,13 +35,37 @@ const parseDate = (value: any) => {
 
 export async function listAdminVouchersController(_req: Request, res: Response) {
   try {
-    const vouchers = await prisma.vouchers.findMany({
-      where: { source: 'ADMIN' },
-      orderBy: { start_at: 'desc' },
-      select: baseSelect,
-    });
+    const { page = '1', limit = '50', search = '' } = _req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
 
-    return res.json({ vouchers });
+    const where: any = { source: 'ADMIN' };
+    if (search) {
+      where.code = { contains: search as string, mode: 'insensitive' };
+    }
+
+    const [vouchers, total] = await Promise.all([
+      prisma.vouchers.findMany({
+        where,
+        skip,
+        take: limitNum,
+        select: baseSelect,
+        orderBy: { start_at: 'desc' },
+      }),
+      prisma.vouchers.count({ where }),
+    ]);
+
+    return res.json({
+      items: vouchers,
+      total,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     console.error('listAdminVouchersController error:', error);
     return res.status(500).json({ message: 'listAdminVouchersController Internal server error' });

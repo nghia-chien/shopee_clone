@@ -1,11 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
+
+
 interface Shop {
   shop_id: string;
   shop_name: string;
   total_products: number;
   avg_rating: number ;
-  logo_url?: string; // thêm logo nếu có
+  avatar?: string; // thêm logo nếu có
 }
 
 interface FeaturedShopsProps {
@@ -27,9 +30,9 @@ const FeaturedShops: React.FC<FeaturedShopsProps> = ({ shops }) => {
             <div className="flex items-center w-full sm:w-auto">
               {/* Logo */}
               <div className="relative w-16 h-16 rounded-full overflow-hidden border mr-4">
-                {shop.logo_url ? (
+                {shop.avatar ? (
                   <img
-                    src={shop.logo_url}
+                    src={shop.avatar}
                     alt={shop.shop_name}
                     className="w-full h-full object-cover"
                   />
@@ -59,7 +62,7 @@ const FeaturedShops: React.FC<FeaturedShopsProps> = ({ shops }) => {
             <div className="flex flex-wrap justify-end sm:justify-end text-gray-700 text-sm mt-3 sm:mt-0">
               <div className="flex items-center px-3 border-r">
                 <span className="text-orange-500 font-semibold mr-1">
-                  {shop.total_products.toLocaleString()}k
+          
                 </span>
                 <p>Sản phẩm: {Number(shop.total_products || 0)}</p>
               </div>

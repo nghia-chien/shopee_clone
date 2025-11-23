@@ -1,4 +1,5 @@
-import { ReactNode, useState } from "react";
+import {  useState } from "react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuthStore } from "../../store/AdminAuth";
 import {
@@ -31,15 +32,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const menuItems = [
+    // Action Management
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+    { icon: AlertTriangle, label: "Khiếu nại", path: "/admin/complaints" },
+    { icon: BarChart3, label: "Thống Kê", path: "/admin/analytics" },
+    { icon: Settings, label: "Cài Đặt", path: "/admin/settings" },
+    // Data Management (Refine CRUD)
     { icon: Package, label: "Sản Phẩm", path: "/admin/products" },
     { icon: Store, label: "Sellers", path: "/admin/sellers" },
     { icon: Users, label: "Người Dùng", path: "/admin/users" },
     { icon: ShoppingCart, label: "Đơn Hàng", path: "/admin/orders" },
-    { icon: BarChart3, label: "Thống Kê", path: "/admin/analytics" },
-    { icon: Settings, label: "Cài Đặt", path: "/admin/settings" },
     { icon: Gift, label: "Voucher", path: "/admin/vouchers" },
-    { icon: AlertTriangle, label: "Khiếu nại", path: "/admin/complaints" },
   ];
 
   return (
