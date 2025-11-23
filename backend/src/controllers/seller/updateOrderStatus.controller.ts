@@ -5,6 +5,12 @@ import { sendEmail } from '../../utils/email';
 import { createThreadIfNotExist, sendSystemMessage } from '../../services/chat.service';
 
 const ALLOWED = new Set(['pending', 'accepted', 'cancelled', 'completed']);
+const FULFILLMENT_MAP: Record<string, string | null> = {
+  pending: null,
+  accepted: 'processing',
+  completed: 'delivered',
+  cancelled: 'cancelled',
+};
 
 export async function updateSellerOrderStatusController(req: SellerRequest, res: Response) {
   try {
@@ -26,19 +32,49 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
       },
       include: {
         orders: { include: { user: true } },
+        shipping_order: true,
       },
     });
 
     if (!sellerOrder) return res.status(404).json({ message: 'Seller order not found or not owned' });
 
+    const fulfillmentStatus = FULFILLMENT_MAP[status] ?? null;
+
     // Cập nhật trạng thái
     const updatedSellerOrder = await prisma.seller_order.update({
       where: { id },
-      data: { seller_status: status },
+      data: {
+        seller_status: status,
+        ...(fulfillmentStatus ? { fulfillment_status: fulfillmentStatus } : {}),
+      },
       include: {
         orders: { include: { user: true } },
+        shipping_order: true,
       },
     });
+
+    if (fulfillmentStatus) {
+      await prisma.orders.update({
+        where: { id: updatedSellerOrder.order_id },
+        data: { fulfillment_status: fulfillmentStatus },
+      }).catch((err) => console.error('Failed to sync fulfillment status to orders table:', err));
+    }
+
+    if (status === 'accepted') {
+      const shippingOrder = updatedSellerOrder.shipping_order;
+      if (shippingOrder) {
+        if (!shippingOrder.ghn_order_code) {
+          try {
+            const { retryShippingOrder } = await import('../../services/shippingRetry.service');
+            await retryShippingOrder({ shippingOrderId: shippingOrder.id, maxRetries: 2 });
+          } catch (retryError) {
+            console.error('Failed to trigger GHN order creation after seller accepted:', retryError);
+          }
+        }
+      } else {
+        console.warn('Seller accepted order but shipping_order not found:', id);
+      }
+    }
 
     // Gửi email cho buyer
     const buyerEmail = updatedSellerOrder.orders.user?.email;

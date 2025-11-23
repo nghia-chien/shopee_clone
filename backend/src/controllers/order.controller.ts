@@ -227,6 +227,17 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
             }
           }
         },
+<<<<<<< HEAD
+        seller: true,
+        shipping_order: {
+          include: {
+            shipping_tracking_event: {
+              orderBy: { happened_at: 'desc' },
+              take: 1,
+            },
+          },
+        },
+=======
         seller: {
           select: {
             id: true,
@@ -235,18 +246,44 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
             shop_mall: true
           }
         }
+>>>>>>> 8490ecb82f2aa57e4b6aa1fc93425a867a840ec8
       },
       orderBy: { created_at: 'desc' }
     });
 
     const mapped = sellerOrders.map(so => {
       const items = so.orders.order_item.filter(oi => oi.product.seller_id === so.seller_id);
+      const latestTracking = so.shipping_order?.shipping_tracking_event?.[0] || null;
+      const fulfillmentStatus =
+        so.fulfillment_status ||
+        so.orders.fulfillment_status ||
+        so.seller_status ||
+        'pending';
       return {
         id: so.id,
         order_id: so.order_id,
         seller: so.seller,
         total: Number(so.total),
         status: so.seller_status || 'pending',
+        fulfillment_status: fulfillmentStatus,
+        shipping: so.shipping_order
+          ? {
+              shipping_order_id: so.shipping_order.id,
+              ghn_order_code: so.shipping_order.ghn_order_code,
+              ghn_status: so.shipping_order.ghn_status,
+              internal_status: so.shipping_order.status,
+              expected_delivery_time: so.shipping_order.expected_delivery_time,
+              synced_at: so.shipping_order.synced_at,
+              latest_event: latestTracking
+                ? {
+                    ghn_status: latestTracking.ghn_status,
+                    internal_status: latestTracking.internal_status,
+                    note: latestTracking.note,
+                    happened_at: latestTracking.happened_at,
+                  }
+                : null,
+            }
+          : null,
         created_at: so.created_at,
         items: items.map(i => ({
           id: i.id,
