@@ -231,13 +231,16 @@ export async function createAddressController(req: AuthRequest, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { full_name, phone, address_line, city, district, ward, is_default } = req.body as {
+    const { full_name, phone, address_line, city, district, ward, province_id, district_id, ward_code, is_default } = req.body as {
       full_name: string;
       phone: string;
       address_line: string;
       city: string;
       district: string;
       ward: string;
+      province_id?: number;
+      district_id?: number;
+      ward_code?: string;
       is_default?: boolean;
     };
 
@@ -262,6 +265,9 @@ export async function createAddressController(req: AuthRequest, res: Response) {
         city,
         district,
         ward,
+        province_id: province_id ? Number(province_id) : null,
+        district_id: district_id ? Number(district_id) : null,
+        ward_code: ward_code || null,
         is_default: is_default || false,
       },
     });
@@ -282,13 +288,16 @@ export async function updateAddressController(req: AuthRequest, res: Response) {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
     const { id } = req.params;
-    const { full_name, phone, address_line, city, district, ward, is_default } = req.body as {
+    const { full_name, phone, address_line, city, district, ward, province_id, district_id, ward_code, is_default } = req.body as {
       full_name?: string;
       phone?: string;
       address_line?: string;
       city?: string;
       district?: string;
       ward?: string;
+      province_id?: number;
+      district_id?: number;
+      ward_code?: string;
       is_default?: boolean;
     };
 
@@ -318,6 +327,9 @@ export async function updateAddressController(req: AuthRequest, res: Response) {
         ...(city !== undefined && { city }),
         ...(district !== undefined && { district }),
         ...(ward !== undefined && { ward }),
+        ...(province_id !== undefined && { province_id: province_id ? Number(province_id) : null }),
+        ...(district_id !== undefined && { district_id: district_id ? Number(district_id) : null }),
+        ...(ward_code !== undefined && { ward_code: ward_code || null }),
         ...(is_default !== undefined && { is_default }),
       },
     });

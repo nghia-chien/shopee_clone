@@ -22,6 +22,9 @@ export interface Address {
   city: string;
   district: string;
   ward: string;
+  province_id?: number | null;
+  district_id?: number | null;
+  ward_code?: string | null;
   is_default: boolean;
   created_at?: string;
   updated_at?: string;

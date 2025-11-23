@@ -9,7 +9,23 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 		},
 	});
 	if (!res.ok) {
-		throw new Error(`API error: ${res.status}`);
+		// Try to parse error message from response
+		let errorMessage = `API error: ${res.status}`;
+		let errorData: any = null;
+		try {
+			errorData = await res.json();
+			if (errorData.message) {
+				errorMessage = errorData.message;
+			} else if (errorData.error) {
+				errorMessage = errorData.error;
+			}
+		} catch (e) {
+			// If response is not JSON, use default message
+		}
+		const error = new Error(errorMessage);
+		(error as any).status = res.status;
+		(error as any).response = { data: errorData, status: res.status };
+		throw error;
 	}
 	return (await res.json()) as T;
 }
