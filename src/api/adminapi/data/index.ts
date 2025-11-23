@@ -6,3 +6,4 @@ export * from "./adminUsers";
 export * from "./adminSellers";
 export * from "./adminVouchers";
 
+export type { PaginationMeta } from "./adminUsers";
