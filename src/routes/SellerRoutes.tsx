@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { SellerRegister } from "../components/seller/SellerRegister";
 import  {SellerLogin}  from '../components/seller/SellerLogin';
 import { SellerDashboard } from "../screens/seller/SellerDashboard";
+import { SellerProduct } from "../screens/seller/SellerProduct";
 import { SellerHome } from "../screens/seller/SellerHome";
 import { SellerUploadPage } from "../screens/seller/SellerUploadPage";
 import { SellerOrders } from "../screens/seller/SellerOrders";
@@ -32,6 +33,7 @@ export function SellerRoutes() {
       >
         <Route path="home" element={<SellerHome />} />
         <Route path="dashboard" element={<SellerDashboard />} />
+        <Route path="products" element={<SellerProduct />} />
         <Route path="upload" element={<SellerUploadPage />} />
         <Route path="orders" element={<SellerOrders />} />
         <Route path="analytics" element={<SellerAnalytics />} />

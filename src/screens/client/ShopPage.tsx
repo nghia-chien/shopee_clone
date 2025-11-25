@@ -5,7 +5,7 @@ import FeaturedShops from "../../components/shops/FeaturedShops";
 import { ProductListSection } from "../../components/product/ProductListSection";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
-import { fetchPublicVouchers, saveVoucher,getUserVouchers } from "../../api/userapi/vouchers";
+import { fetchPublicVouchers, saveVoucher, getUserVouchers } from "../../api/userapi/vouchers";
 import type { Voucher } from "../../api/userapi/vouchers";
 import { useAuthStore } from "../../store/auth";
 import type { UserVoucherEntry } from "../../api/userapi/vouchers";
@@ -26,11 +26,11 @@ interface ShopSummary {
   avg_rating: number | null;
 }
 
-
 export default function ShopPage() {
   const { seller_id } = useParams<{ seller_id: string }>();
   const navigate = useNavigate();
   const { token } = useAuthStore();
+
   const [shopInfo, setShopInfo] = useState<ShopSummary | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -40,6 +40,7 @@ export default function ShopPage() {
   const [savingVoucherId, setSavingVoucherId] = useState<string | null>(null);
   const [userVouchers, setUserVouchers] = useState<UserVoucherEntry[]>([]);
 
+  // Lấy voucher đã lưu của user
   useEffect(() => {
     if (!token) return;
     getUserVouchers(token).then(data => setUserVouchers(data.vouchers || []));
@@ -48,10 +49,12 @@ export default function ShopPage() {
   const isSaved = (voucherId: string) =>
     userVouchers.some(uv => uv.voucher.id === voucherId);
 
+  // Lấy thông tin shop + sản phẩm
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
         const shopRes = await api<{ shop: ShopSummary }>(`/shops/${seller_id}`);
         setShopInfo(shopRes.shop);
 
@@ -72,6 +75,7 @@ export default function ShopPage() {
           ).values()
         );
         setCategories(uniqueCategories);
+
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu shop:", error);
       } finally {
@@ -82,6 +86,7 @@ export default function ShopPage() {
     if (seller_id) fetchData();
   }, [seller_id]);
 
+  // Lấy voucher public của shop
   useEffect(() => {
     const loadVouchers = async () => {
       if (!seller_id) {
@@ -98,6 +103,7 @@ export default function ShopPage() {
     loadVouchers();
   }, [seller_id]);
 
+  // Lưu voucher
   const handleSaveVoucher = async (voucherId: string) => {
     if (!token) {
       navigate("/login");
@@ -105,7 +111,10 @@ export default function ShopPage() {
     }
     try {
       setSavingVoucherId(voucherId);
-      await saveVoucher(voucherId, token);
+      const savedVoucher = await saveVoucher(voucherId, token);
+
+      // Cập nhật state userVouchers ngay lập tức
+      setUserVouchers(prev => [...prev, savedVoucher.saved]);
       alert("Đã lưu voucher vào kho của bạn");
     } catch (error: any) {
       alert(error?.message || "Không thể lưu voucher");
@@ -114,6 +123,8 @@ export default function ShopPage() {
     }
   };
 
+
+  // Lọc sản phẩm theo danh mục
   const filteredProducts = useMemo(() => {
     if (!selectedCategory) return products;
     return products.filter((p) => {
@@ -123,6 +134,19 @@ export default function ShopPage() {
     });
   }, [products, selectedCategory]);
 
+  // Lọc voucher shop theo source và product_id
+// Lọc voucher shop toàn shop và gắn trạng thái đã lưu
+const filteredShopVouchers = useMemo(() => {
+  return shopVouchers
+    .filter(v => v.source === "SELLER" && v.product_id === null)
+    .map(v => ({
+      ...v,
+      saved: userVouchers.some(uv => uv.voucher.id === v.id && uv.saved_at),
+    }));
+}, [shopVouchers, userVouchers]);
+
+
+
   if (loading) return <div className="text-center py-10">Đang tải dữ liệu...</div>;
   if (!shopInfo) return <div className="text-center py-10">Không tìm thấy shop</div>;
 
@@ -131,68 +155,56 @@ export default function ShopPage() {
       <Header />
       <div className="container mx-auto px-4 py-6">
         <FeaturedShops
-          shops={[
-            {
-              shop_id: shopInfo.shop_id,
-              shop_name: shopInfo.shop_name,
-              total_products: shopInfo.total_products,
-              avg_rating: typeof shopInfo.avg_rating === "number" ? shopInfo.avg_rating : 0,
-            },
-          ]}
+          shops={[{
+            shop_id: shopInfo.shop_id,
+            shop_name: shopInfo.shop_name,
+            total_products: shopInfo.total_products,
+            avg_rating: typeof shopInfo.avg_rating === "number" ? shopInfo.avg_rating : 0,
+          }]}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
           <div className="md:col-span-3 bg-white rounded-lg shadow-sm border p-4">
             <h3 className="text-lg font-semibold mb-3">🎟️ Voucher của shop</h3>
             <div className="flex flex-col gap-3">
-              {shopVouchers.length ? (
-                shopVouchers.map((v) => {
-                  const discountLabel =
-                    v.discount_type === "PERCENT"
-                      ? `${v.discount_value}%`
-                      : `${Number(v.discount_value).toLocaleString("vi-VN")}₫`;
-                  const minOrder = Number(v.min_order_amount ?? 0);
+            {filteredShopVouchers.length ? (
+              filteredShopVouchers.map((v) => {
+                const voucherId = String(v.id);
+                const discountLabel =
+                  v.discount_type === "PERCENT"
+                    ? `${v.discount_value}%`
+                    : `${Number(v.discount_value).toLocaleString("vi-VN")}₫`;
+                const minOrder = Number(v.min_order_amount ?? 0);
+                const endAtLabel = v.end_at ? new Date(v.end_at).toLocaleDateString("vi-VN") : "Không rõ";
 
-                  // Kiểm tra đã lưu
-                  
-                  return (
-                    <div
-                      key={v.id}
-                      className="border border-dashed border-orange-400 px-4 py-2 rounded-md text-sm text-gray-700 flex items-center justify-between bg-orange-50 flex-wrap gap-3"
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-orange-600">{discountLabel}</span>
-                        {minOrder > 0 && <span>Đơn tối thiểu {minOrder.toLocaleString("vi-VN")}₫</span>}
-                        <span className="text-xs text-gray-500">
-                          HSD: {new Date(v.end_at).toLocaleDateString("vi-VN")}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleSaveVoucher(v.id)}
-                        disabled={isSaved(v.id) || savingVoucherId === v.id}
-                        className="px-4 py-1 rounded-full border border-orange-500 text-orange-600 text-xs font-semibold hover:bg-orange-500 hover:text-white transition disabled:opacity-50"
-                      >
-                        {isSaved(v.id) ? "Đã lưu" : savingVoucherId === v.id ? "Đang lưu..." : "Lưu voucher"}
-                      </button>
-
+                return (
+                  <div
+                    key={voucherId}
+                    className="border border-dashed border-orange-400 px-4 py-2 rounded-md text-sm text-gray-700 flex items-center justify-between bg-orange-50 flex-wrap gap-3"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-orange-600">{discountLabel}</span>
+                      {minOrder > 0 && (
+                        <span>Đơn tối thiểu {minOrder.toLocaleString("vi-VN")}₫</span>
+                      )}
+                      <span className="text-xs text-gray-500">HSD: {endAtLabel}</span>
                     </div>
-                  );
-                })
-              ) : (
-                <p className="text-gray-500 text-sm">Chưa có voucher nào</p>
-              )}
+
+                    <button
+                      onClick={() => handleSaveVoucher(voucherId)}
+                      disabled={v.saved || savingVoucherId === voucherId}
+                      className="px-4 py-1 rounded-full border border-orange-500 text-orange-600 text-xs font-semibold hover:bg-orange-500 hover:text-white transition disabled:opacity-50"
+                    >
+                      {v.saved ? "Đã lưu" : savingVoucherId === voucherId ? "Đang lưu..." : "Lưu voucher"}
+                    </button>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-gray-500 text-sm">Chưa có voucher nào</p>
+            )}
 
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border p-4">
-            <h3 className="text-lg font-semibold mb-3">✨ Gợi ý cho bạn</h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="hover:text-orange-500 cursor-pointer">Sản phẩm bán chạy</li>
-              <li className="hover:text-orange-500 cursor-pointer">Sản phẩm giảm giá</li>
-              <li className="hover:text-orange-500 cursor-pointer">Mới về hôm nay</li>
-              <li className="hover:text-orange-500 cursor-pointer">Gợi ý theo xu hướng</li>
-            </ul>
           </div>
         </div>
 

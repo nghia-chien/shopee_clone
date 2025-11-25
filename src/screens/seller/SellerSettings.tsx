@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { User, CreditCard, Truck, Bell, Shield, Camera } from "lucide-react";
+import { User,  Bell, Shield, Camera } from "lucide-react";
 import {
   fetchSellerSettings,
   updateSellerProfile,
@@ -14,8 +14,6 @@ type TabId = "profile" | "payment" | "shipping" | "notification" | "security";
 
 const tabs: { id: TabId; label: string; icon: any }[] = [
   { id: "profile", label: "Thông Tin", icon: User },
-  { id: "payment", label: "Thanh Toán", icon: CreditCard },
-  { id: "shipping", label: "Vận Chuyển", icon: Truck },
   { id: "notification", label: "Thông Báo", icon: Bell },
   { id: "security", label: "Bảo Mật", icon: Shield },
 ];
@@ -237,9 +235,6 @@ export default function SellerSettings() {
 
   const securityNotice = useMemo(() => {
     if (!securityMeta) return "Chưa có thông tin cập nhật";
-    if (securityMeta.requiresPassword) {
-      return "Đã quá 15 ngày kể từ lần cập nhật cuối. Hệ thống sẽ yêu cầu bạn xác nhận mật khẩu trước khi lưu thay đổi.";
-    }
     if (securityMeta.lastSensitiveUpdate) {
       return `Bạn đã cập nhật lần gần nhất vào ${new Date(securityMeta.lastSensitiveUpdate).toLocaleDateString("vi-VN")}.`;
     }
@@ -268,9 +263,6 @@ export default function SellerSettings() {
             </label>
           </div>
           <div className="flex-1 w-full">
-            <p className="text-sm text-gray-500 mb-2">
-              Ảnh đại diện giúp khách hàng nhận diện thương hiệu của bạn.
-            </p>
             <button
               onClick={handleAvatarUpload}
               disabled={!avatarFile || avatarUploading || savingProfile}

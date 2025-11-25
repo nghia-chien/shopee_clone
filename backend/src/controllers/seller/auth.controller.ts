@@ -40,33 +40,53 @@ export const sellerRegisterController = async (req:any , res: Response)=>{
     res.status(500).json({ error: "Server error  sellerRegisterController seller/auth.controller" });
   }
 }
-export const sellerLoginController = async (req:any , res: Response)=>{
+export const sellerLoginController = async (req: any, res: Response) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+    if (!email || !password)
+      return res.status(400).json({ error: "Email and password required" });
 
     const seller = await prisma.seller.findUnique({ where: { email } });
     if (!seller) return res.status(400).json({ error: "Seller not found" });
 
-    if (!seller.password) {
+    if (!seller.password)
       return res.status(400).json({ error: "Invalid password" });
-    }
-    let match = false;
-    try {
-      match = await bcrypt.compare(password, seller.password);
-    } catch {
-      match = false;
-    }
+
+    const match = await bcrypt.compare(password, seller.password);
     if (!match) return res.status(400).json({ error: "Invalid password" });
 
-    const token = jwt.sign({ id: seller.id, email: seller.email, phone_number: seller.phone_number, role: 'seller' }, process.env.JWT_SECRET || "secret", { expiresIn: "7d" });
+    const token = jwt.sign(
+      {
+        id: seller.id,
+        email: seller.email,
+        role: "seller",
+      },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "7d" }
+    );
 
-    res.json({ seller: { id: seller.id, email: seller.email, name: seller.name }, token });
+    res.json({
+      token,
+      seller: {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        phone_number: seller.phone_number,
+        avatar: seller.avatar,
+        rating: seller.rating,
+        status: seller.status,
+        shop_mall: seller.shop_mall,
+        address: seller.address,
+      },
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error sellerLoginController seller/auth.controller" });
+    return res
+      .status(500)
+      .json({ error: "Server error sellerLoginController seller/auth.controller" });
   }
-}
+};
+
 
 export const refreshSellerTokenController = async (req: Request, res: Response) => {
   try {

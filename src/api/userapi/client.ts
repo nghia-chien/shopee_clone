@@ -74,7 +74,7 @@ export async function getCategoryTree(): Promise<any> {
 export interface MallShop {
   id: string;
   name: string;
-  logo?: string;
+  avatar?: string;
   rating: number;
   isOfficial: boolean;
 }
@@ -95,6 +95,7 @@ export interface FlashSaleProduct {
   images: string[];
   stock: number;
   sold: number;
+  status: string;
   seller: {
     id: string;
     name: string;

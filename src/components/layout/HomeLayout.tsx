@@ -59,17 +59,17 @@ export function HomeLayout({ children }: HomeLayoutProps) {
 
   // TODO: API Integration - GET /api/banners?position=main
   const mainBanners = [
-    { id: 1, image: "/bannerbig1.png", link: "/sale", alt: "Banner 1" },
-    { id: 2, image: "/bannerbig2.png", link: "/new-arrivals", alt: "Banner 2" },
-    { id: 3, image: "/bannerbig3.png", link: "/brands", alt: "Banner 3" }
+    { id: 1, image: "/bannerbig1.png", link: "/flash-sale", alt: "Banner 1" },
+    { id: 2, image: "/bannerbig2.png", link: "/flash-sale", alt: "Banner 2" },
+    { id: 3, image: "/bannerbig3.png", link: "/flash-sale", alt: "Banner 3" }
   ];
   const subBanners = [
-    { id: 1, image: "/banner1.png", link: "/voucher50k", alt: "Voucher 50K" },
-    { id: 2, image: "/banner2.png", link: "/freeship", alt: "Miễn Phí Vận Chuyển" }
+    { id: 1, image: "/banner1.png", link: "/event", alt: "Voucher 50K" },
+    { id: 2, image: "/banner2.png", link: "/event", alt: "Miễn Phí Vận Chuyển" }
   ];
   // Quick action items - can be made dynamic via API
   const quickActions = [
-    { name: "Ngày hội săn sale", icon: "💰", link: "/cheap" },
+    { name: "Ngày hội săn sale", icon: "💰", link: "/event" },
     { name: "Shopee Mall", icon: "🏪", link: "/mall" },
     { name: "Bắt Deal 0Đ", icon: "⚡", link: "/flash-sale" },
     { name: "Miễn Phí Ship", icon: "🚚", link: "/freeship" },
@@ -183,63 +183,64 @@ export function HomeLayout({ children }: HomeLayoutProps) {
   // ============================================================================
 
   return (
-    <div className="bg-gray-50 ">  <Header/>
-        <section className="bg-white rounded-sm shadow-sm mt-4 pb-6">
+    <div className="bg-gray-50 ">  
+    <Header/>
+      <section className="bg-white rounded-sm shadow-sm mt-4 pb-6">
 
-          
-          {/* banner chính  */}
-          <section className="flex gap-2 justify-center max-w-[1200px] mx-auto mt-4">
-          {/* Main Banner Slider */}
-          <div className="flex-2 h-[235px] w-[800px] rounded-sm overflow-hidden relative shadow-sm">
-            <Slider {...settings}>
-              {mainBanners.map((banner) => (
-                <a key={banner.id} href={banner.link}>
-                  <img
-                    src={banner.image}
-                    alt={banner.alt}
-                    className="w-full h-[235px] object-cover rounded-sm"
-                  />
-                </a>
-              ))}
-            </Slider>
-          </div>
-
-          {/* Sub Banners (cố định bên cạnh) */}
-          <div className="flex-1 flex flex-col gap-2 h-[235px]">
-            {subBanners.map((banner) => (
-              <a
-                key={banner.id}
-                href={banner.link}
-                className="flex-1 relative overflow-hidden rounded-sm shadow-sm"
-              >
+        
+        {/* banner chính  */}
+        <section className="flex gap-2 justify-center max-w-[1200px] mx-auto mt-4">
+        {/* Main Banner Slider */}
+        <div className="flex-2 h-[235px] w-[800px] rounded-sm overflow-hidden relative shadow-sm">
+          <Slider {...settings}>
+            {mainBanners.map((banner) => (
+              <a key={banner.id} href={banner.link}>
                 <img
                   src={banner.image}
                   alt={banner.alt}
-                  className="w-full h-full object-cover rounded-sm"
+                  className="w-full h-[235px] object-cover rounded-sm"
                 />
               </a>
             ))}
-          </div>
-          </section>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mt-4 justify-items-center px-16 mx-auto">
+          </Slider>
+        </div>
 
-            {quickActions.slice(0, 6).map((action) => (
-              <div
-                key={action.name}
-                className="flex flex-col items-center gap-2 cursor-pointer group"
-                onClick={() => navigate(action.link)}
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-pink-100 rounded-lg flex items-center justify-center group-hover:shadow-md group-hover:scale-105 transition-all">
-                  <span className="text-2xl">{action.icon}</span>
-                </div>
-                <span className="text-xs text-center text-gray-700 group-hover:text-orange-500 transition">
-                  {action.name}
-                </span>
-              </div>
-            ))}
-          </div>
+        {/* Sub Banners (cố định bên cạnh) */}
+        <div className="flex-1 flex flex-col gap-2 h-[235px]">
+          {subBanners.map((banner) => (
+            <a
+              key={banner.id}
+              href={banner.link}
+              className="flex-1 relative overflow-hidden rounded-sm shadow-sm"
+            >
+              <img
+                src={banner.image}
+                alt={banner.alt}
+                className="w-full h-full object-cover rounded-sm"
+              />
+            </a>
+          ))}
+        </div>
         </section>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mt-4 justify-items-center px-16 mx-auto">
 
+          {quickActions.slice(0, 6).map((action) => (
+            <div
+              key={action.name}
+              className="flex flex-col items-center gap-2 cursor-pointer group"
+              onClick={() => navigate(action.link)}
+            >
+              <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-pink-100 rounded-lg flex items-center justify-center group-hover:shadow-md group-hover:scale-105 transition-all">
+                <span className="text-2xl">{action.icon}</span>
+              </div>
+              <span className="text-xs text-center text-gray-700 group-hover:text-orange-500 transition">
+                {action.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         <section className="bg-white rounded-sm p-6 shadow-sm">
           <h2 className="text-gray-500 text-sm mb-4 uppercase font-semibold">Danh Mục</h2>
@@ -262,15 +263,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
           </div>
         </section>
 
-        {/* ======================================================================
-            FLASH SALE SECTION
-            TODO:
-            - Real-time countdown timer
-            - Progress bar animation
-            - Auto-refresh product availability
-            - Add "Nhắc tôi" (remind me) feature
-            - Socket connection for live updates
-        ====================================================================== */}
+        {/* FLASH SALE SECTION */}
         <section className="bg-white rounded-sm shadow-sm">
           <div className="flex items-center justify-between px-6 py-4 border-b">
             <div className="flex items-center gap-4">
@@ -316,81 +309,76 @@ export function HomeLayout({ children }: HomeLayoutProps) {
                 </div>
               ))}
             </div>
-          ) : flashSaleProducts.length === 0 ? (
+          ) : flashSaleProducts.filter(product => product.status !== "inactive").length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               Không có sản phẩm flash sale nào
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-px bg-gray-100 p-px">
-              {flashSaleProducts.map((product) => {
-                const soldPercent = product.stock > 0 
-                  ? Math.min(100, Math.round((product.sold / (product.sold + product.stock)) * 100))
-                  : 0;
-                
-                return (
-                  <div 
-                    key={product.id}
-                    className="bg-white p-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
-                    onClick={() => handleProductClick(product.id)}
-                  >
-                    {/* Product Image */}
-                    <div className="relative">
-                      {product.images && product.images.length > 0 ? (
-                        <img 
-                          src={product.images[0]} 
-                          alt={product.title}
-                          className="w-full aspect-square object-cover rounded mb-2"
-                        />
-                      ) : (
-                        <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded mb-2"></div>
-                      )}
-                      
-                      {/* Discount Badge */}
-                      <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-bl shadow">
-                        -{product.discount}%
+              {flashSaleProducts
+                .filter(product => product.status !== "inactive")
+                .map((product) => {
+                  const soldPercent = product.stock > 0 
+                    ? Math.min(100, Math.round((product.sold / (product.sold + product.stock)) * 100))
+                    : 0;
+                  
+                  return (
+                    <div 
+                      key={product.id}
+                      className="bg-white p-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
+                      onClick={() => handleProductClick(product.id)}
+                    >
+                      {/* Product Image */}
+                      <div className="relative">
+                        {product.images && product.images.length > 0 ? (
+                          <img 
+                            src={product.images[0]} 
+                            alt={product.title}
+                            className="w-full aspect-square object-cover rounded mb-2"
+                          />
+                        ) : (
+                          <div className="w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded mb-2"></div>
+                        )}
+                        
+                        {/* Discount Badge */}
+                        <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-bl shadow">
+                          -{product.discount}%
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Price */}
-                    <div className="flex flex-col gap-1 mb-2">
-                      <span className="text-orange-500 text-lg font-bold">
-                        ₫{formatPrice(product.price)}
-                      </span>
-                      {product.originalPrice > product.price && (
-                        <span className="text-gray-400 text-xs line-through">
-                          ₫{formatPrice(product.originalPrice)}
+                      
+                      {/* Price */}
+                      <div className="flex flex-col gap-1 mb-2">
+                        <span className="text-orange-500 text-lg font-bold">
+                          ₫{formatPrice(product.price)}
                         </span>
-                      )}
-                    </div>
-                    
-                    {/* Sold Progress Bar */}
-                    <div className="relative mt-3">
-                      <div className="h-4 bg-pink-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-orange-400 to-pink-500 flex items-center justify-center transition-all duration-300"
-                          style={{ width: `${soldPercent}%` }}
-                        >
-                          <span className="text-xs text-white font-bold">
-                            ĐÃ BÁN {soldPercent}%
+                        {product.originalPrice > product.price && (
+                          <span className="text-gray-400 text-xs line-through">
+                            ₫{formatPrice(product.originalPrice)}
                           </span>
+                        )}
+                      </div>
+                      
+                      {/* Sold Progress Bar */}
+                      <div className="relative mt-3">
+                        <div className="h-4 bg-pink-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-orange-400 to-pink-500 flex items-center justify-center transition-all duration-300"
+                            style={{ width: `${soldPercent}%` }}
+                          >
+                            <span className="text-xs text-white font-bold">
+                              ĐÃ BÁN {soldPercent}%
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
         </section>
 
-        {/* ======================================================================
-            SHOPEE MALL SECTION
-            TODO:
-            - Fetch official shops from API
-            - Add shop badges (Official, Verified, etc.)
-            - Show shop rating and follower count
-            - Add "Follow" button
-        ====================================================================== */}
+        {/*SHOPEE MALL SECTION */}
         <section className="bg-white rounded-sm p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -401,50 +389,48 @@ export function HomeLayout({ children }: HomeLayoutProps) {
                 7 Ngày Miễn Phí Trả Hàng
               </span>
             </div>
-            <button 
+
+            <button
               className="text-orange-500 hover:text-orange-600 font-medium transition"
               onClick={() => navigate("/mall")}
             >
               Xem tất cả →
             </button>
           </div>
-          
+
           {/* Mall Shops Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
             {shops.map((shop) => (
-              <div key={shop.id} className="p-4 border rounded cursor-pointer">
-                <img src={shop.logo || "/placeholder.png"} alt={shop.name} className="w-16 h-16 mb-2" />
-                <h3 className="text-sm font-semibold">{shop.name}</h3>
-                <p className="text-xs text-gray-500">Rating: {shop.rating.toFixed(1)}</p>
+              <div 
+                key={shop.id} 
+                className="cursor-pointer flex flex-col items-center"
+              >
+                <div className="w-full aspect-square overflow-hidden rounded-2xl md:rounded-3xl border border-gray-300">
+                  <img 
+                    src={shop.avatar || "/placeholder.png"} 
+                    alt={shop.name} 
+                    className="w-full h-full object-cover"
+                    onClick={() => handleShopClick(shop.id)}
+                  />
+                </div>
               </div>
             ))}
           </div>
         </section>
-
-        
-
-        
         {children}
-
       </main>
+      </div>
       <Footer/>
-      {/* Back to Top Button */}
-      {/* TODO: Show only when scrolled down */}
       <button 
         className="fixed bottom-6 right-6 w-12 h-12 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 transition flex items-center justify-center z-50"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
-        {/* <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd"/>
-        </svg> */}
         <span className="material-symbols-outlined">
           keyboard_control_key
         </span>
       </button>
-
       {/* Chat Widget */}
       <ChatWidget />
-    
     </div>
   );
 }

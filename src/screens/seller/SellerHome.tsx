@@ -15,7 +15,8 @@ import {
   Star,
   CheckCircle2,
   XCircle,
-  ArrowRight
+  ArrowRight,
+  Store
 } from "lucide-react";
 
 interface Product {
@@ -35,7 +36,7 @@ export const SellerHome = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const storedToken = token; // rely on store; session-based persistence handles reloads
+      const storedToken = token;
       if (!storedToken) {
         navigate("/seller/login");
         return;
@@ -95,6 +96,21 @@ export const SellerHome = () => {
   // Get recent products (last 4)
   const recentProducts = products.slice(0, 4);
 
+  // Get seller initials for avatar
+  const getInitials = (name?: string, email?: string) => {
+    if (name) {
+      const names = name.trim().split(" ");
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+    if (email) {
+      return email.substring(0, 2).toUpperCase();
+    }
+    return "S";
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -106,7 +122,21 @@ export const SellerHome = () => {
     );
   }
 
-  if (!seller) return <p>Không tìm thấy thông tin seller</p>;
+  if (!seller) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="text-center">
+          <p className="text-gray-600">Không tìm thấy thông tin seller</p>
+          <button
+            onClick={() => navigate("/seller/login")}
+            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Đăng nhập lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 w-full overflow-x-hidden">
@@ -116,21 +146,44 @@ export const SellerHome = () => {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                  {seller.name?.charAt(0)?.toUpperCase() || "S"}
+                {/* Avatar */}
+                <div className="relative">
+                  {seller.avatar ? (
+                    <img
+                      src={seller.avatar}
+                      alt={seller.name || "Seller"}
+                      className="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-blue-200"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                      {getInitials(seller.name, seller.email)}
+                    </div>
+                  )}
+                  {seller.status === "active" && (
+                    <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                  )}
                 </div>
+
+                {/* Seller Info */}
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">
                     Chào mừng, {seller.name || "Seller"}!
                   </h1>
                   <p className="text-gray-600 mt-1">{seller.email}</p>
-                  <div className="flex items-center gap-4 mt-2">
+                  {seller.phone_number && (
+                    <p className="text-gray-500 text-sm">📞 {seller.phone_number}</p>
+                  )}
+                  
+                  <div className="flex items-center gap-4 mt-2 flex-wrap">
+                    {/* Rating */}
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                       <span className="text-sm text-gray-600">
-                        {seller.rating?.toFixed(1) || "0.0"}
+                        {seller.rating !== null ? seller.rating.toFixed(1) : "Chưa có"}
                       </span>
                     </div>
+
+                    {/* Status */}
                     <div className="flex items-center gap-1">
                       {seller.status === "active" ? (
                         <>
@@ -140,13 +193,33 @@ export const SellerHome = () => {
                       ) : (
                         <>
                           <XCircle className="w-4 h-4 text-red-500" />
-                          <span className="text-sm text-red-600 font-medium">Tạm ngưng</span>
+                          <span className="text-sm text-red-600 font-medium">
+                            {seller.status === "inactive" ? "Tạm ngưng" : seller.status}
+                          </span>
                         </>
                       )}
                     </div>
+
+                    {/* Shop Mall */}
+                    {seller.shop_mall && (
+                      <div className="flex items-center gap-1">
+                        <Store className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm text-blue-600 font-medium">{seller.shop_mall}</span>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Address */}
+                  {seller.address && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      📍 {typeof seller.address === 'string' ? seller.address : 
+                          `${seller.address.street || ''} ${seller.address.city || ''} ${seller.address.country || ''}`.trim()}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Logout Button */}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200"

@@ -8,17 +8,17 @@ export function VoucherList() {
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"ALL" | "ADMIN" | "SELLER">("ALL");
 
-  const { data: listData, isLoading } = useList({
-    resource: "vouchers",
-    pagination: {
-      current: 1,
-      pageSize: 50,
-    },
-    filters: [
-      ...(search ? [{ field: "q", operator: "contains", value: search }] : []),
-      ...(sourceFilter !== "ALL" ? [{ field: "source", operator: "eq", value: sourceFilter }] : []),
-    ],
-  });
+const { data: listData, isLoading } = useList({
+  resource: "vouchers",
+  pagination: {
+    current: 1,
+    pageSize: 50,
+  },
+  filters: [
+    ...(search ? [{ field: "q", operator: "contains" as const, value: search }] : []),
+    ...(sourceFilter !== "ALL" ? [{ field: "source", operator: "eq" as const, value: sourceFilter }] : []),
+  ],
+});
 
   // In Refine v4, listData has structure: { data: [...], total: number }
   const vouchers = listData?.data || [];

@@ -34,8 +34,13 @@ export const SellerOrders = () => {
   const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
-  const [filter, setFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const statusOptions: Array<{ value: SellerOrder["seller_status"]; label: string }> = [
+    { value: "pending", label: "Đang xử lý" },
+    { value: "accepted", label: "Đã xác nhận" },
+    { value: "completed", label: "Hoàn thành" },
+    { value: "cancelled", label: "Đã hủy" },
+  ];
 
   useEffect(() => {
     if (!token) {
@@ -74,8 +79,14 @@ export const SellerOrders = () => {
     }
   };
 
-  const handleUpdateStatus = async (seller_order_id: string, status: 'accepted' | 'cancelled' | 'completed') => {
+  const handleUpdateStatus = async (
+    seller_order_id: string,
+    status: SellerOrder["seller_status"]
+  ) => {
+    if (!token) return;
     try {
+      const current = orders.find((o) => o.id === seller_order_id)?.seller_status;
+      if (current === status) return;
       setUpdatingId(seller_order_id);
       await updateSellerOrderStatus(token!, seller_order_id, status);
       await loadOrders();
@@ -93,19 +104,7 @@ export const SellerOrders = () => {
     }
   };
 
-  const filteredOrders = filter === "all"
-    ? orders
-    : orders.filter(o => o.seller_status === filter);
-
-  const stats = {
-    total: orders.length,
-    pending: orders.filter(o => o.seller_status === "pending").length,
-    completed: orders.filter(o => o.seller_status === "accepted").length,
-    cancelled: orders.filter(o => o.seller_status === "cancelled").length,
-    totalRevenue: orders
-      .filter(o => o.seller_status === "completed")
-      .reduce((sum, o) => sum + Number(o.total), 0),
-  };
+  const filteredOrders = orders;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -187,48 +186,28 @@ export const SellerOrders = () => {
                   <Eye className="w-4 h-4" />
                   Xem Chi Tiết
                 </button>
-{/* thêm trạng thai sau khi đã xác nhận thì hoàn thành /
-     xem được chi tiết đơn hàng */}
-                {/* Action Buttons */}
-<div className="grid grid-cols-2 gap-2 mt-3">
-  {order.seller_status === 'pending' && (
-    <>
-      <button
-        onClick={() => handleUpdateStatus(order.id, 'accepted')}
-        disabled={updatingId === order.id}
-        className="px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 font-medium disabled:opacity-50"
-      >
-        {updatingId === order.id ? 'Đang xác nhận...' : 'Xác nhận'}
-      </button>
-      <button
-        onClick={() => handleUpdateStatus(order.id, 'cancelled')}
-        disabled={updatingId === order.id}
-        className="px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium disabled:opacity-50"
-      >
-        {updatingId === order.id ? 'Đang hủy...' : 'Hủy đơn'}
-      </button>
-    </>
-  )}
-
-  {order.seller_status === 'accepted' && (
-    <>
-      <button
-        onClick={() => handleUpdateStatus(order.id, 'completed')}
-        disabled={updatingId === order.id}
-        className="px-4 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium disabled:opacity-50"
-      >
-        {updatingId === order.id ? 'Đang hoàn thành...' : 'Hoàn thành đơn'}
-      </button>
-      <button
-        onClick={() => handleUpdateStatus(order.id, 'cancelled')}
-        disabled={updatingId === order.id}
-        className="px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium disabled:opacity-50"
-      >
-        Hủy đơn
-      </button>
-    </>
-  )}
-</div>
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Cập nhật trạng thái</p>
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                    <select
+                      value={order.seller_status}
+                      onChange={(e) =>
+                        handleUpdateStatus(order.id, e.target.value as SellerOrder["seller_status"])
+                      }
+                      disabled={updatingId === order.id}
+                      className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                      {statusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {updatingId === order.id && (
+                      <span className="text-xs text-gray-500">Đang cập nhật...</span>
+                    )}
+                  </div>
+                </div>
 
               </div>
             </div>

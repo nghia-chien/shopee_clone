@@ -484,6 +484,7 @@ export async function getFlashSaleProductsController(req: Request, res: Response
           id: product.id,
           title: product.title,
           price: finalPrice,
+          status : product.status,
           originalPrice: originalPrice,
           discount: discountPercent,
           images: product.images || [],

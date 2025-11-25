@@ -1,24 +1,22 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+interface Seller {
+  id: string;
+  email: string;
+  name?: string;
+  phone_number?: string;
+  avatar?: string;
+  rating: number | null;
+  status: string;
+  shop_mall?: string;
+  address?: any;
+}
+
 interface SellerAuthState {
   token: string | null;
-  seller: {
-    status: string;
-    rating: number;
-    id: string;
-    email: string;
-    phone_number?: string;
-    name?: string;
-  } | null;
-  setAuth: (token: string, seller: {
-    id: string;
-    email: string;
-    phone_number?: string;
-    name?: string;
-    status: string;
-    rating: number;
-  }) => void;
+  seller: Seller | null;
+  setAuth: (token: string, seller: Seller) => void;
   logout: () => void;
 }
 
