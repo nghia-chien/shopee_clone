@@ -38,9 +38,7 @@ export function AppRoutes() {
             </AuthGuard>
           }
         >
-          {/* Các page yêu cầu login */}
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+
 
           {/* User pages */}
           <Route path="/user/profile" element={<AccountPage />} />
@@ -48,7 +46,9 @@ export function AppRoutes() {
           <Route path="/user/complaints" element={<ComplaintsPage />} />
           <Route path="/user/orders" element={<OrdersPage />} />
         </Route>
-
+          {/* Các page yêu cầu login */}
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
         {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/category/:slug" element={<CategoryPage />} />

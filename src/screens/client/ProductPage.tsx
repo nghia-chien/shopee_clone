@@ -18,6 +18,8 @@ export function ProductPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { token } = useAuthStore();
   const navigate = useNavigate();
+  const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
+
 
   // Lấy dữ liệu sản phẩm theo id
   // Giả định cấu trúc data: {..., title, rating, reviews, sold, price, discount, images: [], description, tags: [], stock, seller: {logo, name, address}}
@@ -58,27 +60,50 @@ export function ProductPage() {
 
   if (!data) return <div className="p-4 text-center">{t("product.loading")}</div>;
 
-  // (Yêu cầu 3) Tính giá sau giảm giá
-  const priceAfterDiscount = data.discount
-    ? (data.price * (100 - data.discount)) / 100
-    : data.price;
+// (Yêu cầu 3) Tính giá sau giảm giá
+  const priceToShow = selectedVariant?.price ?? data.price;
+  const discountToShow = selectedVariant?.discount ?? data.discount;
+  
+  const priceAfterDiscount = discountToShow
+    ? (priceToShow * (100 - discountToShow)) / 100
+    : priceToShow;
 
   const addToCart = async () => {
     if (!token) {
       navigate('/login');
       return;
     }
+    
+    // Đảm bảo variant_id là null thay vì undefined
+    const requestBody = {
+      product_id: params.id, 
+      variant_id: selectedVariant?.id || null,
+      quantity 
+    };
+    
+    console.log('📦 Thông tin gửi lên API:', requestBody);
+    console.log('🔑 Token:', token ? 'Có token' : 'Không có token');
+    console.log('🆔 Product ID:', params.id);
+    console.log('🎨 Variant ID:', selectedVariant?.id);
+    console.log('📊 Quantity:', quantity);
+    
     try {
       await api(`/cart/items`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ product_id: params.id, quantity }),
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
       });
       alert('Đã thêm vào giỏ hàng');
+      
     } catch (err: any) {
+      console.error('❌ Lỗi khi gọi API:', err);
       alert(err?.message || 'Lỗi thêm giỏ hàng');
     }
   };
+
 
   const buyNow = async () => {
     try {
@@ -141,28 +166,26 @@ export function ProductPage() {
           <div className="flex items-baseline gap-3 bg-gray-100 p-4 rounded">
             {/* Giá chính (sau giảm hoặc giá gốc) */}
             <span className="text-3xl font-bold text-orange-600">
-              {Number(data.discount ? priceAfterDiscount : data.price)
-                .toString()
-                .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+              {(Number(discountToShow ? priceAfterDiscount : priceToShow)
+                .toLocaleString("vi-VN"))}
               <span className="text-[16px] relative top-[-8px] ml-0.5">₫</span>
             </span>
 
             {/* Chỉ hiện giá gốc + % giảm khi có discount */}
-            {data.discount > 0 && (
+            {discountToShow > 0 && (
               <>
                 <span className="text-gray-400 line-through">
-                  {Number(data.price)
-                    .toString()
-                    .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                  {Number(priceToShow).toLocaleString("vi-VN")}
                   <span className="text-[16px] relative top-[-8px] ml-0.5">₫</span>
                 </span>
 
                 <span className="text-red-600 text-sm font-semibold">
-                  -{data.discount}%
+                  -{discountToShow}%
                 </span>
               </>
             )}
           </div>
+
 
 
 
@@ -171,6 +194,29 @@ export function ProductPage() {
             <div>{t("product.voucher")}: <span className="text-orange-600">Giảm 2k, 3k</span></div>
             <div>{t("product.shipping")}: <span>Miễn phí đơn từ 50k</span></div>
           </div>
+          {/* chọn size */}
+          {data.product_variant?.length > 0 && (
+            <div className="flex text-xs items-center gap-3 pt-2">
+              <span>{t("product.select_variant")}:</span>
+              <div className="grid grid-cols-4 gap-2">
+                {data.product_variant.map((v: any) => (
+                  <button
+                    key={v.id}
+                    onClick={() => {
+                      setSelectedVariant(v);
+                      setSelectedImage(v.image || data.images?.[0] || null);
+                    }}
+                    className={`px-3 py-1 border rounded ${
+                      selectedVariant?.id === v.id ? "bg-orange-500 text-white" : "bg-white"
+                    }`}
+                  >
+                    {v.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {/* Số lượng */}
           <div className="flex items-center gap-3 pt-2">
@@ -232,14 +278,29 @@ export function ProductPage() {
         <div className="text-sm text-gray-700 space-y-2">
           <div>• Tags: {data.tags?.join(", ") || t("updating")}</div>
           <div>• {t("product.stock")}: {data.stock > 0 ? 'Còn hàng' : 'Hết hàng'}</div>
-          <div>• {t("product.seller_address")}: {data.seller?.address || t("updating")}</div>
+          <div>• {t("product.seller_name")}: {data.seller?.name || t("updating")}</div>
         </div>
       </div>
 
       {/* (Yêu cầu 7) MÔ TẢ SẢN PHẨM */}
       <div className="max-w-6xl mx-auto bg-white mt-4 p-6 shadow-sm rounded-md text-left">
         <h2 className="text-lg font-semibold mb-3">{t("product.description")}</h2>
-        <p className="text-sm text-gray-700 whitespace-pre-line">{data.description}</p>
+        <div className="text-sm text-gray-700 space-y-2">
+          {JSON.parse(data.description)?.map((block: any, idx: number) => {
+            if (block.type === "text") return <p key={idx}>{block.content}</p>;
+            if (block.type === "image")
+              return (
+                <img
+                  key={idx}
+                  src={block.content}
+                  alt={`desc-${idx}`}
+                  className="w-full rounded-md"
+                />
+              );
+            return null;
+          })}
+        </div>
+
       </div>
 
       {/* (Yêu cầu 8) ĐÁNH GIÁ SẢN PHẨM */}

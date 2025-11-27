@@ -82,11 +82,6 @@ export function HomeLayout({ children }: HomeLayoutProps) {
     return price.toLocaleString("vi-VN");
   };
 
-  const formatSold = (sold: number) => {
-    if (sold >= 1000) return `${(sold / 1000).toFixed(1)}k`;
-    return sold.toString();
-  };
-
   // Fetch Flash Sale Products
   useEffect(() => {
     const fetchFlashSaleProducts = async () => {

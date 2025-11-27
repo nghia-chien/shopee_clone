@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   fetchSellerProducts,
@@ -8,15 +8,23 @@ import {
 import { useSellerAuthStore } from "../../store/SellerAuth";
 import { Package, Search, Plus, Edit2, Trash2 } from "lucide-react";
 
+type DescriptionBlock = { type: "text" | "image"; content: string };
+type Variant = { title: string; price: number; stock: number; image?: string };
+
 interface Product {
   id: string;
   title: string;
-  description?: string;
+  description?: DescriptionBlock[] | string; // Cho phép cả string và array
   price: number;
   stock: number;
   images: string[];
-  status?: string;
+  status?: "active" | "inactive";
   attributes?: Record<string, any>;
+  discount?: number;
+  rating?: number;
+  tags?: string;
+  categoryId?: string;
+  variants?: Variant[];
 }
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
@@ -27,6 +35,26 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 
 const formatCurrency = (value: number) =>
   currencyFormatter.format(Math.max(0, Math.round(value || 0)));
+
+// Helper function to convert description blocks to text for display
+// Helper function to convert description blocks to text for display
+const descriptionToText = (description: DescriptionBlock[] | string | undefined): string => {
+  if (!description) return "Chưa có mô tả";
+  
+  if (typeof description === 'string') {
+    return description.substring(0, 100) + (description.length > 100 ? "..." : "");
+  }
+  
+  if (Array.isArray(description)) {
+    const text = description
+      .filter(block => block.type === "text")
+      .map(block => block.content)
+      .join(" ");
+    return text.substring(0, 100) + (text.length > 100 ? "..." : "");
+  }
+  
+  return "Chưa có mô tả";
+};
 
 export const SellerProduct = () => {
   const navigate = useNavigate();
@@ -68,39 +96,26 @@ export const SellerProduct = () => {
     loadProducts();
   }, [token, navigate]);
 
-  const loadProducts = async () => {
-    if (!token) return;
-    try {
-      setLoading(true);
-      const data = await fetchSellerProducts(token);
-      setProducts(data.products || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch products");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setEditForm({
-      title: product.title,
-      price: product.price.toString(),
-      stock: product.stock.toString(),
-      description: product.description || "",
-    });
-    const pairs: Array<{ key: string; value: string }> = [];
-    if (product.attributes && typeof product.attributes === "object") {
-      Object.entries(product.attributes).forEach(([k, v]) => {
-        pairs.push({ key: k, value: String(v ?? "") });
-      });
-    }
-    if (pairs.length === 0) pairs.push({ key: "", value: "" });
-    setAttributesEditor(pairs);
-    setEditErrors({});
-    setError("");
-    setSuccessMessage("");
-  };
+const loadProducts = async () => {
+  if (!token) {
+    console.error('No token available');
+    setError("No authentication token");
+    return;
+  }
+  
+  try {
+    setLoading(true);
+    console.log('Loading products...');
+    const data = await fetchSellerProducts(token);
+    console.log('Products loaded:', data);
+    setProducts(data.products || []);
+  } catch (err: any) {
+    console.error('Load products error:', err);
+    setError(err.message || "Failed to fetch products loadProducts");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const validateEditForm = () => {
     const errors: Record<string, string> = {};
@@ -132,11 +147,17 @@ export const SellerProduct = () => {
         const k = key.trim();
         if (k) attributesObj[k] = value;
       });
+
+      // Convert description text back to description blocks format
+      const descriptionBlocks: DescriptionBlock[] = [
+        { type: "text" as const, content: editForm.description.trim() }
+      ];
+
       await updateSellerProduct(token, editingProduct.id, {
         title: editForm.title.trim(),
         price: parseFloat(editForm.price),
         stock: parseInt(editForm.stock, 10),
-        description: editForm.description.trim(),
+        description: descriptionBlocks,
         attributes: Object.keys(attributesObj).length ? attributesObj : undefined,
       });
       await loadProducts();
@@ -204,7 +225,7 @@ export const SellerProduct = () => {
         normalizedSearch &&
         !(
           product.title.toLowerCase().includes(normalizedSearch) ||
-          product.description?.toLowerCase().includes(normalizedSearch)
+          descriptionToText(product.description).toLowerCase().includes(normalizedSearch)
         )
       ) {
         return false;
@@ -465,8 +486,13 @@ export const SellerProduct = () => {
                         <div>
                           <p className="font-semibold text-gray-900">{product.title}</p>
                           <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {product.description || "Chưa có mô tả"}
+                            {descriptionToText(product.description)}
                           </p>
+                          {product.variants && product.variants.length > 0 && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              {product.variants.length} biến thể
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -474,6 +500,9 @@ export const SellerProduct = () => {
                       <p className="text-base font-semibold text-blue-600">
                         {formatCurrency(product.price)}
                       </p>
+                      {product.discount && product.discount > 0 && (
+                        <p className="text-xs text-red-600">Giảm {product.discount}%</p>
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       <p
@@ -502,13 +531,16 @@ export const SellerProduct = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
+                        
+
                         <button
-                          onClick={() => handleEdit(product)}
-                          className="flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+                          onClick={() => navigate(`/seller/upload?edit=${product.id}`)}
+                          className="flex items-center gap-2 rounded-lg border border-purple-200 px-3 py-1.5 text-sm font-semibold text-purple-600 hover:bg-purple-50"
                         >
                           <Edit2 className="w-4 h-4" />
-                          Sửa nhanh
+                          sửa 
                         </button>
+
                         <button
                           onClick={() => handleToggleVisibility(product)}
                           disabled={togglingId === product.id}
