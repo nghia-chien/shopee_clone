@@ -50,6 +50,12 @@ export const SellerOrders = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const statusOptions: Array<{ value: SellerOrder["seller_status"]; label: string }> = [
+    { value: "pending", label: "Đang xử lý" },
+    { value: "accepted", label: "Đã xác nhận" },
+    { value: "completed", label: "Hoàn thành" },
+    { value: "cancelled", label: "Đã hủy" },
+  ];
 
   useEffect(() => {
     if (!token) {
@@ -97,8 +103,14 @@ export const SellerOrders = () => {
     }
   };
 
-  const handleUpdateStatus = async (seller_order_id: string, status: 'accepted' | 'cancelled' | 'completed') => {
+  const handleUpdateStatus = async (
+    seller_order_id: string,
+    status: SellerOrder["seller_status"]
+  ) => {
+    if (!token) return;
     try {
+      const current = orders.find((o) => o.id === seller_order_id)?.seller_status;
+      if (current === status) return;
       setUpdatingId(seller_order_id);
       await updateSellerOrderStatus(token!, seller_order_id, status);
       await loadOrders();

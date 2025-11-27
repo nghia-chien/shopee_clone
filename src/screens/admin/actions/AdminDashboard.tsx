@@ -141,28 +141,24 @@ export function AdminDashboard() {
       value: stats.totalUsers.toLocaleString('vi-VN'),
       icon: Users,
       color: "blue",
-      change: "+12%",
     },
     {
       title: "Tổng Sellers",
       value: stats.totalSellers.toLocaleString('vi-VN'),
       icon: Store,
       color: "green",
-      change: "+5%",
     },
     {
       title: "Tổng Sản Phẩm",
       value: stats.totalProducts.toLocaleString('vi-VN'),
       icon: Package,
       color: "purple",
-      change: "+8%",
     },
     {
       title: "Tổng Đơn Hàng",
       value: stats.totalOrders.toLocaleString('vi-VN'),
       icon: ShoppingCart,
       color: "orange",
-      change: "+15%",
     },
     {
       title: "Doanh Thu",
@@ -172,14 +168,12 @@ export function AdminDashboard() {
       }).format(stats.totalRevenue),
       icon: DollarSign,
       color: "yellow",
-      change: "+20%",
     },
     {
       title: "Người Dùng Hoạt Động",
       value: stats.activeUsers.toLocaleString('vi-VN'),
       icon: Activity,
       color: "pink",
-      change: "+10%",
     },
   ];
 
@@ -259,7 +253,6 @@ export function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {statCards.map((stat, index) => {
-          const Icon = stat.icon;
           const colorClasses = {
             blue: { bg: "bg-blue-500", text: "text-blue-600", light: "bg-blue-50" },
             green: { bg: "bg-green-500", text: "text-green-600", light: "bg-green-50" },
@@ -272,15 +265,6 @@ export function AdminDashboard() {
           
           return (
             <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className={`${colors.light} p-3 rounded-lg`}>
-                  <Icon className={`w-6 h-6 ${colors.text}`} />
-                </div>
-                <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded">
-                  <TrendingUp className="w-3 h-3 text-green-600" />
-                  <span className="text-xs font-semibold text-green-700">{stat.change}</span>
-                </div>
-              </div>
               
               <p className="text-sm font-medium text-gray-500 mb-1">{stat.title}</p>
               <p className="text-3xl font-bold text-gray-900 mb-4">{stat.value}</p>

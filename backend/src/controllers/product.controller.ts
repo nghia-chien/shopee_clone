@@ -60,7 +60,7 @@ export const getProductController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // 1) Lấy product + seller
+    // 1) Lấy product + seller + variants
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -71,6 +71,7 @@ export const getProductController = async (req: Request, res: Response) => {
             avatar: true,
           },
         },
+        product_variant: true, // lấy variants
       },
     });
 
@@ -78,38 +79,50 @@ export const getProductController = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // 2) Tổng số lượng đã bán (tính theo order_item)
+    // 2) Tổng số lượng đã bán
     const sold = await prisma.order_item.aggregate({
-  where: {
-    product_id: id,
-    orders: {
-      status: { in: ["paid", "completed"] }
-    }
-  },
-  _sum: {
-    quantity: true
-  }
-});
+      where: {
+        product_id: id,
+        orders: {
+          status: { in: ["paid", "completed"] },
+        },
+      },
+      _sum: {
+        quantity: true,
+      },
+    });
+    const soldCount = sold._sum.quantity ?? 0;
 
-const soldCount = sold._sum.quantity ?? 0;
-
-
-    // 3) Review count + rating avg (dùng bảng product_reviews)
+    // 3) Review count + rating avg
     const reviewStats = await prisma.product_reviews.aggregate({
       where: { product_id: id },
       _count: { id: true },
       _avg: { rating: true },
     });
-
     const reviewCount = reviewStats._count.id;
     const ratingAvg = reviewStats._avg.rating ?? 0;
 
-    // 4) Trả về
+    // 4) Trả về dữ liệu cần thiết cho frontend
     res.json({
-      ...product,
+      id: product.id,
+      title: product.title,
+      description: product.description || "[]",
+      price: Number(product.price),
+      stock: product.stock,
+      images: product.images || [],
+      discount: Number(product.discount || 0),
+      tags: product.tags || [],
       soldCount,
       reviewCount,
       ratingAvg,
+      seller: product.seller,
+      product_variant: product.product_variant.map(v => ({
+        id: v.id,
+        title: v.title,
+        price: Number(v.price),
+        stock: v.stock,
+        image: v.image,
+      })),
     });
 
   } catch (err) {
@@ -484,6 +497,7 @@ export async function getFlashSaleProductsController(req: Request, res: Response
           id: product.id,
           title: product.title,
           price: finalPrice,
+          status : product.status,
           originalPrice: originalPrice,
           discount: discountPercent,
           images: product.images || [],

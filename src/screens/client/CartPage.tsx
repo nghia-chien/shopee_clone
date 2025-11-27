@@ -27,11 +27,25 @@ interface SuggestedProduct {
   sold?: number;
 }
 
+interface CartProductVariant {
+  id: string;
+  title?: string;
+  price?: number;
+  image?: string;
+}
+
 interface CartItem {
-  id: string; // cart_item.id
-  product_id: string;
+  id: string;
   quantity: number;
-  product: CartProduct;
+  product: {
+    id: string; // Đảm bảo product có id
+    seller_id?: string | null;
+    title?: string;
+    images?: string[];
+    price: number;
+    stock: number;
+  };
+  variant?: CartProductVariant;
 }
 
 export function CartPage() {
@@ -39,7 +53,7 @@ export function CartPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set()); // lưu cart_item.id
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const [userVouchers, setUserVouchers] = useState<UserVoucherEntry[]>([]);
   const [voucherLoading, setVoucherLoading] = useState(false);
@@ -74,14 +88,12 @@ export function CartPage() {
     try {
       const reorderDataStr = localStorage.getItem('reorder_items');
       if (!reorderDataStr) {
-        // Không có reorder data, chỉ load cart bình thường
         await loadCart();
         return;
       }
 
       const reorderData = JSON.parse(reorderDataStr);
       
-      // Kiểm tra timestamp (chỉ xử lý trong 5 phút)
       const fiveMinutes = 5 * 60 * 1000;
       if (Date.now() - reorderData.timestamp > fiveMinutes) {
         localStorage.removeItem('reorder_items');
@@ -89,7 +101,6 @@ export function CartPage() {
         return;
       }
 
-      // Thêm từng sản phẩm vào cart
       for (const item of reorderData.items) {
         try {
           await api('/cart/items', {
@@ -100,6 +111,7 @@ export function CartPage() {
             },
             body: JSON.stringify({
               product_id: item.product_id,
+              variant_id: item.variant_id || null,
               quantity: item.quantity,
             }),
           });
@@ -108,10 +120,7 @@ export function CartPage() {
         }
       }
 
-      // Xóa reorder data sau khi đã thêm vào cart
       localStorage.removeItem('reorder_items');
-      
-      // Reload cart để hiển thị items mới
       await loadCart();
     } catch (err) {
       console.error('Error handling reorder items:', err);
@@ -121,7 +130,6 @@ export function CartPage() {
   };
 
   useEffect(() => { 
-    // Xử lý reorder items trước, sau đó load cart
     (async () => {
       await handleReorderItems();
     })();
@@ -169,12 +177,13 @@ export function CartPage() {
     fetchSuggestions();
   }, []);
 
-  // ✅ Tính tổng tiền dựa trên cart_item.id
+  // Tính tổng tiền
   const total = useMemo(
     () =>
       items.reduce((sum, it) => {
         if (selectedItems.has(it.id)) {
-          return sum + Number(it.product.price || 0) * it.quantity;
+          const price = it.variant?.price ?? it.product?.price ?? 0;
+          return sum + price * it.quantity;
         }
         return sum;
       }, 0),
@@ -188,72 +197,82 @@ export function CartPage() {
     if (now < new Date(voucher.start_at).getTime() || now > new Date(voucher.end_at).getTime()) {
       return null;
     }
+    
     let applicableItems = items.filter((it) => selectedItems.has(it.id));
-    // For PLATFORM vouchers (source='ADMIN'), don't filter by seller_id
-    // For seller vouchers, filter by seller_id
-    if ( voucher.source !== 'ADMIN') {
+    
+    if (voucher.source !== 'ADMIN') {
       applicableItems = applicableItems.filter((it) => it.product.seller_id === voucher.seller_id);
     }
+    
     if (voucher.product_id) {
-      applicableItems = applicableItems.filter((it) => it.product_id === voucher.product_id);
+      applicableItems = applicableItems.filter((it) => it.product.id === voucher.product_id);
     }
+    
     if (applicableItems.length === 0) return null;
+    
     const base = applicableItems.reduce(
-      (sum, it) => sum + Number(it.product.price || 0) * it.quantity,
+      (sum, it) => {
+        const price = it.variant?.price ?? it.product.price;
+        return sum + Number(price || 0) * it.quantity;
+      },
       0
     );
+    
     const minOrder = Number(voucher.min_order_amount ?? 0);
     if (minOrder > 0 && base < minOrder) return null;
+    
     let discount =
       voucher.discount_type === 'PERCENT'
         ? (base * Number(voucher.discount_value)) / 100
         : Number(voucher.discount_value);
+        
     if (voucher.discount_type === 'PERCENT' && voucher.max_discount_amount) {
       discount = Math.min(discount, Number(voucher.max_discount_amount));
     }
+    
     discount = Math.min(discount, base);
     if (discount <= 0) return null;
+    
     return { discount, base };
   };
 
   const applicableVouchers = useMemo(() => {
-  if (!selectedItems.size) return [];
-  const now = Date.now();
+    if (!selectedItems.size) return [];
+    const now = Date.now();
 
-  return userVouchers
-    .filter(entry => {
-      const v = entry.voucher;
+    return userVouchers
+      .filter(entry => {
+        const v = entry.voucher;
 
-      // 1️⃣ Voucher còn hiệu lực
-      if (v.status !== 'ACTIVE') return false;
-      if (now < new Date(v.start_at).getTime() || now > new Date(v.end_at).getTime()) return false;
+        if (v.status !== 'ACTIVE') return false;
+        if (now < new Date(v.start_at).getTime() || now > new Date(v.end_at).getTime()) return false;
 
-      // 2️⃣ Voucher chưa dùng hết
-      if (v.usage_limit_per_user && entry.usage_count >= v.usage_limit_per_user) return false;
+        if (v.usage_limit_per_user && entry.usage_count >= v.usage_limit_per_user) return false;
 
-      // 3️⃣ Kiểm tra product/seller
-      let applicableItems = items.filter(it => selectedItems.has(it.id));
-      if (v.source !== 'ADMIN') {
-        applicableItems = applicableItems.filter(it => it.product.seller_id === v.seller_id);
-      }
-      if (v.product_id) {
-        applicableItems = applicableItems.filter(it => it.product_id === v.product_id);
-      }
-      if (applicableItems.length === 0) return false;
+        let applicableItems = items.filter(it => selectedItems.has(it.id));
+        if (v.source !== 'ADMIN') {
+          applicableItems = applicableItems.filter(it => it.product.seller_id === v.seller_id);
+        }
+        if (v.product_id) {
+          applicableItems = applicableItems.filter(it => it.product.id === v.product_id);
+        }
+        if (applicableItems.length === 0) return false;
 
-      // 4️⃣ Kiểm tra min_order_amount
-      const base = applicableItems.reduce((sum, it) => sum + Number(it.product.price || 0) * it.quantity, 0);
-      if (v.min_order_amount && base < Number(v.min_order_amount)) return false;
+        const base = applicableItems.reduce((sum, it) => {
+          const price = it.variant?.price ?? it.product.price;
+          return sum + Number(price || 0) * it.quantity;
+        }, 0);
+        
+        if (v.min_order_amount && base < Number(v.min_order_amount)) return false;
 
-      return true;
-    })
-    .map(entry => {
-      const evalResult = evaluateVoucher(entry.voucher);
-      return evalResult ? entry : null;
-    })
-    .filter(Boolean) as UserVoucherEntry[];
-}, [userVouchers, selectedItems, items]);
-
+        return true;
+      })
+      .map(entry => {
+        const evalResult = evaluateVoucher(entry.voucher);
+        return evalResult ? entry : null;
+      })
+      .filter(Boolean) as UserVoucherEntry[];
+  }, [userVouchers, selectedItems, items]);
 
   useEffect(() => {
     if (
@@ -274,44 +293,66 @@ export function CartPage() {
   const discountAmount = selectedVoucherPreview?.discount ?? 0;
   const payableTotal = Math.max(0, total - discountAmount);
 
-  // Cập nhật số lượng
-  const updateQty = async (product_id: string, quantity: number) => {
+  // Cập nhật số lượng - ĐÃ SỬA
+  const updateQty = async (cartItem: CartItem, quantity: number) => {
     try {
-      await api(`/cart/items/${product_id}`, {
+      await api('/cart/items', {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ product_id, quantity }),
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          product_id: cartItem.product.id, 
+          variant_id: cartItem.variant?.id || null,
+          quantity 
+        }),
       });
       setItems(prev =>
-        prev.map(it => (it.product_id === product_id ? { ...it, quantity } : it))
+        prev.map(it => 
+          it.id === cartItem.id 
+            ? { ...it, quantity } 
+            : it
+        )
       );
     } catch (err: any) {
       alert(err?.message || 'Cập nhật số lượng thất bại');
     }
   };
 
-  // Xóa sản phẩm
-  const removeItem = async (product_id: string) => {
+  // Xóa sản phẩm - ĐÃ SỬA HOÀN TOÀN
+  const removeItem = async (cartItem: CartItem) => {
     if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
     try {
-      await api(`/cart/items/${product_id}`, {
+      const product_id = cartItem.product.id;
+      const variant_id = cartItem.variant?.id || null;
+      
+      let url = `/cart/items/${product_id}`;
+      if (variant_id) {
+        url += `/${variant_id}`;
+      }
+      
+      console.log('🗑️ Deleting cart item:', { product_id, variant_id, url });
+      
+      await api(url, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      setItems(prev => prev.filter(it => it.product_id !== product_id));
+      
+      // Cập nhật state
+      setItems(prev => prev.filter(it => it.id !== cartItem.id));
       setSelectedItems(prev => {
         const newSet = new Set(prev);
-        // Xóa cả cart_item.id tương ứng
-        const removedItem = items.find(it => it.product_id === product_id);
-        if (removedItem) newSet.delete(removedItem.id);
+        newSet.delete(cartItem.id);
         return newSet;
       });
     } catch (err: any) {
+      console.error('❌ Error deleting item:', err);
       alert(err?.message || 'Xóa sản phẩm thất bại');
     }
   };
 
-  // ✅ Toggle chọn 1 sản phẩm theo cart_item.id
+  // Toggle chọn 1 sản phẩm
   const toggleItem = (cartItemId: string) => {
     setSelectedItems(prev => {
       const newSet = new Set(prev);
@@ -321,7 +362,7 @@ export function CartPage() {
     });
   };
 
-  // ✅ Toggle chọn tất cả theo cart_item.id
+  // Toggle chọn tất cả
   const toggleSelectAll = () => {
     if (selectAll) {
       setSelectedItems(new Set());
@@ -335,7 +376,7 @@ export function CartPage() {
     setSelectAll(items.length > 0 && selectedItems.size === items.length);
   }, [selectedItems, items]);
 
-  // ✅ Gửi cart_item.id lên server khi checkout
+  // Gửi cart_item.id lên server khi checkout
   const proceedToCheckout = () => {
     if (selectedItems.size === 0) {
       alert('Vui lòng chọn sản phẩm để thanh toán');
@@ -357,29 +398,6 @@ export function CartPage() {
     <div className="bg-gray-50 min-h-screen">
       <Header />
       <div className="max-w-7xl mx-auto p-4 space-y-4">
-        
-
-        <div className="bg-white rounded-sm shadow-sm p-4 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900">Shopee Voucher</span>
-            <span className="text-xs text-gray-500">Chọn hoặc nhập mã</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {selectedVoucherCode ? (
-              <span className="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-medium">
-                {selectedVoucherCode}
-              </span>
-            ) : (
-              <span className="text-xs text-gray-500">Chưa chọn voucher</span>
-            )}
-            <button
-              onClick={() => navigate('/user/vouchers')}
-              className="text-sm text-blue-500 hover:text-blue-600"
-            >
-              Chọn mã
-            </button>
-          </div>
-        </div>
 
         <div className="bg-white rounded-sm shadow-sm mb-3">
           <div className="px-5 py-4 grid grid-cols-12 gap-4 text-sm text-gray-600 font-medium">
@@ -480,7 +498,9 @@ export function CartPage() {
             <div className="space-y-3 mb-3">
               {items.map(it => {
                 const isSelected = selectedItems.has(it.id);
-                const itemTotal = Number(it.product?.price || 0) * it.quantity;
+                const productPrice = it.variant?.price ?? it.product?.price ?? 0;
+                const productImage = it.variant?.image || it.product?.images?.[0];
+                const itemTotal = productPrice * it.quantity;
 
                 return (
                   <div key={it.id} className="bg-white rounded-sm shadow-sm">
@@ -494,24 +514,27 @@ export function CartPage() {
                         />
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="w-20 h-20 bg-gray-100 rounded-sm overflow-hidden flex-shrink-0 border">
-                            {it.product?.images?.length ? (
-                              <img
-                                src={it.product.images[0]}
-                                className="w-full h-full object-cover"
-                              />
+                            {productImage ? (
+                              <img src={productImage} className="w-full h-full object-cover" />
                             ) : null}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-gray-800 line-clamp-2">
-                              {it.product?.title || it.product_id}
+                            <div className="text-sm text-left text-gray-800">
+                              {it.product?.title || it.product.id}
                             </div>
+                            {/* Hiển thị variant nếu có */}
+                            {it.variant && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Phân loại: {it.variant.title}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
 
                       <div className="col-span-2 text-center">
                         <div className="text-gray-900 font-medium">
-                          ₫{Number(it.product?.price || 0).toLocaleString('vi-VN')}
+                          {Number(productPrice).toLocaleString('vi-VN')}₫
                         </div>
                       </div>
 
@@ -520,7 +543,7 @@ export function CartPage() {
                           <button
                             className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 border-r"
                             onClick={() =>
-                              updateQty(it.product_id, Math.max(1, it.quantity - 1))
+                              updateQty(it, Math.max(1, it.quantity - 1))
                             }
                             disabled={it.quantity <= 1}
                           >
@@ -531,13 +554,13 @@ export function CartPage() {
                             min={1}
                             value={it.quantity}
                             onChange={e =>
-                              updateQty(it.product_id, Math.max(1, Number(e.target.value) || 1))
+                              updateQty(it, Math.max(1, Number(e.target.value) || 1))
                             }
                             className="w-12 h-8 text-center border-0 focus:outline-none text-gray-900"
                           />
                           <button
                             className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 text-gray-600 border-l"
-                            onClick={() => updateQty(it.product_id, it.quantity + 1)}
+                            onClick={() => updateQty(it, it.quantity + 1)}
                           >
                             +
                           </button>
@@ -553,7 +576,7 @@ export function CartPage() {
                       <div className="col-span-1 text-center">
                         <button
                           className="text-gray-600 hover:text-red-500 text-sm"
-                          onClick={() => removeItem(it.product_id)}
+                          onClick={() => removeItem(it)}
                         >
                           Xóa
                         </button>
@@ -578,36 +601,54 @@ export function CartPage() {
                     <span className="text-sm">Chọn Tất Cả ({items.length})</span>
                   </label>
                   <button
-  className="text-sm text-gray-700 hover:text-gray-900"
-  onClick={async () => {
-    if (selectedItems.size === 0) return;
-    
-    if (!confirm(`Xóa ${selectedItems.size} sản phẩm đã chọn?`)) return;
-    
-    try {
-      // Get product_ids of selected items
-      const itemsToDelete = items.filter(it => selectedItems.has(it.id));
-      
-      // Delete from backend
-      await Promise.all(
-        itemsToDelete.map(it =>
-          api(`/cart/items/${it.product_id}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        )
-      );
-      
-      // Update frontend state
-      setItems(prev => prev.filter(it => !selectedItems.has(it.id)));
-      setSelectedItems(new Set());
-    } catch (err: any) {
-      alert(err?.message || 'Xóa sản phẩm thất bại');
-    }
-  }}
->
-  Xóa
-</button>
+                    className="text-sm text-gray-700 hover:text-gray-900"
+                    onClick={async () => {
+                      if (selectedItems.size === 0) return;
+                      
+                      if (!confirm(`Xóa ${selectedItems.size} sản phẩm đã chọn?`)) return;
+                      
+                      try {
+                        const itemsToDelete = items.filter(it => selectedItems.has(it.id));
+                        
+                        // Sử dụng Promise.allSettled để không bị dừng khi có lỗi
+                        const results = await Promise.allSettled(
+                          itemsToDelete.map(it => {
+                            const variantId = it.variant?.id;
+                            let url = `/cart/items/${it.product.id}`;
+                            if (variantId) {
+                              url += `/${variantId}`;
+                            }
+                            return api(url, {
+                              method: 'DELETE',
+                              headers: { Authorization: `Bearer ${token}` },
+                            });
+                          })
+                        );
+
+                        // Kiểm tra kết quả
+                        const failedDeletes = results.filter((result, index) => 
+                          result.status === 'rejected'
+                        );
+
+                        if (failedDeletes.length > 0) {
+                          console.error('Some items failed to delete:', failedDeletes);
+                        }
+
+                        // Cập nhật UI dù có lỗi hay không
+                        setItems(prev => prev.filter(it => !selectedItems.has(it.id)));
+                        setSelectedItems(new Set());
+                        
+                        if (failedDeletes.length > 0) {
+                          alert(`Đã xóa ${itemsToDelete.length - failedDeletes.length} sản phẩm, ${failedDeletes.length} sản phẩm xóa thất bại`);
+                        }
+                      } catch (err: any) {
+                        console.error('❌ Error bulk deleting:', err);
+                        alert(err?.message || 'Xóa sản phẩm thất bại');
+                      }
+                    }}
+                  >
+                    Xóa
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-8">

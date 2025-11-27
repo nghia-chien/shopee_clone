@@ -8,14 +8,16 @@ datasource db {
 }
 
 model cart_item {
-  id         String  @id @default(dbgenerated("gen_random_uuid()"))
-  user_id    String
-  product_id String
-  quantity   Int     @default(1)
-  product    product @relation(fields: [product_id], references: [id])
-  user       user    @relation(fields: [user_id], references: [id])
+  id              String           @id @default(dbgenerated("gen_random_uuid()"))
+  user_id         String
+  product_id      String
+  variant_id      String?
+  quantity        Int              @default(1)
+  product         product          @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user            user             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  product_variant product_variant? @relation(fields: [variant_id], references: [id], onUpdate: NoAction)
 
-  @@unique([user_id, product_id], map: "cart_item_user_product_key")
+  @@unique([user_id, product_id, variant_id], map: "cart_item_user_product_variant_key")
 }
 
 model category {
@@ -34,13 +36,15 @@ model category {
 }
 
 model order_item {
-  id         String  @id @default(dbgenerated("gen_random_uuid()"))
-  order_id   String
-  product_id String
-  price      Decimal @db.Decimal(10, 2)
-  quantity   Int     @default(1)
-  orders     orders  @relation(fields: [order_id], references: [id])
-  product    product @relation(fields: [product_id], references: [id])
+  id              String           @id @default(dbgenerated("gen_random_uuid()"))
+  order_id        String
+  product_id      String
+  price           Decimal          @db.Decimal(10, 2)
+  quantity        Int              @default(1)
+  variant_id      String?
+  orders          orders           @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_order_item_order")
+  product         product          @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_order_item_product")
+  product_variant product_variant? @relation(fields: [variant_id], references: [id], map: "fk_order_item_variant")
 }
 
 model orders {
@@ -100,6 +104,7 @@ model product {
   category        category?         @relation(fields: [category_id], references: [id])
   seller          seller            @relation(fields: [seller_id], references: [id])
   product_reviews product_reviews[]
+  product_variant product_variant[]
   vouchers        vouchers[]
 
   @@index([category_id], map: "idx_product_category_id")
@@ -461,6 +466,20 @@ model shipping_tracking_event {
 
   @@index([shipping_order_id], map: "idx_tracking_order")
   @@index([ghn_status, happened_at], map: "idx_tracking_status_time")
+}
+
+model product_variant {
+  id         String       @id @default(dbgenerated("gen_random_uuid()"))
+  product_id String
+  title      String
+  price      Decimal      @db.Decimal(10, 2)
+  stock      Int          @default(0)
+  image      String?
+  cart_item  cart_item[]
+  order_item order_item[]
+  product    product      @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_variant_product")
+
+  @@index([product_id], map: "idx_variant_product_id")
 }
 
 enum shipping_status {

@@ -22,6 +22,10 @@ const baseVoucherSelect = {
   start_at: true,
   end_at: true,
   status: true,
+  seller: {       // thêm dòng này
+    select: {
+      name: true
+    }}
 };
 
 export async function listPublicVouchersController(req: Request, res: Response) {
@@ -113,7 +117,7 @@ export async function listUserVouchersController(req: AuthRequest, res: Response
       where: { user_id },
       include: {
         vouchers: {
-          select: baseVoucherSelect,
+          select:baseVoucherSelect,
         },
       },
       orderBy: { saved_at: 'desc' },
@@ -123,7 +127,7 @@ export async function listUserVouchersController(req: AuthRequest, res: Response
     const now = nowDate();
     let allVouchers: any[] = [];
     try {
-      // First, get vouchers with applicable_user_id = null (public vouchers)
+      // Public vouchers
       const publicVouchers = await prisma.vouchers.findMany({
         where: {
           status: 'ACTIVE',
@@ -135,7 +139,7 @@ export async function listUserVouchersController(req: AuthRequest, res: Response
         orderBy: { start_at: 'desc' },
       });
 
-      // Then, get vouchers specific to this user (if applicable_user_id matches)
+      // User-specific vouchers
       let userSpecificVouchers: any[] = [];
       try {
         userSpecificVouchers = await prisma.vouchers.findMany({
@@ -145,15 +149,14 @@ export async function listUserVouchersController(req: AuthRequest, res: Response
             end_at: { gte: now },
             applicable_user_id: user_id,
           },
-          select: baseVoucherSelect,
+          select:baseVoucherSelect,
           orderBy: { start_at: 'desc' },
         });
       } catch (userVoucherError: any) {
         console.error('Error fetching user-specific vouchers:', userVoucherError);
-        // Continue with public vouchers only
       }
 
-      // Combine both lists and remove duplicates
+      // Combine lists & remove duplicates
       const voucherMap = new Map();
       [...publicVouchers, ...userSpecificVouchers].forEach((v) => {
         voucherMap.set(v.id, v);
@@ -161,22 +164,18 @@ export async function listUserVouchersController(req: AuthRequest, res: Response
       allVouchers = Array.from(voucherMap.values());
     } catch (voucherError: any) {
       console.error('Error fetching all vouchers:', voucherError);
-      console.error('Error message:', voucherError?.message);
-      console.error('Error code:', voucherError?.code);
-      // If error, just return saved vouchers
       allVouchers = [];
     }
 
-    // Create a map of saved vouchers for quick lookup
+    // Map saved vouchers
     const savedVoucherMap = new Map(
       savedVouchers.map((sv) => [sv.voucher_id, sv])
     );
 
-    // Combine all vouchers: saved ones with usage info, unsaved ones as virtual entries
+    // Combine saved & unsaved
     const allVoucherEntries = allVouchers.map((voucher) => {
       const saved = savedVoucherMap.get(voucher.id);
       if (saved) {
-        // Voucher đã được lưu
         return {
           id: saved.id,
           voucher_id: voucher.id,
@@ -186,7 +185,6 @@ export async function listUserVouchersController(req: AuthRequest, res: Response
           voucher,
         };
       } else {
-        // Voucher chưa được lưu
         return {
           id: `temp-${voucher.id}`,
           voucher_id: voucher.id,
@@ -203,11 +201,11 @@ export async function listUserVouchersController(req: AuthRequest, res: Response
     });
   } catch (error: any) {
     console.error('listUserVouchersController error:', error);
-    console.error('Error details:', error?.message, error?.stack);
     return res.status(500).json({ 
       message: 'listUserVouchersController Internal server error',
       error: process.env.NODE_ENV === 'development' ? error?.message : undefined,
     });
   }
 }
+
 

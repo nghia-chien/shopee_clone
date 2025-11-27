@@ -45,14 +45,15 @@
     "chat_now": "Chat ngay",
     "view_shop": "Xem shop",
     "product_details": "Chi tiết sản phẩm",
-    "stock": "Tồn kho",
-    "seller_address": "Địa chỉ người bán",
+    "stock": "Kho",
+    "seller_name": "Thương hiệu",
     "description": "Mô tả sản phẩm",
     "reviews": "Đánh giá",
     "updating": "Đang cập nhật...",
     "other_products_by_shop": "Các sản phẩm khác của shop",
     "you_may_also_like": "Có thể bạn cũng thích",
-    "reviews_notyet": "Chưa có đánh giá nào cho sản phẩm này."
+    "reviews_notyet": "Chưa có đánh giá nào cho sản phẩm này.",
+    "select_variant": "Phân Loại"
   },
   "chat": {
     "messages": "Tin nhắn",

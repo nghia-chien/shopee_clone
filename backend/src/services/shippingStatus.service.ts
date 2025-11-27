@@ -13,7 +13,7 @@ type InternalStatus =
   | 'cancelled'
   | 'returned'
   | 'failed';
-
+// đổi trạng thái ghn_status -> fulfillment_status
 const GHN_STATUS_MAP: Record<string, { internalStatus: InternalStatus; note: string }> = {
   ready_to_pick: { internalStatus: 'ready_to_pick', note: 'GHN sẵn sàng lấy hàng' },
   picking: { internalStatus: 'processing', note: 'GHN đang đến lấy hàng' },

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 interface Product {
   id: string;
   title?: string;
@@ -13,6 +12,7 @@ interface Product {
   location?: string;
   freeShip?: boolean;
   discount?: number;
+  status?: string;
 }
 
 interface Props {
@@ -22,28 +22,36 @@ interface Props {
   lazyLoad?: boolean;   
 }
 
-
-export function ProductListSection({title = "Gợi Ý Hôm Nay", products,horizontal = false,lazyLoad = false,
+export function ProductListSection({
+  title = "Gợi Ý Hôm Nay",
+  products,
+  horizontal = false,
+  lazyLoad = false,
 }: Props) {
   const navigate = useNavigate();
-  const [visibleCount, setVisibleCount] = useState(lazyLoad ? 30 : products.length);
+  
+  // Lọc các sản phẩm không phải inactive
+  const activeProducts = products.filter(product => product.status !== "inactive");
+  
+  const [visibleCount, setVisibleCount] = useState(lazyLoad ? 30 : activeProducts.length);
 
-
-   useEffect(() => {
+  useEffect(() => {
     if (!lazyLoad) return;
     const onScroll = () => {
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-        setVisibleCount((prev) => Math.min(prev + 30, products.length));
+        setVisibleCount((prev) => Math.min(prev + 30, activeProducts.length));
       }
     };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
-  }, [lazyLoad, products.length]);
-    const displayedProducts = horizontal
-    ? products.slice(0, 10)
-    : products.slice(0, visibleCount);
-  
-  if (!products || products.length === 0)
+  }, [lazyLoad, activeProducts.length]);
+
+  const displayedProducts = horizontal
+    ? activeProducts.slice(0, 10)
+    : activeProducts.slice(0, visibleCount);
+
+  // Kiểm tra activeProducts thay vì products
+  if (!activeProducts || activeProducts.length === 0)
     return (
       <section className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-gray-600 text-lg uppercase font-bold mb-4">{title}</h2>
@@ -54,20 +62,18 @@ export function ProductListSection({title = "Gợi Ý Hôm Nay", products,horizo
     );
 
   return (
-    <section className=" rounded-lg  p-6 w-full">
-      <div className="flex items-center  justify-between mb-4">
+    <section className="rounded-lg p-6 w-full">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-gray-600 text-lg uppercase font-bold">{title}</h2>
       </div>
 
       {/* --- Layout chính --- */}
       {horizontal ? (
         <div className="w-full max-w-[1200px] flex gap-3 overflow-x-auto scrollbar-hide mx-auto">
-
           {displayedProducts.map((product) => (
             <div
               key={product.id}
               className="bg-white rounded-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
-              
               onClick={() => navigate(`/products/${product.id}`)}
             >
               <ProductCard product={product} />
@@ -90,10 +96,9 @@ export function ProductListSection({title = "Gợi Ý Hôm Nay", products,horizo
     </section>
   );
 }
-            
+
 function ProductCard({ product }: { product: Product }) {
   return (
-    <> 
     <div
       className="w-[180px] h-[320px] flex-shrink-0 bg-white rounded-sm overflow-hidden 
                  hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
@@ -123,7 +128,6 @@ function ProductCard({ product }: { product: Product }) {
           {product.title ?? product.name}
         </div>
 
-        {/* TODO:  thêm bảng: tạo dữ liệu đã bán bao nhiêu cho sản phẩm có id này  */}
         <div className="flex items-center justify-between mb-2">
           {product.price ? (
             <span className="text-orange-500 font-bold text-base">
@@ -160,14 +164,10 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>{product.location ?? "Việt Nam"}</span>
         </div>
       </div>
-          </div>
-</>
+    </div>
   );
 }
-   
-

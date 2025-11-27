@@ -118,6 +118,7 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string };
 }
 
+// SỬA: Thêm include product_variant vào fetchCartItems
 type CartItemWithProduct = Awaited<ReturnType<typeof fetchCartItems>>[number];
 type VoucherApplication = Awaited<ReturnType<typeof validateVoucherForCart>>;
 
@@ -127,12 +128,19 @@ async function fetchCartItems(params: { userId: string; cartItemIds: string[] })
       user_id: params.userId,
       id: { in: params.cartItemIds },
     },
-    include: { product: true },
+    include: { 
+      product: true,
+      product_variant: true // THÊM: Include variant information
+    },
   });
 }
 
+// SỬA: Tính giá ưu tiên từ variant nếu có
 const sumCartItems = (items: CartItemWithProduct[]) =>
-  items.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+  items.reduce((sum, item) => {
+    const price = item.product_variant?.price ?? item.product.price; // ƯU TIÊN VARIANT PRICE
+    return sum + Number(price || 0) * item.quantity;
+  }, 0);
 
 const nowDate = () => new Date();
 
@@ -144,6 +152,7 @@ class VoucherError extends Error {
   }
 }
 
+// SỬA: Tính base amount với variant price
 async function validateVoucherForCart(
   voucherCode: string,
   userId: string,
@@ -222,7 +231,12 @@ async function validateVoucherForCart(
     throw new VoucherError('Giỏ hàng không đủ điều kiện áp dụng voucher này');
   }
 
-  const baseAmount = sumCartItems(applicableItems);
+  // SỬA: Tính base amount với variant price
+  const baseAmount = applicableItems.reduce((sum, item) => {
+    const price = item.product_variant?.price ?? item.product.price; // ƯU TIÊN VARIANT PRICE
+    return sum + Number(price || 0) * item.quantity;
+  }, 0);
+
   const minOrder = Number(voucher.min_order_amount ?? 0);
   if (minOrder > 0 && baseAmount < minOrder) {
     throw new VoucherError(
@@ -280,7 +294,10 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
         orders: {
           include: {
             order_item: {
-              include: { product: true }
+              include: { 
+                product: true,
+                product_variant: true // THÊM: Include variant information
+              }
             }
           }
         },
@@ -334,8 +351,10 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
         items: items.map(i => ({
           id: i.id,
           product_id: i.product_id,
+          variant_id: i.variant_id, // THÊM: variant_id
           title: i.product.title,
           images: i.product.images,
+          variant_title: i.product_variant?.title, // THÊM: variant title
           price: Number(i.price),
           quantity: i.quantity
         }))
@@ -584,6 +603,8 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
         price: i.product.price,
         seller_id: i.product.seller_id,
         weight: i.product.weight,
+        variant_id: i.variant_id, // THÊM: variant info
+        variant_price: i.product_variant?.price,
       })),
     });
     
@@ -607,6 +628,7 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
       }
     }
 
+    // SỬA: Tính grossTotal với variant price
     const grossTotal = sumCartItems(cart_items);
     let appliedVoucher: VoucherApplication | null = null;
 
@@ -825,11 +847,15 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
         return sum + productWeight * item.quantity;
       }, 0);
 
-      // Tạo items array cho GHN
+      // Tạo items array cho GHN - SỬA: Sử dụng variant price và title nếu có
       const ghnItems = items.map(item => {
-        const productTitle = item.product.title || `Sản phẩm ${item.product_id}`;
+        // Ưu tiên variant title và price
+        const productTitle = item.product_variant?.title 
+          ? `${item.product.title} - ${item.product_variant.title}`
+          : item.product.title || `Sản phẩm ${item.product_id}`;
+        
+        const productPrice = item.product_variant?.price ?? item.product.price;
         const productWeight = item.product.weight ? Number(item.product.weight) * 1000 : 500;
-        const productPrice = Number(item.product.price) || 0;
         
         if (!productTitle) {
           console.warn(`⚠️ Product ${item.product_id} has no title, using fallback`);
@@ -839,7 +865,7 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
           name: productTitle,
           quantity: item.quantity,
           weight: productWeight,
-          price: productPrice,
+          price: Number(productPrice) || 0,
           product_code: item.product_id,
         };
       });
@@ -1003,15 +1029,22 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
               }
             : undefined,
         order_item: {
+          // SỬA: Lưu variant_id và sử dụng variant price
           create: cart_items.map((item) => ({
             product_id: item.product_id,
-            price: item.product.price,
+            variant_id: item.variant_id, // THÊM: Lưu variant_id
+            price: item.product_variant?.price ?? item.product.price, // ƯU TIÊN VARIANT PRICE
             quantity: item.quantity,
           })),
         },
       },
       include: {
-        order_item: { include: { product: true } },
+        order_item: { 
+          include: { 
+            product: true,
+            product_variant: true // THÊM: Include variant information
+          } 
+        },
       },
     });
 
@@ -1160,8 +1193,6 @@ export async function createOrderController(req: AuthenticatedRequest, res: Resp
   }
 }
 
-
-
 /**
  * 🔍 Lấy chi tiết một đơn hàng hoặc tất cả đơn hàng
  */
@@ -1175,7 +1206,8 @@ export async function getOrdersController(req: AuthenticatedRequest, res: Respon
       include: {
         order_item: { 
           include: { 
-            product: true 
+            product: true,
+            product_variant: true // THÊM: Include variant information
           } 
         },
         seller_order: {

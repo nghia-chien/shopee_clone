@@ -5,6 +5,7 @@ export interface Voucher {
   code: string;
   source: 'ADMIN' | 'SELLER' | string;
   seller_id?: string | null;
+  seller?: { name: string };
   type: string;
   discount_type: 'PERCENT' | 'AMOUNT' | string;
   discount_value: number;

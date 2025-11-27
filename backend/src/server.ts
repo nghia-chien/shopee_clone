@@ -13,11 +13,6 @@ console.log('  DATABASE_URL:', process.env.DATABASE_URL ? '✅ SET' : '❌ NOT S
 
 const server = app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  
-  // Optional: Setup background job để tự động retry failed shipping orders
-  // Uncomment dòng sau để enable:
-  // import { setupShippingRetryCron } from './jobs/shippingRetry.job';
-  // setupShippingRetryCron();
 
   // Bật cron đồng bộ trạng thái GHN → DB
   setupShippingStatusSyncJob();

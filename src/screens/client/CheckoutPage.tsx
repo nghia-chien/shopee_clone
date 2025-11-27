@@ -31,11 +31,19 @@ interface CartProduct {
   stock: number;
 }
 
+interface CartProductVariant {
+  id: string;
+  title?: string;
+  price?: number;
+  image?: string;
+}
+
 interface CartItem {
   id: string;
   product_id: string;
   quantity: number;
   product: CartProduct;
+  variant?: CartProductVariant;
 }
 
 interface ShopInfo {
@@ -67,14 +75,14 @@ const SHIPPING_OPTIONS = [
   {
     id: 'fast',
     label: 'Nhanh',
-    description: 'Nhận từ 23 Th11 - 26 Th11',
-    fee: 1000,
+    description: 'Nhận từ 2-3 ngày',
+    fee: 30000,
   },
   {
     id: 'standard',
     label: 'Tiết kiệm',
-    description: 'Nhận từ 22 Th11 - 23 Th11',
-    fee: 0,
+    description: 'Nhận từ 4-7 ngày',
+    fee: 15000,
   },
 ];
 
@@ -89,18 +97,28 @@ function evaluateVoucher(
   }
 
   let applicableItems = [...items];
+  
+  // Filter by seller if it's a seller voucher
   if (voucher.source !== 'ADMIN') {
     applicableItems = applicableItems.filter((it) => it.product.seller_id === voucher.seller_id);
   }
+  
+  // Filter by specific product if specified
   if (voucher.product_id) {
     applicableItems = applicableItems.filter((it) => it.product_id === voucher.product_id);
   }
+  
   if (applicableItems.length === 0) return null;
 
+  // Calculate base amount using variant price if available
   const base = applicableItems.reduce(
-    (sum, it) => sum + Number(it.product.price || 0) * it.quantity,
+    (sum, it) => {
+      const price = it.variant?.price ?? it.product.price;
+      return sum + Number(price || 0) * it.quantity;
+    },
     0
   );
+
   const minOrder = Number(voucher.min_order_amount ?? 0);
   if (minOrder > 0 && base < minOrder) return null;
 
@@ -108,11 +126,14 @@ function evaluateVoucher(
     voucher.discount_type === 'PERCENT'
       ? (base * Number(voucher.discount_value)) / 100
       : Number(voucher.discount_value);
+      
   if (voucher.discount_type === 'PERCENT' && voucher.max_discount_amount) {
     discount = Math.min(discount, Number(voucher.max_discount_amount));
   }
+  
   discount = Math.min(discount, base);
   if (discount <= 0) return null;
+  
   return { discount, base };
 }
 
@@ -128,7 +149,7 @@ export function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [shippingOption, setShippingOption] = useState<string>(SHIPPING_OPTIONS[0].id);
-  const [note, setNote] = useState('');
+  const [notes, setNotes] = useState<Record<string, string>>({}); // Store notes per item
   const [shopInfos, setShopInfos] = useState<Record<string, ShopInfo>>({});
   const [voucherEntries, setVoucherEntries] = useState<UserVoucherEntry[]>([]);
   const [fetchingVoucher, setFetchingVoucher] = useState(false);
@@ -155,6 +176,7 @@ export function CheckoutPage() {
   const [paypalReady, setPaypalReady] = useState(false);
   const fetchedShopIds = useRef<Set<string>>(new Set());
 
+  // Load cart items for checkout
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -188,8 +210,9 @@ export function CheckoutPage() {
     load();
   }, [token, cartItemIds, navigate]);
 
+  // Load user vouchers
   useEffect(() => {
-    if (!token || !preselectedVoucher) return;
+    if (!token) return;
     const fetchVoucher = async () => {
       try {
         setFetchingVoucher(true);
@@ -202,8 +225,9 @@ export function CheckoutPage() {
       }
     };
     fetchVoucher();
-  }, [token, preselectedVoucher]);
+  }, [token]);
 
+  // Load user addresses
   const loadAddresses = useCallback(async () => {
     if (!token) return;
     try {
@@ -225,6 +249,7 @@ export function CheckoutPage() {
     loadAddresses();
   }, [loadAddresses]);
 
+  // Load shop information
   useEffect(() => {
     const uniqueSellerIds = Array.from(
       new Set(items.map((it) => it.product.seller_id).filter(Boolean) as string[])
@@ -243,6 +268,7 @@ export function CheckoutPage() {
     });
   }, [items]);
 
+  // Calculate applied voucher
   const appliedVoucher = useMemo(() => {
     if (!preselectedVoucher) return null;
     const entry = voucherEntries.find((v) => v.voucher.code === preselectedVoucher);
@@ -250,13 +276,18 @@ export function CheckoutPage() {
     return evaluateVoucher(entry.voucher, items);
   }, [preselectedVoucher, voucherEntries, items]);
 
+  // Get default address
   const defaultAddress = useMemo(() => {
     if (!addresses.length) return null;
     return addresses.find((addr) => addr.is_default) ?? addresses[0];
   }, [addresses]);
 
+  // Calculate prices
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + Number(item.product.price || 0) * item.quantity, 0),
+    () => items.reduce((sum, item) => {
+      const price = item.variant?.price ?? item.product.price;
+      return sum + Number(price || 0) * item.quantity;
+    }, 0),
     [items]
   );
 
@@ -270,6 +301,7 @@ export function CheckoutPage() {
     return Math.max(0.01, Number((payableTotal / conversionRate).toFixed(2)));
   }, [payableTotal, conversionRate]);
 
+  // Group items by seller
   const groupedItems = useMemo(() => {
     const map = new Map<string, CartItem[]>();
     items.forEach((item) => {
@@ -281,6 +313,7 @@ export function CheckoutPage() {
     return Array.from(map.entries());
   }, [items]);
 
+  // Finalize order function
   const finalizeOrder = useCallback(
     async (options?: { paymentIntent?: string }) => {
       if (!token) {
@@ -297,15 +330,25 @@ export function CheckoutPage() {
       }
       try {
         setPlacingOrder(true);
+        
+        // Prepare order items with notes
+        const orderItems = items.map(item => ({
+          cart_item_id: item.id,
+          note: notes[item.id] || '',
+        }));
+
         await api('/orders', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             cart_item_ids: cartItemIds,
             voucher_code: preselectedVoucher || undefined,
             payment_method: paymentMethod,
             shipping_option: shippingOption,
-            note: note?.trim() || undefined,
+            notes: notes,
             address_id: defaultAddress.id,
             paypal_order_id: options?.paymentIntent,
           }),
@@ -323,23 +366,25 @@ export function CheckoutPage() {
       cartItemIds,
       defaultAddress,
       navigate,
-      note,
+      notes,
       paymentMethod,
       preselectedVoucher,
       shippingOption,
       token,
+      items,
     ]
   );
 
+  // Handle place order
   const handlePlaceOrder = async () => {
     if (paymentMethod === 'PAYPAL') {
-      
       alert('Vui lòng sử dụng nút PayPal để hoàn tất thanh toán.');
       return;
     }
     await finalizeOrder();
   };
 
+  // Handle address form submission
   const handleAddressFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -368,12 +413,21 @@ export function CheckoutPage() {
     }
   };
 
+  // Handle note change for individual items
+  const handleNoteChange = (itemId: string, note: string) => {
+    setNotes(prev => ({
+      ...prev,
+      [itemId]: note
+    }));
+  };
+
+  // PayPal integration
   const ensurePaypalScript = useCallback(() => {
     if (window.paypal) {
       return Promise.resolve(true);
     }
     if (!VITE_PAYPAL_CLIENT_ID) {
-      setPaypalError('VITE_PAYPAL_CLIENT_ID chưa được cấu hình.');
+      setPaypalError('PayPal chưa được cấu hình.');
       return Promise.reject(new Error('PayPal client id missing'));
     }
     return new Promise<boolean>((resolve, reject) => {
@@ -393,75 +447,78 @@ export function CheckoutPage() {
     setPaypalError(null);
     
     const renderPayPalButtons = async () => {
-    try {
-    await ensurePaypalScript();
-    if (!mounted || !window.paypal || !paypalContainerRef.current) return;
-    
-      setPaypalReady(true);
-    
-      // Xóa button cũ nếu có
-      paypalContainerRef.current.innerHTML = '';
-    
-      window.paypal.Buttons({
-        style: {
-          layout: 'vertical',
-          color: 'gold',
-          shape: 'rect',
-          label: 'paypal',
-        },
-        createOrder: async () => {
-          if (!VITE_PAYPAL_CLIENT_ID) {
-            throw new Error('Chưa cấu hình PayPal Client ID');
-          }
-          try {
-            const res = await api<{ orderId: string }>(PAYPAL_CREATE_ORDER_API, {
-              method: 'POST',
-              body: JSON.stringify({
-                amount: paypalAmountUSD,
-                currency: 'USD',
-                original_amount_vnd: payableTotal,
-                conversion_rate: conversionRate,
-                cart_item_ids: cartItemIds,
-              }),
-            });
-            return res.orderId;
-          } catch (error: any) {
-            setPaypalError(error?.message || 'Không tạo được đơn PayPal');
-            throw error;
-          }
-        },
-        onApprove: async (data: { orderID: string }) => {
-          try {
-            await api(PAYPAL_CAPTURE_ORDER_API, {
-              method: 'POST',
-              body: JSON.stringify({ orderId: data.orderID }),
-            });
-            await finalizeOrder({ paymentIntent: data.orderID });
-          } catch (error: any) {
-            console.error('PayPal capture error', error);
-            setPaypalError(error?.message || 'Không thể xác nhận thanh toán PayPal');
-          }
-        },
-        onError: (err: any) => {
-          console.error('PayPal error', err);
-          setPaypalError(err?.message || 'PayPal gặp lỗi');
-        },
-      }).render(paypalContainerRef.current);
-    } catch (error: any) {
-      if (!mounted) return;
-      setPaypalError(error?.message || 'Không thể khởi tạo PayPal');
-    }
-    
-    
+      try {
+        await ensurePaypalScript();
+        if (!mounted || !window.paypal || !paypalContainerRef.current) return;
+        
+        setPaypalReady(true);
+        
+        // Clear previous buttons
+        paypalContainerRef.current.innerHTML = '';
+        
+        window.paypal.Buttons({
+          style: {
+            layout: 'vertical',
+            color: 'gold',
+            shape: 'rect',
+            label: 'paypal',
+          },
+          createOrder: async () => {
+            if (!VITE_PAYPAL_CLIENT_ID) {
+              throw new Error('Chưa cấu hình PayPal Client ID');
+            }
+            try {
+              const res = await api<{ orderId: string }>(PAYPAL_CREATE_ORDER_API, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  amount: paypalAmountUSD,
+                  currency: 'USD',
+                  original_amount_vnd: payableTotal,
+                  conversion_rate: conversionRate,
+                  cart_item_ids: cartItemIds,
+                }),
+              });
+              return res.orderId;
+            } catch (error: any) {
+              setPaypalError(error?.message || 'Không tạo được đơn PayPal');
+              throw error;
+            }
+          },
+          onApprove: async (data: { orderID: string }) => {
+            try {
+              await api(PAYPAL_CAPTURE_ORDER_API, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ orderId: data.orderID }),
+              });
+              await finalizeOrder({ paymentIntent: data.orderID });
+            } catch (error: any) {
+              console.error('PayPal capture error', error);
+              setPaypalError(error?.message || 'Không thể xác nhận thanh toán PayPal');
+            }
+          },
+          onError: (err: any) => {
+            console.error('PayPal error', err);
+            setPaypalError(err?.message || 'PayPal gặp lỗi');
+          },
+        }).render(paypalContainerRef.current);
+      } catch (error: any) {
+        if (!mounted) return;
+        setPaypalError(error?.message || 'Không thể khởi tạo PayPal');
+      }
     };
     
     renderPayPalButtons();
     
     return () => {
-    mounted = false;
+      mounted = false;
     };
   }, [paymentMethod, ensurePaypalScript, paypalAmountUSD, conversionRate, cartItemIds, finalizeOrder, payableTotal]);
-    
 
   if (!cartItemIds.length) {
     return (
@@ -471,7 +528,7 @@ export function CheckoutPage() {
           <p className="text-gray-600">Không có sản phẩm nào được chọn để thanh toán.</p>
           <button
             onClick={() => navigate('/cart')}
-            className="px-6 py-2 bg-orange-500 text-white rounded-sm"
+            className="px-6 py-2 bg-orange-500 text-white rounded-sm hover:bg-orange-600 transition-colors"
           >
             Quay lại giỏ hàng
           </button>
@@ -485,18 +542,20 @@ export function CheckoutPage() {
     <div className="bg-gray-50 min-h-screen">
       <Header />
       <div className="max-w-7xl mx-auto p-4 lg:p-6 space-y-4">
+        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="text-orange-500 cursor-pointer" onClick={() => navigate('/cart')}>
+          <span className="text-orange-500 cursor-pointer hover:text-orange-600" onClick={() => navigate('/cart')}>
             Giỏ hàng
           </span>
           <span>/</span>
           <span className="text-gray-900 font-medium">Thanh toán</span>
         </div>
 
-        <div className="bg-white rounded-sm shadow-sm p-5 space-y-3">
+        {/* Shipping Address */}
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm uppercase font-semibold">Địa chỉ nhận hàng</p>
+              <p className="text-gray-600 text-sm uppercase font-semibold mb-2">Địa chỉ nhận hàng</p>
               {addressLoading ? (
                 <p className="text-gray-500 text-sm">Đang tải địa chỉ...</p>
               ) : defaultAddress ? (
@@ -504,30 +563,34 @@ export function CheckoutPage() {
                   <p className="text-gray-900 font-medium">
                     {defaultAddress.full_name} | {defaultAddress.phone}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mt-1">
                     {defaultAddress.address_line}, {defaultAddress.ward}, {defaultAddress.district},{' '}
                     {defaultAddress.city}
                   </p>
-                  <span className="inline-block mt-2 px-2 py-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded">
-                    Địa chỉ mặc định
-                  </span>
+                  {defaultAddress.is_default && (
+                    <span className="inline-block mt-2 px-2 py-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded">
+                      Địa chỉ mặc định
+                    </span>
+                  )}
                 </>
               ) : (
                 <p className="text-sm text-red-500">Bạn chưa có địa chỉ nhận hàng.</p>
               )}
             </div>
             <button
-              className="text-sm text-orange-500 font-medium"
+              className="text-sm text-orange-500 font-medium hover:text-orange-600"
               onClick={() => setShowAddressForm((prev) => !prev)}
             >
               {defaultAddress ? 'Thêm địa chỉ mới' : 'Thêm địa chỉ'}
             </button>
           </div>
+          
           {addressError && (
             <div className="text-sm text-red-500 bg-red-50 border border-red-100 rounded p-3">
               {addressError}
             </div>
           )}
+          
           {showAddressForm && (
             <form className="grid md:grid-cols-2 gap-4 pt-4 border-t" onSubmit={handleAddressFormSubmit}>
               <input
@@ -535,21 +598,21 @@ export function CheckoutPage() {
                 placeholder="Họ và tên"
                 value={addressForm.full_name}
                 onChange={(e) => setAddressForm((prev) => ({ ...prev, full_name: e.target.value }))}
-                className="border rounded-sm px-3 py-2 text-sm"
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <input
                 required
                 placeholder="Số điện thoại"
                 value={addressForm.phone}
                 onChange={(e) => setAddressForm((prev) => ({ ...prev, phone: e.target.value }))}
-                className="border rounded-sm px-3 py-2 text-sm"
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <input
                 required
                 placeholder="Địa chỉ cụ thể"
                 value={addressForm.address_line}
                 onChange={(e) => setAddressForm((prev) => ({ ...prev, address_line: e.target.value }))}
-                className="border rounded-sm px-3 py-2 text-sm md:col-span-2"
+                className="border rounded-lg px-3 py-2 text-sm md:col-span-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
               <div className="md:col-span-2 space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -560,31 +623,17 @@ export function CheckoutPage() {
                   includeStreetInput={false}
                   showLabels={false}
                   onAddressChange={(location) => {
-                    setAddressForm((prev) => {
-                      // chỉ update nếu dữ liệu thực sự khác
-                      if (
-                        prev.city === location.provinceName &&
-                        prev.district === location.districtName &&
-                        prev.ward === location.wardName &&
-                        prev.province_id === location.provinceId &&
-                        prev.district_id === location.districtId &&
-                        prev.ward_code === location.wardCode
-                      ) {
-                        return prev;
-                      }
-                      return {
-                        ...prev,
-                        city: location.provinceName || "",
-                        district: location.districtName || "",
-                        ward: location.wardName || "",
-                        province_id: location.provinceId || undefined,
-                        district_id: location.districtId || undefined,
-                        ward_code: location.wardCode || undefined,
-                      };
-                    });
+                    setAddressForm((prev) => ({
+                      ...prev,
+                      city: location.provinceName || "",
+                      district: location.districtName || "",
+                      ward: location.wardName || "",
+                      province_id: location.provinceId || undefined,
+                      district_id: location.districtId || undefined,
+                      ward_code: location.wardCode || undefined,
+                    }));
                   }}
                 />
-
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -593,20 +642,21 @@ export function CheckoutPage() {
                   onChange={(e) =>
                     setAddressForm((prev) => ({ ...prev, is_default: e.target.checked }))
                   }
+                  className="rounded focus:ring-orange-500"
                 />
                 Đặt làm địa chỉ mặc định
               </label>
               <div className="md:col-span-2 flex items-center gap-3">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-500 text-white rounded-sm text-sm disabled:opacity-50"
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600 disabled:opacity-50 transition-colors"
                   disabled={savingAddress}
                 >
                   {savingAddress ? 'Đang lưu...' : 'Lưu địa chỉ'}
                 </button>
                 <button
                   type="button"
-                  className="text-sm text-gray-600"
+                  className="text-sm text-gray-600 hover:text-gray-800"
                   onClick={() => setShowAddressForm(false)}
                 >
                   Hủy
@@ -616,8 +666,9 @@ export function CheckoutPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-sm shadow-sm">
-          <div className="px-5 py-4 grid grid-cols-12 gap-4 text-sm text-gray-600 font-medium border-b">
+        {/* Products List */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 grid grid-cols-12 gap-4 text-sm text-gray-600 font-medium border-b bg-gray-50">
             <div className="col-span-5">Sản phẩm</div>
             <div className="col-span-2 text-center">Đơn giá</div>
             <div className="col-span-2 text-center">Số lượng</div>
@@ -632,53 +683,67 @@ export function CheckoutPage() {
                 const shop = sellerId !== 'unknown' ? shopInfos[sellerId] : undefined;
                 return (
                   <div key={sellerId}>
-                    <div className="px-5 py-3 flex items-center gap-2 text-sm text-gray-700 bg-orange-50">
-                      <span className="text-orange-500 font-semibold uppercase text-xs border border-orange-200 px-2 py-0.5 rounded-sm">
-                        Yêu thích
+                    <div className="px-6 py-3 flex items-center gap-2 text-sm text-gray-700 bg-orange-50">
+                      <span className="text-orange-500 font-semibold uppercase text-xs border border-orange-200 px-2 py-0.5 rounded">
+                        Shop
                       </span>
                       <span className="font-medium">
                         {shop?.shop_name || `Shop ${sellerId.slice(-4)}`}
                       </span>
                     </div>
                     {sellerItems.map((item) => {
-                      const itemTotal = Number(item.product.price || 0) * item.quantity;
+                      const price = item.variant?.price ?? item.product.price;
+                      const itemTotal = Number(price || 0) * item.quantity;
                       return (
                         <div
                           key={item.id}
-                          className="px-5 py-4 grid grid-cols-12 gap-4 items-center text-sm text-gray-700"
+                          className="px-6 py-4 grid grid-cols-12 gap-4 items-center text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           <div className="col-span-5 flex items-center gap-3">
-                            <div className="w-20 h-20 border rounded-sm overflow-hidden bg-gray-100">
-                              {item.product.images?.length ? (
+                            <div className="w-20 h-20 border rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                              {item.product.images?.[0] ? (
                                 <img
                                   src={item.product.images[0]}
                                   alt={item.product.title || item.product_id}
                                   className="w-full h-full object-cover"
                                 />
-                              ) : null}
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  No Image
+                                </div>
+                              )}
                             </div>
-                            <div className="flex-1">
-                              <p className="text-gray-900 line-clamp-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-gray-900 line-clamp-2 font-medium">
                                 {item.product.title || item.product_id}
                               </p>
-                              <p className="text-xs text-gray-500">
-                                Phân loại: {item.product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                              {item.variant && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Phân loại: {item.variant.title}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                {item.product.stock > 0 ? '🟢 Còn hàng' : '🔴 Hết hàng'}
                               </p>
                             </div>
                           </div>
                           <div className="col-span-2 text-center text-gray-900 font-medium">
-                            ₫{Number(item.product.price || 0).toLocaleString('vi-VN')}
+                            ₫{Number(price || 0).toLocaleString('vi-VN')}
                           </div>
-                          <div className="col-span-2 text-center">{item.quantity}</div>
+                          <div className="col-span-2 text-center text-gray-600">
+                            {item.quantity}
+                          </div>
                           <div className="col-span-2 text-center text-orange-500 font-semibold">
                             ₫{itemTotal.toLocaleString('vi-VN')}
                           </div>
                           <div className="col-span-1 text-center">
                             <input
                               type="text"
-                              className="w-full border rounded-sm px-2 py-1 text-xs"
-                              placeholder="Lưu ý"
-                              onChange={(e) => setNote(e.target.value)}
+                              placeholder="Ghi chú..."
+                              value={notes[item.id] || ''}
+                              onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                              className="w-full border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                              maxLength={100}
                             />
                           </div>
                         </div>
@@ -691,25 +756,25 @@ export function CheckoutPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-sm shadow-sm p-5 space-y-4">
+        {/* Shipping Options */}
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-gray-900 font-semibold">Phương thức vận chuyển</h3>
-              <button className="text-sm text-blue-500">Thay đổi</button>
-            </div>
+            <h3 className="text-gray-900 font-semibold mb-4">Phương thức vận chuyển</h3>
             <div className="grid gap-3 md:grid-cols-2">
               {SHIPPING_OPTIONS.map((option) => (
                 <label
                   key={option.id}
-                  className={`border rounded-sm p-4 flex items-center justify-between cursor-pointer ${
-                    shippingOption === option.id ? 'border-orange-400 bg-orange-50' : 'border-gray-200'
+                  className={`border rounded-lg p-4 flex items-center justify-between cursor-pointer transition-all ${
+                    shippingOption === option.id 
+                      ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-200' 
+                      : 'border-gray-200 hover:border-orange-300'
                   }`}
                 >
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-gray-900">{option.label}</p>
-                    <p className="text-sm text-gray-500">{option.description}</p>
+                    <p className="text-sm text-gray-500 mt-1">{option.description}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex items-center gap-3">
                     <p className="text-orange-500 font-semibold">
                       {option.fee === 0 ? 'Miễn phí' : `₫${option.fee.toLocaleString('vi-VN')}`}
                     </p>
@@ -718,6 +783,7 @@ export function CheckoutPage() {
                       name="shipping"
                       checked={shippingOption === option.id}
                       onChange={() => setShippingOption(option.id)}
+                      className="text-orange-500 focus:ring-orange-500"
                     />
                   </div>
                 </label>
@@ -725,21 +791,26 @@ export function CheckoutPage() {
             </div>
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="text-gray-900 font-semibold mb-3">Shopee Voucher</h3>
+          {/* Voucher Section */}
+          <div className="border-t pt-6">
+            <h3 className="text-gray-900 font-semibold mb-4">Voucher</h3>
             {fetchingVoucher ? (
               <p className="text-sm text-gray-500">Đang kiểm tra voucher...</p>
             ) : preselectedVoucher && appliedVoucher ? (
-              <div className="flex items-center gap-3 text-sm text-gray-700">
-                <span className="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold">
-                  {preselectedVoucher}
-                </span>
-                <span>Ước tính giảm {appliedVoucher.discount.toLocaleString('vi-VN')}₫</span>
+              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                    {preselectedVoucher}
+                  </span>
+                  <span className="text-sm text-gray-700">
+                    Giảm {appliedVoucher.discount.toLocaleString('vi-VN')}₫
+                  </span>
+                </div>
                 <button
-                  className="text-xs text-gray-500"
+                  className="text-xs text-gray-500 hover:text-gray-700"
                   onClick={() => navigate('/cart')}
                 >
-                  Thay đổi voucher
+                  Thay đổi
                 </button>
               </div>
             ) : (
@@ -748,12 +819,16 @@ export function CheckoutPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-sm shadow-sm p-5 space-y-4">
+        {/* Payment Methods */}
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
           <h3 className="text-gray-900 font-semibold">Phương thức thanh toán</h3>
           <div className="grid md:grid-cols-2 gap-4">
+            {/* COD Option */}
             <label
-              className={`border rounded-md p-4 cursor-pointer flex items-start gap-3 ${
-                paymentMethod === 'COD' ? 'border-orange-400 bg-orange-50' : 'border-gray-200'
+              className={`border rounded-lg p-4 cursor-pointer flex items-start gap-3 transition-all ${
+                paymentMethod === 'COD' 
+                  ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-200' 
+                  : 'border-gray-200 hover:border-orange-300'
               }`}
             >
               <input
@@ -761,84 +836,99 @@ export function CheckoutPage() {
                 name="payment"
                 checked={paymentMethod === 'COD'}
                 onChange={() => setPaymentMethod('COD')}
-                className="mt-1"
+                className="mt-1 text-orange-500 focus:ring-orange-500"
               />
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold text-gray-900">Thanh toán khi nhận hàng (COD)</p>
-                <p className="text-sm text-gray-600">
-                  Phù hợp cho đơn nội địa. Người mua thanh toán tiền mặt khi nhận hàng.
+                <p className="text-sm text-gray-600 mt-1">
+                  Phù hợp cho đơn nội địa. Thanh toán tiền mặt khi nhận hàng.
                 </p>
               </div>
             </label>
 
+            {/* PayPal Option */}
             <label
-              className={`border rounded-md p-4 cursor-pointer flex flex-col gap-3 ${
-                paymentMethod === 'PAYPAL' ? 'border-orange-400 bg-orange-50' : 'border-gray-200'
+              className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                paymentMethod === 'PAYPAL' 
+                  ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-200' 
+                  : 'border-gray-200 hover:border-orange-300'
               }`}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 mb-3">
                 <input
                   type="radio"
                   name="payment"
                   checked={paymentMethod === 'PAYPAL'}
                   onChange={() => setPaymentMethod('PAYPAL')}
-                  className="mt-1"
+                  className="mt-1 text-orange-500 focus:ring-orange-500"
                 />
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold text-gray-900">Thanh toán bằng PayPal</p>
-                  <p className="text-sm text-gray-600">
-                    Khung tích hợp sẵn cho PayPal. Sau khi kết nối API, nút thanh toán sẽ hiển thị
-                    tại đây.
+                  <p className="text-sm text-gray-600 mt-1">
+                    Thanh toán an toàn qua PayPal với thẻ Visa, MasterCard hoặc tài khoản PayPal.
                   </p>
                 </div>
               </div>
-              <div
-                ref={paypalContainerRef}
-                className="w-full min-h-[64px] border border-dashed border-gray-300 rounded-md flex items-center justify-center text-xs text-gray-500"
-              >
-                {paypalReady
-                  ? 'PayPal đang tải...'
-                  : 'Khu vực nhúng PayPal Button – cấu hình SDK để hiển thị nút.'}
-              </div>
+              {paymentMethod === 'PAYPAL' && (
+                <div
+                  ref={paypalContainerRef}
+                  className="w-full min-h-[48px] border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-xs text-gray-500 bg-gray-50"
+                >
+                  {paypalReady ? 'Đang tải PayPal...' : 'Nút thanh toán PayPal sẽ xuất hiện ở đây'}
+                </div>
+              )}
               {paypalError && (
-                <p className="text-xs text-red-500">
-                  {paypalError} – kiểm tra client ID và API backend của PayPal.
+                <p className="text-xs text-red-500 mt-2">
+                  {paypalError}
                 </p>
               )}
             </label>
           </div>
         </div>
 
-        <div className="bg-white rounded-sm shadow-sm p-5 space-y-3">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Tổng tiền hàng</span>
-            <span>₫{subtotal.toLocaleString('vi-VN')}</span>
+        {/* Order Summary */}
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+          <h3 className="text-gray-900 font-semibold text-lg">Tổng thanh toán</h3>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Tổng tiền hàng</span>
+              <span>₫{subtotal.toLocaleString('vi-VN')}</span>
+            </div>
+            
+            {voucherDiscount > 0 && (
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>Giảm giá voucher</span>
+                <span className="text-green-600">
+                  -₫{voucherDiscount.toLocaleString('vi-VN')}
+                </span>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Phí vận chuyển</span>
+              <span>{shippingFee === 0 ? 'Miễn phí' : `₫${shippingFee.toLocaleString('vi-VN')}`}</span>
+            </div>
+            
+            <div className="flex items-center justify-between text-2xl font-semibold text-orange-500 pt-3 border-t">
+              <span>Tổng thanh toán</span>
+              <span>₫{payableTotal.toLocaleString('vi-VN')}</span>
+            </div>
           </div>
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Voucher giảm</span>
-            <span className="text-green-600">
-              -₫{voucherDiscount.toLocaleString('vi-VN')}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Phí vận chuyển</span>
-            <span>{shippingFee === 0 ? 'Miễn phí' : `₫${shippingFee.toLocaleString('vi-VN')}`}</span>
-          </div>
-          <div className="flex items-center justify-between text-2xl font-semibold text-orange-500 pt-2 border-t">
-            <span>Tổng thanh toán</span>
-            <span>₫{payableTotal.toLocaleString('vi-VN')}</span>
-          </div>
-          <div className="text-right">
+
+          <div className="text-right pt-4">
             <button
               onClick={handlePlaceOrder}
-              disabled={placingOrder || loading || (!defaultAddress && !addressLoading)}
-              className="px-8 py-3 bg-orange-500 text-white rounded-sm hover:bg-orange-600 disabled:opacity-50"
+              disabled={placingOrder || loading || !defaultAddress}
+              className="px-8 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {paymentMethod === 'PAYPAL' ? 'Thanh toán bằng PayPal' : 'Đặt hàng'}
+              {placingOrder ? 'Đang xử lý...' : paymentMethod === 'PAYPAL' ? 'Tiếp tục với PayPal' : 'Đặt hàng'}
             </button>
           </div>
-          <p className="text-xs text-gray-500 text-right">
-            Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý tuân theo Điều khoản Shopee.
+          
+          <p className="text-xs text-gray-500 text-center pt-2">
+            Bằng cách nhấn "Đặt hàng", bạn đồng ý với{' '}
+            <a href="#" className="text-orange-500 hover:underline">Điều khoản dịch vụ</a> của chúng tôi
           </p>
         </div>
       </div>
@@ -848,4 +938,3 @@ export function CheckoutPage() {
 }
 
 export default CheckoutPage;
-

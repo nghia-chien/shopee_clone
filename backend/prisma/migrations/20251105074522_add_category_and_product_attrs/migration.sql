@@ -164,8 +164,6 @@ CREATE UNIQUE INDEX "category_slug_key" ON "category"("slug");
 -- CreateIndex
 CREATE INDEX "idx_category_parent_id" ON "category"("parent_id");
 
--- CreateIndex
-CREATE UNIQUE INDEX "cart_item_user_product_key" ON "cart_item"("user_id", "product_id");
 
 -- AddForeignKey
 ALTER TABLE "seller" ADD CONSTRAINT "seller_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
