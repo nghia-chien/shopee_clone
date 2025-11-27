@@ -1,8 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Footer: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
-    
     <footer className="bg-white border-t mt-12">
     <div className="max-w-7xl mx-auto px-4 py-8">
             {/* ========================================================================
@@ -25,41 +27,76 @@ export const Footer: React.FC = () => {
             CHĂM SÓC KHÁCH HÀNG
           </h3>
           <ul className="space-y-2 text-xs text-gray-600">
-          <li
+            <li
               className="hover:text-orange-500 cursor-pointer transition"
-              onClick={() => window.open("https://help.shopee.vn/portal/4", "_blank")}
+              onClick={() => navigate("/support")}
             >
               Trung Tâm Trợ Giúp
             </li>
 
-            <li className="hover:text-orange-500 cursor-pointer transition" onClick={() => window.open("https://help.shopee.vn/portal/4", "_blank")}>
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => navigate("/flash-sale")}
+            >
               Shopee Blog
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li className="hover:text-orange-500 cursor-pointer transition"
+            onClick={() =>
+              window.open(
+                "https://shopee.vn/mall/",
+                "_blank"
+              )
+            }>
               Shopee Mall
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition ">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition "
+              onClick={() => navigate("/user/profile")}
+            >
               Hướng Dẫn Mua Hàng
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li className="hover:text-orange-500 cursor-pointer transition"
+             onClick={() => navigate("/seller/register")}
+             >
               Hướng Dẫn Bán Hàng
             </li>
             <li className="hover:text-orange-500 cursor-pointer transition">
               Thanh Toán
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li className="hover:text-orange-500 cursor-pointer transition"
+            onClick={() =>
+              window.open(
+                "https://help.shopee.vn/portal/4/article/79144-[Shopee-Xu]-C%c3%a1c-c%c3%a2u-h%e1%bb%8fi-th%c6%b0%e1%bb%9dng-g%e1%ba%b7p",
+                "_blank"
+              )
+            }>
               Shopee Xu
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li className="hover:text-orange-500 cursor-pointer transition"
+            onClick={() => navigate("/user/orders")}>
               Vận Chuyển
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => navigate("/user/orders")}
+            >
               Trả Hàng & Hoàn Tiền
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => navigate("/user/complaints")}
+            >
               Chăm Sóc Khách Hàng
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() =>
+                window.open(
+                  "https://help.shopee.vn/portal/4/article/79046-[Quy-%c4%91%e1%bb%8bnh]-Ch%c3%adnh-s%c3%a1ch-b%e1%ba%a3o-h%c3%a0nh-cho-s%e1%ba%a3n-ph%e1%ba%a9m-mua-t%e1%ba%a1i-Shopee",
+                  "_blank"
+                )
+              }
+            >
               Chính Sách Bảo Hành
             </li>
           </ul>
@@ -71,28 +108,56 @@ export const Footer: React.FC = () => {
             VỀ SHOPEE
           </h3>
           <ul className="space-y-2 text-xs text-gray-600">
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li className="hover:text-orange-500 cursor-pointer transition"
+            onClick={() =>
+              window.open(
+                "https://careers.shopee.vn/about",
+                "_blank"
+              )
+            }>
               Giới Thiệu Về Shopee Việt Nam
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => window.open("https://careers.shopee.vn/jobs", "_blank")}
+            >
               Tuyển Dụng
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() =>
+                window.open("https://help.shopee.vn/portal/4/article/77242", "_blank")
+              }
+            >
               Điều Khoản Shopee
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() =>
+                window.open("https://help.shopee.vn/portal/4/article/77244", "_blank")
+              }
+            >
               Chính Sách Bảo Mật
             </li>
             <li className="hover:text-orange-500 cursor-pointer transition">
               Chính Hãng
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => navigate("/seller")}
+            >
               Kênh Người Bán
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => window.open("https://shopee.vn/flash_sale/", "_blank")}
+            >
               Flash Sales
             </li>
-            <li className="hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="hover:text-orange-500 cursor-pointer transition"
+              onClick={() => window.open("https://shopee.vn/affiliate/", "_blank")}
+            >
               Chương Trình Tiếp Thị Liên Kết
             </li>
             <li className="hover:text-orange-500 cursor-pointer transition">
@@ -140,13 +205,22 @@ export const Footer: React.FC = () => {
             THEO DÕI CHÚNG TÔI TRÊN
           </h3>
           <ul className="space-y-2 text-xs text-gray-600">
-            <li className="flex items-center gap-2 hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="flex items-center gap-2 hover:text-orange-500 cursor-pointer transition"
+              onClick={() => window.open("https://www.facebook.com/ShopeeVN", "_blank")}
+            >
               <span>📘</span> Facebook
             </li>
-            <li className="flex items-center gap-2 hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="flex items-center gap-2 hover:text-orange-500 cursor-pointer transition"
+              onClick={() => window.open("https://www.instagram.com/Shopee_VN/", "_blank")}
+            >
               <span>📷</span> Instagram
             </li>
-            <li className="flex items-center gap-2 hover:text-orange-500 cursor-pointer transition">
+            <li
+              className="flex items-center gap-2 hover:text-orange-500 cursor-pointer transition"
+              onClick={() => window.open("https://www.linkedin.com/company/shopee", "_blank")}
+            >
               <span>💼</span> LinkedIn
             </li>
           </ul>

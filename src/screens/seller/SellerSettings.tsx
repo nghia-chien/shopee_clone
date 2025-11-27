@@ -9,6 +9,7 @@ import {
   type SellerProfileUpdatePayload,
   type SellerAddress,
 } from "../../api/sellerapi/sellerSettings";
+import { AddressSelector } from "../../components/shipping/AddressSelector";
 
 type TabId = "profile" | "payment" | "shipping" | "notification" | "security";
 
@@ -22,13 +23,16 @@ const tabs: { id: TabId; label: string; icon: any }[] = [
 
 const DEFAULT_AVATAR = "https://ui-avatars.com/api/?name=Seller&background=f97316&color=fff";
 
-const normalizeAddress = (address?: SellerAddress | null): Required<SellerAddress> => ({
+const normalizeAddress = (address?: SellerAddress | null): SellerAddress => ({
   full_name: address?.full_name ?? "",
   phone: address?.phone ?? "",
   address_line: address?.address_line ?? "",
   city: address?.city ?? "",
   district: address?.district ?? "",
   ward: address?.ward ?? "",
+  province_id: address?.province_id,
+  district_id: address?.district_id,
+  ward_code: address?.ward_code,
 });
 
 export default function SellerSettings() {
@@ -336,38 +340,55 @@ export default function SellerSettings() {
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tỉnh/Thành</label>
-            <input
-              type="text"
-              value={profileForm.address.city}
-              onChange={(e) =>
-                setProfileForm((prev) => ({ ...prev, address: { ...prev.address, city: e.target.value } }))
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Khu vực (Tỉnh / Quận / Phường) *
+            </label>
+
+            <AddressSelector
+              key="seller-address"
+              includeStreetInput={false}
+              showLabels={false}
+              onAddressChange={(location) => {
+                setProfileForm((prev) => {
+                  if (
+                    prev.address.city === location.provinceName &&
+                    prev.address.district === location.districtName &&
+                    prev.address.ward === location.wardName &&
+                    prev.address.province_id === location.provinceId &&
+                    prev.address.district_id === location.districtId &&
+                    prev.address.ward_code === location.wardCode
+                  ) {
+                    return prev;
+                  }
+
+                  return {
+                    ...prev,
+                    address: {
+                      ...prev.address,
+                      city: location.provinceName || "",
+                      district: location.districtName || "",
+                      ward: location.wardName || "",
+                      province_id: location.provinceId || undefined,
+                      district_id: location.districtId || undefined,
+                      ward_code: location.wardCode || undefined,
+                    },
+                  };
+                });
+              }}
+              defaultValues={{
+                provinceId: profileForm.address.province_id,
+                provinceName: profileForm.address.city,
+                districtId: profileForm.address.district_id,
+                districtName: profileForm.address.district,
+                wardCode: profileForm.address.ward_code,
+                wardName: profileForm.address.ward,
+              }}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Quận/Huyện</label>
-            <input
-              type="text"
-              value={profileForm.address.district}
-              onChange={(e) =>
-                setProfileForm((prev) => ({ ...prev, address: { ...prev.address, district: e.target.value } }))
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phường/Xã</label>
-            <input
-              type="text"
-              value={profileForm.address.ward}
-              onChange={(e) =>
-                setProfileForm((prev) => ({ ...prev, address: { ...prev.address, ward: e.target.value } }))
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
+            <p className="text-xs text-gray-500 mt-1">
+              Đã chọn: {profileForm.address.ward || "—"}, {profileForm.address.district || "—"},{" "}
+              {profileForm.address.city || "—"}
+            </p>
           </div>
         </div>
 

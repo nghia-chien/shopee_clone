@@ -19,6 +19,7 @@ import {AuthGuard} from  "../components/auth/AuthGuard";
 import VoucherPage from "../screens/client/VoucherPage";
 import ComplaintsPage from "../screens/client/Complaints";
 import { RefineApp } from "../admin/RefineApp";
+import SupportPage from "../screens/client/SupportPage";
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -44,6 +45,7 @@ export function AppRoutes() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/flash-sale" element={<FlashSalePage />} />
+        <Route path="/support" element={<SupportPage />} />
 
         
         

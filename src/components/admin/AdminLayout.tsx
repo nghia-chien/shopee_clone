@@ -15,6 +15,9 @@ import {
   Store,
   Gift,
   AlertTriangle,
+  FolderTree,
+  Star,
+  MessageSquare,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -39,10 +42,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { icon: Settings, label: "Cài Đặt", path: "/admin/settings" },
     // Data Management (Refine CRUD)
     { icon: Package, label: "Sản Phẩm", path: "/admin/products" },
+    { icon: FolderTree, label: "Danh Mục", path: "/admin/categories" },
     { icon: Store, label: "Sellers", path: "/admin/sellers" },
     { icon: Users, label: "Người Dùng", path: "/admin/users" },
     { icon: ShoppingCart, label: "Đơn Hàng", path: "/admin/orders" },
     { icon: Gift, label: "Voucher", path: "/admin/vouchers" },
+    { icon: Star, label: "Đánh Giá", path: "/admin/reviews" },
+    { icon: MessageSquare, label: "Tin Nhắn", path: "/admin/messages" },
   ];
 
   return (
