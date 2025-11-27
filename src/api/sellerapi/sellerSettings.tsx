@@ -3,12 +3,15 @@ import { useSellerAuthStore } from '../../store/SellerAuth';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 export type SellerAddress = {
-  full_name?: string;
-  phone?: string;
-  address_line?: string;
-  city?: string;
-  district?: string;
-  ward?: string;
+  full_name: string;
+  phone: string;
+  address_line: string;
+  city: string;
+  district: string;
+  ward: string;
+  province_id?: number;
+  district_id?: number;
+  ward_code?: string;
 };
 
 export type SellerSettingsSuccessResponse = {

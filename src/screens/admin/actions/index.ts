@@ -4,4 +4,5 @@
  */
 export { AdminDashboard } from "./AdminDashboard";
 export { AdminComplaints } from "./AdminComplaints";
+export { AdminMessages } from "./AdminMessages";
 

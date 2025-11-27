@@ -7,6 +7,7 @@ import { AdminGuard } from "../components/admin/AdminGuard";
 import { AdminLogin } from "../components/admin/AdminLogin";
 import { AdminDashboard } from "../screens/admin/actions/AdminDashboard";
 import { AdminComplaints } from "../screens/admin/actions/AdminComplaints";
+import { AdminMessages } from "../screens/admin/actions/AdminMessages";
 // Data Management Pages (Refine-based CRUD)
 import { ProductList, ProductShow, ProductEdit } from "../screens/admin/data/ProductList";
 import { CategoryList, CategoryShow, CategoryCreate, CategoryEdit } from "../screens/admin/data/CategoryList";
@@ -101,6 +102,7 @@ export function RefineApp() {
                   {/* Action Management Pages (Custom, not Refine-based) */}
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="complaints" element={<AdminComplaints />} />
+                  <Route path="messages" element={<AdminMessages />} />
                   
                   {/* Data Management Pages (Refine-based CRUD) */}
                   {/* Products */}

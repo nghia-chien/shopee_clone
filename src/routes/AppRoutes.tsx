@@ -20,6 +20,7 @@ import ComplaintsPage from "../screens/client/Complaints";
 import { RefineApp } from "../admin/RefineApp";
 import EventPage from "../screens/client/EventPage";
 import TestPage from "../screens/client/xyz";
+import SupportPage from "../screens/client/SupportPage";
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -58,6 +59,7 @@ export function AppRoutes() {
         <Route path="/event" element={<EventPage />} />
         <Route path="/search" element={<SearchResultsPage />} />
         <Route path="/test" element={<TestPage />} />
+        <Route path="/support" element={<SupportPage />} />
 
         {/* Seller */}
         <Route path="/seller/*" element={<SellerRoutes />} />
