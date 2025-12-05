@@ -9,14 +9,6 @@ import type { UserVoucherEntry, Voucher } from '../../api/userapi/vouchers';
 
 import { ProductListSection } from '../../components/product/ProductListSection';
 
-interface CartProduct {
-  seller_id: string | null | undefined;
-  id: string;
-  title?: string;
-  images?: string[];
-  price: number;
-  stock: number;
-}
 
 interface SuggestedProduct {
   id: string;
@@ -626,7 +618,7 @@ export function CartPage() {
                         );
 
                         // Kiểm tra kết quả
-                        const failedDeletes = results.filter((result, index) => 
+                        const failedDeletes = results.filter((result) => 
                           result.status === 'rejected'
                         );
 

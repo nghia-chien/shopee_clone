@@ -12,22 +12,22 @@ export async function listSellerSoldOrdersController(req: SellerRequest, res: Re
     if (!seller_id) return res.status(401).json({ message: 'Unauthorized' });
 
     const orders = await prisma.seller_order.findMany({
-    where: { seller_id },
-    include: {
-      orders: {
-        include: {
-          user: { select: { name: true, email: true, phone_number: true } },
-          order_item: {
-            include: {
-              product: { select: { id: true, title: true, images: true } },
+      where: { seller_id },
+      include: {
+        orders: {
+          include: {
+            user: { select: { name: true, email: true, phone_number: true } },
+            order_item: {
+              include: {
+                product: { select: { id: true, title: true, images: true } },
+                product_variant: { select: { id: true, title: true, image: true } }
+              },
             },
           },
         },
       },
-    },
-    orderBy: { created_at: 'desc' },
-  });
-
+      orderBy: { created_at: 'desc' },
+    });
 
     return res.json({ orders });
   } catch (error) {
@@ -52,16 +52,19 @@ export async function getSellerOrderController(req: SellerRequest, res: Response
         orders: {
           include: {
             user: { select: { name: true, email: true, phone_number: true } },
-            order_item: { // từ orders lấy ra các sản phẩm
+            order_item: {
+              where: { // THÊM DÒNG NÀY để lọc chỉ sản phẩm của seller
+                product: { seller_id } 
+              },
               include: {
-                product: { select: { id: true, title: true, images: true } },
+                product: { select: { id: true, title: true, images: true, seller_id: true } },
+                product_variant: { select: { id: true, title: true, image: true } }
               },
             },
           },
         },
       },
     });
-
 
     if (!sellerOrder) return res.status(404).json({ message: 'Seller order not found' });
 
@@ -91,4 +94,3 @@ export async function updateSellerOrderTrackingController(req: SellerRequest, re
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
-

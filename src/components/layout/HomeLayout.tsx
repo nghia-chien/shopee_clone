@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
-import { useAuthStore } from "../../store/auth";
+import { useEffect, useState,useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
@@ -9,46 +8,63 @@ import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { ChatWidget } from "../chat/ChatWidget";
 import {useMallShops} from "../../hooks/useMall";
-import { getFlashSaleProducts } from "../../api/userapi/client";
-import type { FlashSaleProduct } from "../../api/userapi/client";
+import { getFlashSaleProducts ,getCategories  } from "../../api/userapi/client";
+import type { FlashSaleProduct,Category } from "../../api/userapi/client";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+
+
 interface HomeLayoutProps {
   children?: ReactNode;
 }
 
 export function HomeLayout({ children }: HomeLayoutProps) {
-  const { user, logout } = useAuthStore();
+
   const navigate = useNavigate();
-  const { shops, loading } = useMallShops();
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const { shops } = useMallShops();
+  
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+   const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(true);
+
+  const scroll = (direction: 'left' | 'right') => {
+    const element = scrollRef.current;
+    if (element) {
+      const scrollAmount = 1000;
+      
+      if (direction === 'left') {
+        element.scrollLeft -= scrollAmount;
+        setShowRight(true);
+        setTimeout(() => {
+          setShowLeft(element.scrollLeft > 0);
+        }, 100);
+      } else {
+        element.scrollLeft += scrollAmount;
+        setShowLeft(true);
+        setTimeout(() => {
+          const isAtEnd = element.scrollLeft >= element.scrollWidth - element.clientWidth - 10;
+          setShowRight(!isAtEnd);
+        }, 100);
+      }
+    }
   };
 
   // ============================================================================
   // DATA SECTION - TODO: Replace with API calls
   // ============================================================================
- const categories = [
-  { name: "Thời Trang Nam", slug: "thoi-trang-nam", icon: "👔" },
-  { name: "Thời Trang Nữ", slug: "thoi-trang-nu", icon: "👗" },
-  { name: "Điện Thoại & Phụ Kiện", slug: "dien-thoai-phu-kien", icon: "📱" },
-  { name: "Thiết Bị Điện Tử", slug: "thiet-bi-dien-tu", icon: "💻" },
-  { name: "Máy Tính & Laptop", slug: "may-tinh-laptop", icon: "🖥️" },
-  { name: "Máy Ảnh & Máy Quay Phim", slug: "may-anh-may-quay", icon: "📷" },
-  { name: "Đồng Hồ", slug: "dong-ho", icon: "⌚" },
-  { name: "Giày Dép Nam", slug: "giay-dep-nam", icon: "👞" },
-  { name: "Giày Dép Nữ", slug: "giay-dep-nu", icon: "👠" },
-  { name: "Túi Ví Nam", slug: "balo-tui-vi-nam", icon: "👜" },
-  { name: "Túi Ví Nữ", slug: "tui-vi-nu", icon: "🛍️" },
-  { name: "Phụ Kiện & Trang Sức", slug: "phu-kien-trang-suc-nu", icon: "💍" },
-  { name: "Nhà Cửa & Đời Sống", slug: "nha-cua-doi-song", icon: "🏠" },
-  { name: "Sách & Văn Phòng Phẩm", slug: "nha-sach-online", icon: "📚" },
-  { name: "Thể Thao & Du Lịch", slug: "the-thao-du-lich", icon: "🏖️" },
-  { name: "Ô Tô & Xe Máy", slug: "oto-xe-may-xe-dap", icon: "🚗" },
-  { name: "Mẹ & Bé", slug: "me-be", icon: "👶" },
-  { name: "Làm Đẹp & Sức Khỏe", slug: "suc-khoe", icon: "🩺" },
-  { name: "Thú Cưng", slug: "thu-cung", icon: "🐶" },
-  { name: "Voucher & Dịch Vụ", slug: "voucher-dich-vu", icon: "🎟️" },
-];
+ useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await getCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      } 
+    };
+
+    fetchCategories();
+  }, []);
 
 
 
@@ -149,7 +165,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
 
 
 
-  function handleCategoryClick(cat: { name: string; slug: string }) {
+  function handleCategoryClick(cat: { slug: string }) {
   navigate(`/category/${cat.slug}`);
 }
 
@@ -236,25 +252,58 @@ export function HomeLayout({ children }: HomeLayoutProps) {
         </div>
       </section>
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <section className="bg-white rounded-sm p-6 shadow-sm">
-          <h2 className="text-gray-500 text-sm mb-4 uppercase font-semibold">Danh Mục</h2>
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-4">
-            {categories.map((cat, i) => (
-              <div 
-                key={i}
-                className="flex flex-col items-center gap-2 cursor-pointer group"
-                onClick={() => handleCategoryClick(cat)}
-              >
-                <div className="w-16 h-16 bg-gray-50 border-2 border-gray-200 rounded-lg flex items-center justify-center text-2xl group-hover:border-orange-500 group-hover:shadow-md transition-all">
-                  {cat.icon}
-                </div>
-                <span className="text-xs text-center text-gray-700 line-clamp-2 group-hover:text-orange-500 transition">
-                  {cat.name}
-                </span>
-              </div>
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <section className="bg-white rounded-lg p-6">
+          <h2 className="text-gray-900 text-xl  text-left mb-6">DANH MỤC</h2>
 
-            ))}
+          <div className="relative">
+            {showLeft && (
+              <button
+                onClick={() => scroll('left')}
+                className="absolute top-1/2 -left-8 transform -translate-y-1/2 z-10 bg-white p-1 rounded-full shadow-md hover:bg-gray-50 transition-all -ml-2"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-600" />
+              </button>
+            )}
+
+            {showRight && (
+              <button
+                onClick={() => scroll('right')}
+                className="absolute top-1/2 -right-10 transform -translate-y-1/2 z-10 bg-white p-1 rounded-full shadow-md hover:bg-gray-50 transition-all"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-600" />
+              </button>
+            )}
+
+            {/* Container với overflow-hidden để ẩn thanh cuộn */}
+            <div
+              ref={scrollRef}
+              className="overflow-hidden py-2"
+            >
+              <div className="grid grid-rows-2 grid-flow-col gap-x-8 gap-y-4 whitespace-nowrap">
+                {categories
+                  .filter(cat => cat.level === 1) // Lọc chỉ những category có level === 1
+                  .sort((a, b) => b.name.localeCompare(a.name))
+                  .map((cat, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col items-center gap-2 cursor-pointer group min-w-[100px] inline-block"
+                    onClick={() => handleCategoryClick(cat)}
+                  >
+                    <div className="w-20 h-20 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <img 
+                        src={cat.image} 
+                        className="w-full h-full object-contain" 
+                        alt={cat.name}
+                      />
+                    </div>
+                    <span className="block w-full text-xs text-center text-gray-800 break-words whitespace-normal group-hover:text-orange-500 transition-colors">
+  {cat.name}
+</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -339,32 +388,34 @@ export function HomeLayout({ children }: HomeLayoutProps) {
                         <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-bl shadow">
                           -{product.discount}%
                         </div>
+                        {/* Discount Badge */}
+                        <div className="absolute top-2 left-0 bg-red-600 text-white text-xs font-bold px-1 py-1 rounded-bl shadow">
+                          {product.seller.shop_mall}
+                        </div>
                       </div>
                       
                       {/* Price */}
                       <div className="flex flex-col gap-1 mb-2">
+                        
                         <span className="text-orange-500 text-lg font-bold">
                           ₫{formatPrice(product.price)}
                         </span>
-                        {product.originalPrice > product.price && (
-                          <span className="text-gray-400 text-xs line-through">
-                            ₫{formatPrice(product.originalPrice)}
-                          </span>
-                        )}
                       </div>
                       
                       {/* Sold Progress Bar */}
                       <div className="relative mt-3">
-                        <div className="h-4 bg-pink-100 rounded-full overflow-hidden">
+                        <div className="h-4 bg-pink-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-orange-400 to-pink-500 flex items-center justify-center transition-all duration-300"
-                            style={{ width: `${soldPercent}%` }}
+                            className="h-full bg-gradient-to-r from-orange-500 to-pink-500 transition-all duration-300"
+                            style={{ width: `1${soldPercent}%` }}
                           >
-                            <span className="text-xs text-white font-bold">
-                              ĐÃ BÁN {soldPercent}%
-                            </span>
+                            {/* Đã xóa span khỏi đây */}
                           </div>
                         </div>
+                        {/* Thêm span tuyệt đối ở giữa */}
+                        <span className="absolute top-0 left-1/2 transform -translate-x-1/2 text-xs text-center text-white font-bold w-full">
+                          ĐÃ BÁN {soldPercent}%
+                        </span>
                       </div>
                     </div>
                   );

@@ -26,18 +26,18 @@ export function AdminMessages() {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [messagePage, setMessagePage] = useState(1);
 
-  const threadsQuery = useQuery({
-    queryKey: ["admin-message-threads", filters],
-    queryFn: () => getAllAdminThreads(filters),
-    keepPreviousData: true,
-  });
+const threadsQuery = useQuery({
+  queryKey: ["admin-message-threads", filters],
+  queryFn: () => getAllAdminThreads(filters),
+  // Xóa dòng này: keepPreviousData: true,
+});
 
-  const threadDetailQuery = useQuery({
-    queryKey: ["admin-thread-detail", selectedThreadId, messagePage],
-    queryFn: () => getAdminThreadById(selectedThreadId!, messagePage, MESSAGE_PAGE_SIZE),
-    enabled: !!selectedThreadId,
-    keepPreviousData: true,
-  });
+const threadDetailQuery = useQuery({
+  queryKey: ["admin-thread-detail", selectedThreadId, messagePage],
+  queryFn: () => getAdminThreadById(selectedThreadId!, messagePage, MESSAGE_PAGE_SIZE),
+  enabled: !!selectedThreadId,
+  // Xóa dòng này: keepPreviousData: true,
+});
 
   // Apply search filter
   useEffect(() => {

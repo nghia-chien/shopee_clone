@@ -12,6 +12,7 @@ interface OrderItem {
     id: string;
     title: string;
     images: string[];
+    seller_id: string;
   };
 }
 
@@ -43,7 +44,8 @@ interface SellerOrder {
 
 export const SellerOrders = () => {
   const navigate = useNavigate();
-  const { token } = useSellerAuthStore();
+  const { token ,seller } = useSellerAuthStore();
+  const sellerId = seller?.id;
   const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
@@ -69,12 +71,22 @@ export const SellerOrders = () => {
     try {
       setLoading(true);
       const data = await getSellerSoldOrders(token!);
-      // map order_items => items
-      const mappedOrders = (data.orders || []).map((o: any) => ({
-        ...o,
-        items: o.order_items || o.orders?.order_item || [],
-        user: o.orders?.user || o.user,
-      }));
+      
+      // map order_items => items và lọc chỉ sản phẩm của seller hiện tại
+      const mappedOrders = (data.orders || []).map((o: any) => {
+        const allItems = o.order_items || o.orders?.order_item || [];
+        
+        // Lọc chỉ sản phẩm của seller hiện tại
+        const sellerItems = allItems.filter((item: any) => 
+          item.product?.seller_id === sellerId
+        );
+        
+        return {
+          ...o,
+          items: sellerItems, // Chỉ chứa sản phẩm của seller
+          user: o.orders?.user || o.user,
+        };
+      });
       setOrders(mappedOrders);
     } catch (err: any) {
       console.error("Failed to load orders:", err);
@@ -83,25 +95,33 @@ export const SellerOrders = () => {
     }
   };
 
-  const handleViewDetails = async (seller_order_id: string) => {
-    try {
-      setDetailLoading(true);
-      const data = await getSellerOrderDetails(token!, seller_order_id);
-      const detailItems =
-        data.sellerOrder?.order_items ||
-        data.sellerOrder?.orders?.order_item ||
-        [];
-      setSelectedOrder({
-        ...data.sellerOrder,
-        user: data.sellerOrder?.orders?.user || data.sellerOrder?.user,
-        items: detailItems,
-      });
-    } catch (err: any) {
-      alert(err.message || "Failed to load order details");
-    } finally {
-      setDetailLoading(false);
-    }
-  };
+ const handleViewDetails = async (seller_order_id: string) => {
+  try {
+    setDetailLoading(true);
+    const data = await getSellerOrderDetails(token!, seller_order_id);
+    
+    // Lấy tất cả items từ API
+    const allItems =
+      data.sellerOrder?.order_items ||
+      data.sellerOrder?.orders?.order_item ||
+      [];
+    
+    // Lọc chỉ sản phẩm của seller hiện tại
+    const sellerItems = allItems.filter((item: any) => 
+      item.product?.seller_id === sellerId
+    );
+    
+    setSelectedOrder({
+      ...data.sellerOrder,
+      user: data.sellerOrder?.orders?.user || data.sellerOrder?.user,
+      items: sellerItems, // Chỉ chứa sản phẩm của seller
+    });
+  } catch (err: any) {
+    alert(err.message || "Failed to load order details");
+  } finally {
+    setDetailLoading(false);
+  }
+};
 
   const handleUpdateStatus = async (
     seller_order_id: string,

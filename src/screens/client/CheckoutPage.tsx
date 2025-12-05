@@ -91,6 +91,13 @@ function evaluateVoucher(
   items: CartItem[]
 ): { discount: number; base: number } | null {
   const now = Date.now();
+  
+  console.log('🔍 Evaluating voucher in Checkout:', voucher.code, {
+    source: voucher.source,
+    seller_id: voucher.seller_id,
+    product_id: voucher.product_id
+  });
+
   if (voucher.status !== 'ACTIVE') return null;
   if (now < new Date(voucher.start_at).getTime() || now > new Date(voucher.end_at).getTime()) {
     return null;
@@ -98,17 +105,30 @@ function evaluateVoucher(
 
   let applicableItems = [...items];
   
+  console.log('🛒 Items for evaluation:', applicableItems.map(it => ({
+    product_id: it.product.id,
+    seller_id: it.product.seller_id,
+    title: it.product.title
+  })));
+
   // Filter by seller if it's a seller voucher
   if (voucher.source !== 'ADMIN') {
+    const beforeSeller = applicableItems.length;
     applicableItems = applicableItems.filter((it) => it.product.seller_id === voucher.seller_id);
+    console.log(`🏪 Seller filter: ${beforeSeller} → ${applicableItems.length}`);
   }
   
-  // Filter by specific product if specified
+  // ✅ SỬA: Dùng it.product.id thay vì it.product_id
   if (voucher.product_id) {
-    applicableItems = applicableItems.filter((it) => it.product_id === voucher.product_id);
+    const beforeProduct = applicableItems.length;
+    applicableItems = applicableItems.filter((it) => it.product.id === voucher.product_id);
+    console.log(`📦 Product filter: ${beforeProduct} → ${applicableItems.length}`);
   }
   
-  if (applicableItems.length === 0) return null;
+  if (applicableItems.length === 0) {
+    console.log('❌ No applicable items after filtering');
+    return null;
+  }
 
   // Calculate base amount using variant price if available
   const base = applicableItems.reduce(
@@ -119,21 +139,32 @@ function evaluateVoucher(
     0
   );
 
+
   const minOrder = Number(voucher.min_order_amount ?? 0);
-  if (minOrder > 0 && base < minOrder) return null;
+  if (minOrder > 0 && base < minOrder) {
+    console.log(`❌ Min order not met: ${base} < ${minOrder}`);
+    return null;
+  }
 
   let discount =
     voucher.discount_type === 'PERCENT'
       ? (base * Number(voucher.discount_value)) / 100
       : Number(voucher.discount_value);
       
+  console.log('🎯 Discount before limits:', discount);
+
   if (voucher.discount_type === 'PERCENT' && voucher.max_discount_amount) {
     discount = Math.min(discount, Number(voucher.max_discount_amount));
+    console.log('📉 Discount after max limit:', discount);
   }
   
   discount = Math.min(discount, base);
-  if (discount <= 0) return null;
+  if (discount <= 0) {
+    console.log('❌ Discount <= 0');
+    return null;
+  }
   
+  console.log('✅ Voucher applicable, discount:', discount);
   return { discount, base };
 }
 

@@ -13,7 +13,16 @@ export async function listcart_itemsController(req: Request & { user?: { id: str
     const items = await prisma.cart_item.findMany({
       where: { user_id },
       include: {
-        product: true,
+        product: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            discount: true,
+            images: true,
+            seller_id: true, // ← THÊM DÒNG NÀY
+          }
+        },
         product_variant: true,
       },
     });
@@ -24,6 +33,7 @@ export async function listcart_itemsController(req: Request & { user?: { id: str
       quantity: item.quantity,
       product: {
         id: item.product.id,
+        seller_id: item.product.seller_id, // ← THÊM DÒNG NÀY
         title: item.product.title,
         price: Number(item.product.price),
         discount: Number(item.product.discount || 0),
@@ -38,6 +48,8 @@ export async function listcart_itemsController(req: Request & { user?: { id: str
           }
         : null,
     }));
+
+    console.log('🛒 Cart items với seller_id:', mappedItems); // ← Debug
 
     return res.json({ items: mappedItems });
   } catch (error) {

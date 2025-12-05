@@ -66,10 +66,10 @@ export function UserLayout() {
                 <User className="w-4 h-4" />
                 Hồ sơ
               </NavLink>
-              <NavLink to="/user/notifications" className={navItemClass}>
+              {/* <NavLink to="/user/notifications" className={navItemClass}>
                 <Bell className="w-4 h-4" />
                 Thông báo
-              </NavLink>
+              </NavLink> */}
               <NavLink to="/user/orders" className={navItemClass}>
                 <Package className="w-4 h-4" />
                 Đơn mua
@@ -78,10 +78,10 @@ export function UserLayout() {
                 <Gift className="w-4 h-4" />
                 Kho Voucher
               </NavLink>
-              <NavLink to="/user/coins" className={navItemClass}>
+              {/* <NavLink to="/user/coins" className={navItemClass}>
                 <Coins className="w-4 h-4" />
                 Shopee Xu
-              </NavLink>
+              </NavLink> */}
               {/* <NavLink to="/user/chat" className={navItemClass}>
                 <MessageSquare className="w-4 h-4" />
                 Tin nhắn

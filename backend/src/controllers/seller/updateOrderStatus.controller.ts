@@ -24,14 +24,28 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    // Kiểm tra seller sở hữu seller_order
+    // Kiểm tra seller sở hữu seller_order và lấy thông tin order items
     const sellerOrder = await prisma.seller_order.findFirst({
       where: {
         id,
         seller_id,
       },
       include: {
-        orders: { include: { user: true } },
+        orders: { 
+          include: { 
+            user: true,
+            order_item: {
+              include: {
+                product: {
+                  include: {
+                    product_variant: true
+                  }
+                },
+                product_variant: true
+              }
+            }
+          } 
+        },
         shipping_order: true,
       },
     });
@@ -40,73 +54,185 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
 
     const fulfillmentStatus = FULFILLMENT_MAP[status] ?? null;
 
-    // Cập nhật trạng thái
-    const updatedSellerOrder = await prisma.seller_order.update({
-      where: { id },
-      data: {
-        seller_status: status,
-        ...(fulfillmentStatus ? { fulfillment_status: fulfillmentStatus } : {}),
-      },
-      include: {
-        orders: { include: { user: true } },
-        shipping_order: true,
-      },
-    });
+    // Sử dụng transaction để đảm bảo tính nhất quán
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Cập nhật trạng thái
+      const updatedSellerOrder = await tx.seller_order.update({
+        where: { id },
+        data: {
+          seller_status: status,
+          ...(fulfillmentStatus ? { fulfillment_status: fulfillmentStatus } : {}),
+        },
+        include: {
+          orders: { 
+            include: { 
+              user: true,
+              order_item: {
+                include: {
+                  product: true,
+                  product_variant: true
+                }
+              }
+            } 
+          },
+          shipping_order: true,
+        },
+      });
 
-    if (fulfillmentStatus) {
-      await prisma.orders.update({
-        where: { id: updatedSellerOrder.order_id },
-        data: { fulfillment_status: fulfillmentStatus },
-      }).catch((err) => console.error('Failed to sync fulfillment status to orders table:', err));
-    }
+      // 2. Đồng bộ fulfillment status với orders table
+      if (fulfillmentStatus) {
+        await tx.orders.update({
+          where: { id: updatedSellerOrder.order_id },
+          data: { fulfillment_status: fulfillmentStatus },
+        }).catch((err) => console.error('Failed to sync fulfillment status to orders table:', err));
+      }
 
-    if (status === 'accepted') {
-      const shippingOrder = updatedSellerOrder.shipping_order;
-      if (shippingOrder) {
-        if (!shippingOrder.ghn_order_code) {
-          try {
-            const { retryShippingOrder } = await import('../../services/shippingRetry.service');
-            await retryShippingOrder({ shippingOrderId: shippingOrder.id, maxRetries: 2 });
-          } catch (retryError) {
-            console.error('Failed to trigger GHN order creation after seller accepted:', retryError);
+      // 3. Xử lý stock khi đơn hàng được xác nhận (accepted)
+      if (status === 'processing') {
+        for (const item of sellerOrder.orders.order_item) {
+          // Kiểm tra xem sản phẩm này có thuộc về seller không
+          if (item.product.seller_id !== seller_id) {
+            continue; // Bỏ qua nếu không phải sản phẩm của seller
+          }
+
+          if (item.variant_id && item.product_variant) {
+            // Kiểm tra stock trước khi trừ
+            const currentVariant = await tx.product_variant.findUnique({
+              where: { id: item.variant_id }
+            });
+
+            if (!currentVariant || currentVariant.stock < item.quantity) {
+              throw new Error(`Insufficient stock for variant: ${item.product_variant.title}`);
+            }
+
+            // Trừ stock trong variant
+            await tx.product_variant.update({
+              where: { id: item.variant_id },
+              data: {
+                stock: {
+                  decrement: item.quantity
+                }
+              }
+            });
+            
+          } else {
+            // Kiểm tra stock trước khi trừ
+            const currentProduct = await tx.product.findUnique({
+              where: { id: item.product_id }
+            });
+
+            if (!currentProduct || currentProduct.stock < item.quantity) {
+              throw new Error(`Insufficient stock for product: ${item.product.title}`);
+            }
+
+            // Trừ stock trực tiếp trong product
+            await tx.product.update({
+              where: { id: item.product_id },
+              data: {
+                stock: {
+                  decrement: item.quantity
+                }
+              }
+            });
           }
         }
-      } else {
-        console.warn('Seller accepted order but shipping_order not found:', id);
       }
-    }
 
-    // Gửi email cho buyer
-    const buyerEmail = updatedSellerOrder.orders.user?.email;
+      // 4. Cộng lại stock nếu đơn hàng bị hủy và trước đó đã được xác nhận
+      if (status === 'cancelled' && sellerOrder.seller_status === 'processing') {
+        for (const item of sellerOrder.orders.order_item) {
+          // Kiểm tra xem sản phẩm này có thuộc về seller không
+          if (item.product.seller_id !== seller_id) {
+            continue;
+          }
+
+          if (item.variant_id && item.product_variant) {
+            // Cộng stock trong variant
+            await tx.product_variant.update({
+              where: { id: item.variant_id },
+              data: {
+                stock: {
+                  increment: item.quantity
+                }
+              }
+            });
+            
+          } else {
+            // Cộng stock trực tiếp trong product
+            await tx.product.update({
+              where: { id: item.product_id },
+              data: {
+                stock: {
+                  increment: item.quantity
+                }
+              }
+            });
+          }
+        }
+      }
+
+      // 5. Xử lý tạo đơn GHN khi seller accepted
+      if (status === 'accepted') {
+        const shippingOrder = sellerOrder.shipping_order;
+        if (shippingOrder) {
+          if (!shippingOrder.ghn_order_code) {
+            try {
+              const { retryShippingOrder } = await import('../../services/shippingRetry.service');
+              await retryShippingOrder({ shippingOrderId: shippingOrder.id, maxRetries: 2 });
+            } catch (retryError) {
+              console.error('Failed to trigger GHN order creation after seller accepted:', retryError);
+            }
+          }
+        } else {
+          console.warn('Seller accepted order but shipping_order not found:', id);
+        }
+      }
+
+      return updatedSellerOrder;
+    });
+
+    // 6. Gửi email cho buyer
+    const buyerEmail = result.orders.user?.email;
     if (buyerEmail) {
       const html = `
         <h2>Đơn hàng cập nhật trạng thái</h2>
-        <p>Mã đơn: ${updatedSellerOrder.orders.id}</p>
-        <p>Trạng thái của shop ${req.seller?.name}: ${updatedSellerOrder.seller_status}</p>
+        <p>Mã đơn: ${result.orders.id}</p>
+        <p>Trạng thái của shop ${req.seller?.name}: ${result.seller_status}</p>
       `;
-      await sendEmail(buyerEmail, 'Cập nhật trạng thái đơn hàng', html);
+      await sendEmail(buyerEmail, 'Cập nhật trạng thái đơn hàng', html).catch(err => 
+        console.error('Failed to send email:', err)
+      );
     }
 
-    // Gửi tin nhắn hệ thống trong chat thread (nếu status là accepted, completed, hoặc cancelled)
-    if (updatedSellerOrder.orders.user_id && ['accepted', 'completed', 'cancelled'].includes(status)) {
+    // 7. Gửi tin nhắn hệ thống trong chat thread
+    if (result.orders.user_id && ['accepted', 'completed', 'cancelled'].includes(status)) {
       try {
-        // Tìm hoặc tạo thread giữa user và seller
         const thread = await createThreadIfNotExist(
-          updatedSellerOrder.orders.user_id,
+          result.orders.user_id,
           seller_id
         );
 
-        // Gửi tin nhắn hệ thống
-        await sendSystemMessage(thread.id, updatedSellerOrder.order_id, status);
+        await sendSystemMessage(thread.id, result.order_id, status);
       } catch (chatError) {
-        // Log lỗi nhưng không fail request nếu chat có vấn đề
         console.error('Error sending system message:', chatError);
       }
     }
 
-    return res.json({ sellerOrder: updatedSellerOrder });
-  } catch (error) {
+    return res.json({ 
+      message: 'Order status updated successfully',
+      sellerOrder: result 
+    });
+
+  } catch (error: any) {
     console.error('updateSellerOrderStatusController error:', error);
+    
+    // Xử lý lỗi stock không đủ
+    if (error.message?.includes('Insufficient stock')) {
+      return res.status(400).json({ 
+        message: error.message 
+      });
+    }
+    
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

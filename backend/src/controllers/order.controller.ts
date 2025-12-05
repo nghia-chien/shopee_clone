@@ -177,7 +177,7 @@ async function validateVoucherForCart(
   // For PLATFORM vouchers, allow usage without saving first
   // For other vouchers, require saving first
   // PLATFORM vouchers are those with source='ADMIN' or type='PLATFORM'
-  const isPlatformVoucher = voucher.source === 'ADMIN' || voucher.type === 'PLATFORM';
+  const isPlatformVoucher = voucher.source === 'ADMIN' || voucher.type === 'PLATFORM' || voucher.product_id !== null;
   
   let savedVoucher = await prisma.user_vouchers.findUnique({
     where: {

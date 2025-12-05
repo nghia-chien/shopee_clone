@@ -463,6 +463,15 @@ export async function createGhnOrderInternal(params: {
  * Test xem GHN có chấp nhận địa chỉ này không bằng cách tính phí vận chuyển
  * Nếu tính được phí → địa chỉ hợp lệ
  */
+interface GhnFeeResponse {
+  total?: number;
+  leadtime?: number;
+  data?: {
+    total?: number;
+    leadtime?: number;
+  };
+}
+
 export async function preValidateGhnOrder(params: {
   to_name: string;
   to_phone: string;
@@ -511,9 +520,9 @@ export async function preValidateGhnOrder(params: {
           from_district_id: validated.from_district_id,
           to_district_id: validated.to_district_id,
           weight: validated.weight,
-          service_id: 53321, // Standard service
+          service_id: 53321,
         },
-      });
+      }) as GhnFeeResponse; // Ép kiểu ở đây
 
       // Kiểm tra response structure
       const total = feeResponse?.total || feeResponse?.data?.total;
@@ -521,17 +530,9 @@ export async function preValidateGhnOrder(params: {
 
       // Nếu tính được phí → địa chỉ hợp lệ
       if (total !== undefined && total !== null) {
-        console.log('✅ Pre-validation passed:', {
-          shippingFee: total,
-          estimatedTime: leadtime,
-        });
-
         return {
           valid: true,
-          details: {
-            shippingFee: total,
-            estimatedTime: leadtime,
-          },
+          details: { shippingFee: total, estimatedTime: leadtime },
         };
       }
 

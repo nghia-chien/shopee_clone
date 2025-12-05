@@ -7,7 +7,6 @@ import {
   Package,
   Users,
   ShoppingCart,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -40,7 +39,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     // Action Management
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
     { icon: AlertTriangle, label: "Khiếu nại", path: "/admin/complaints" },
-    { icon: Settings, label: "Cài Đặt", path: "/admin/settings" },
     // Data Management (Refine CRUD)
     { icon: Package, label: "Sản Phẩm", path: "/admin/products" },
     { icon: FolderTree, label: "Danh Mục", path: "/admin/categories" },

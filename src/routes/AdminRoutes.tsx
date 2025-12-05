@@ -1,5 +1,5 @@
 // AdminRoutes.tsx
-import { RefineApp } from "../admin/RefineApp";
+import { RefineApp } from "./RefineApp";
 
 export function AdminRoutes() {
   return <RefineApp />;
