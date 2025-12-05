@@ -54,20 +54,20 @@ export const SellerReview = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('review.seller_reviews') || 'Đánh giá sản phẩm'}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{ 'Đánh giá sản phẩm'}</h1>
         <p className="text-sm text-gray-600 mt-1">
-          {t('review.manage_reviews') || 'Quản lý và phản hồi đánh giá từ khách hàng'}
+          { 'Quản lý và phản hồi đánh giá từ khách hàng'}
         </p>
       </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="text-sm text-gray-600">{t('review.total_reviews') || 'Tổng đánh giá'}</div>
+          <div className="text-sm text-gray-600">{ 'Tổng đánh giá'}</div>
           <div className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</div>
         </div>
         <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="text-sm text-gray-600">{t('review.avg_rating') || 'Đánh giá trung bình'}</div>
+          <div className="text-sm text-gray-600">{'Đánh giá trung bình'}</div>
           <div className="flex items-center gap-1 mt-1">
             <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
             <span className="text-2xl font-bold text-gray-900">
@@ -76,11 +76,11 @@ export const SellerReview = () => {
           </div>
         </div>
         <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="text-sm text-gray-600">{t('review.replied') || 'Đã phản hồi'}</div>
+          <div className="text-sm text-gray-600">{ 'Đã phản hồi'}</div>
           <div className="text-2xl font-bold text-green-600 mt-1">{stats.replied}</div>
         </div>
         <div className="bg-white p-4 rounded-lg border shadow-sm">
-          <div className="text-sm text-gray-600">{t('review.not_replied') || 'Chưa phản hồi'}</div>
+          <div className="text-sm text-gray-600">{ 'Chưa phản hồi'}</div>
           <div className="text-2xl font-bold text-orange-600 mt-1">{stats.notReplied}</div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export const SellerReview = () => {
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-600" />
             <span className="text-sm font-medium text-gray-700">
-              {t('review.filter') || 'Lọc:'}
+              { 'Lọc:'}
             </span>
           </div>
 
@@ -102,7 +102,7 @@ export const SellerReview = () => {
               onChange={(e) => setSelectedProductId(e.target.value || undefined)}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="">{t('review.all_products') || 'Tất cả sản phẩm'}</option>
+              <option value="">{ 'Tất cả sản phẩm'}</option>
               {productsFromReviews.map((product: any) => (
                 <option key={product.id} value={product.id}>
                   {product.title}
@@ -121,7 +121,7 @@ export const SellerReview = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              {t('review.all') || 'Tất cả'}
+              {'Tất cả'}
             </button>
             <button
               onClick={() => setFilterReplied('replied')}
@@ -132,7 +132,7 @@ export const SellerReview = () => {
               }`}
             >
               <MessageSquare className="w-4 h-4 inline mr-1" />
-              {t('review.replied') || 'Đã phản hồi'}
+              { 'Đã phản hồi'}
             </button>
             <button
               onClick={() => setFilterReplied('not_replied')}
@@ -142,7 +142,7 @@ export const SellerReview = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              {t('review.not_replied') || 'Chưa phản hồi'}
+              { 'Chưa phản hồi'}
             </button>
           </div>
         </div>

@@ -104,36 +104,6 @@ export const getProductsByCategorySlug = async (req: Request, res: Response) => 
 };
 
 
-// Bản đồ slug → icon
-const iconMap: Record<string, string> = {
-  "thoi-trang-nam": "👔",
-  "thoi-trang-nu": "👗",
-  "thoi-trang-tre-em": "🧒",
-  "dien-thoai-phu-kien": "📱",
-  "thiet-bi-dien-tu": "💻",
-  "may-tinh-laptop": "🖥️",
-  "may-anh-may-quay": "📷",
-  "dong-ho": "⌚",
-  "giay-dep-nam": "👞",
-  "giay-dep-nu": "👠",
-  "tui-vi-nu": "🛍️",
-  "balo-tui-vi-nam": "👜",
-  "phu-kien-trang-suc-nu": "💍",
-  "nha-cua-doi-song": "🏠",
-  "sac-dep": "💄",
-  "suc-khoe": "🩺",
-  "bach-hoa-online": "🛒",
-  "nha-sach-online": "📚",
-  "do-choi": "🧸",
-  "cham-soc-thu-cung": "🐶",
-  "dung-cu-tien-ich": "🔧",
-  "giat-giu-cham-soc-nha-cua": "🧹",
-  "voucher-dich-vu": "🎟️",
-  "oto-xe-may-xe-dap": "🚗",
-  "the-thao-du-lich": "🏖️",
-  "thiet-bi-dien-gia-dung": "🔌",
-};
-
 export const getCategories = async (req: Request, res: Response) => {
   try {
     const categories = await prisma.category.findMany({
@@ -141,13 +111,18 @@ export const getCategories = async (req: Request, res: Response) => {
         id: true,
         name: true,
         slug: true,
+        image: true,
+        level : true,
       },
       orderBy: { name: "asc" },
     });
 
-    const result = categories.map(c => ({
-      ...c,
-      icon: iconMap[c.slug] || "❓", // Nếu chưa map thì dùng ❓
+    const result = categories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      image: cat.image,
+      level: cat.level,
     }));
 
     res.json(result);

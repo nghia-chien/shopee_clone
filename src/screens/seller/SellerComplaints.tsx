@@ -68,7 +68,7 @@ export default function SellerComplaintsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Khiếu nại & Báo cáo</h1>
-          <p className="text-sm text-gray-500">Theo dõi khiếu nại từ người mua và tạo báo cáo lên Admin.</p>
+        
         </div>
         <button
           onClick={openDraft}

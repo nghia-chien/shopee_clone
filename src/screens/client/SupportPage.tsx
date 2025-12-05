@@ -1,13 +1,15 @@
 import { HomeLayout } from "../../components/layout/HomeLayout";
 import { AlertCircle, HelpCircle, MessageCircle, ShieldCheck, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Header } from "../../components/layout/Header";
 
 export default function SupportPage() {
   const navigate = useNavigate();
 
   return (
-    <HomeLayout>
+    
       <div className="bg-gradient-to-b from-orange-50/80 to-white">
+      <Header/>
         <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
           {/* Hero */}
           <header className="flex flex-col md:flex-row items-center gap-8">
@@ -156,7 +158,7 @@ export default function SupportPage() {
           </section>
         </div>
       </div>
-    </HomeLayout>
+    
   );
 }
 

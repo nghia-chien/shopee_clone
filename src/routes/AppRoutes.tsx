@@ -17,7 +17,7 @@ import  {UserLayout}  from "../components/layout/UserLayout";
 import {AuthGuard} from  "../components/auth/AuthGuard";
 import VoucherPage from "../screens/client/VoucherPage";
 import ComplaintsPage from "../screens/client/Complaints";
-import { RefineApp } from "../admin/RefineApp";
+import { RefineApp } from "./RefineApp";
 import EventPage from "../screens/client/EventPage";
 import TestPage from "../screens/client/xyz";
 import SupportPage from "../screens/client/SupportPage";
@@ -25,7 +25,6 @@ export function AppRoutes() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-
       <Routes>
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
@@ -39,17 +38,17 @@ export function AppRoutes() {
             </AuthGuard>
           }
         >
-
-
           {/* User pages */}
           <Route path="/user/profile" element={<AccountPage />} />
           <Route path="/user/vouchers" element={<VoucherPage />} />
           <Route path="/user/complaints" element={<ComplaintsPage />} />
           <Route path="/user/orders" element={<OrdersPage />} />
         </Route>
-          {/* Các page yêu cầu login */}
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+
+        {/* Các page yêu cầu login */}
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+
         {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/category/:slug" element={<CategoryPage />} />
@@ -64,7 +63,7 @@ export function AppRoutes() {
         {/* Seller */}
         <Route path="/seller/*" element={<SellerRoutes />} />
 
-        {/* Admin */}
+        {/* Admin - QUAN TRỌNG: Route chính cho admin */}
         <Route path="/admin/*" element={<RefineApp />} />
 
         {/* 404 fallback */}
@@ -73,4 +72,3 @@ export function AppRoutes() {
     </BrowserRouter>
   );
 }
-
