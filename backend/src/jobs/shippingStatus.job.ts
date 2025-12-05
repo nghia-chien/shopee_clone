@@ -16,7 +16,7 @@ export async function syncPendingShippingOrders({
     where: {
       ghn_order_code: { not: null },
       // Đồng bộ cho tất cả đơn GHN còn đang hoạt động (chưa kết thúc)
-      status: { in: ['pending', 'created', 'retrying'] },
+      status: { in: ['pending', 'created'] },
     },
     select: {
       id: true,
