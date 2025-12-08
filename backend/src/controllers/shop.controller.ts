@@ -37,6 +37,7 @@ export const getProductsBySeller = async (req: Request, res: Response) => {
       title: p.title,
       price: p.price,
       images: p.images,
+      rating: p.rating,
       seller_name: p.seller?.name || "Không rõ",
       category: p.category
         ? { id: p.category.id, name: p.category.name }
@@ -49,7 +50,6 @@ export const getProductsBySeller = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi server khi lấy sản phẩm" });
   }
 };
-
 export const getShopInfo = async (req: Request, res: Response) => {
   try {
     const { seller_id } = req.params;

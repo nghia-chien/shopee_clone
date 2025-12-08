@@ -376,7 +376,7 @@ const addressSelectorKey = useMemo(() => editingAddress ? `edit-${editingAddress
 
   const handleAddressSubmit = () => {
     if (!addressForm.full_name || !addressForm.phone || !addressForm.address_line || !addressForm.city || !addressForm.district || !addressForm.ward) {
-      alert("Vui lòng điền đầy đủ thông tin!");
+     
       return;
     }
 
@@ -477,8 +477,8 @@ const addressSelectorKey = useMemo(() => editingAddress ? `edit-${editingAddress
           </div>
 
           {showAddressForm && (
-            <div className="rounded-2xl border-2 border-orange-200 bg-orange-50 p-6 space-y-4">
-              <h3 className="font-semibold text-gray-900 text-lg">
+            <div className="rounded-2xl text-start  border-2 border-orange-200 bg-orange-50 p-6 space-y-4">
+              <h3 className="font-semibold text-center text-gray-900 text-lg">
                 {editingAddress ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
               </h3>
               <div className="grid gap-4">
@@ -513,7 +513,7 @@ const addressSelectorKey = useMemo(() => editingAddress ? `edit-${editingAddress
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tỉnh/Thành phố - Quận/Huyện - Phường/Xã *</label>
+                  <label className="block text-sm font-medium text-center text-gray-700 mb-2">Tỉnh/Thành phố - Quận/Huyện - Phường/Xã *</label>
                   <AddressSelector
                     key={addressSelectorKey}
                     includeStreetInput={false}

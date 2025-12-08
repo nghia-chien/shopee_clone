@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery,useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/userapi/client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Header } from "../../components/layout/Header";
 import { Footer } from "../../components/layout/Footer";
 import { useTranslation } from "react-i18next";
@@ -11,6 +11,7 @@ import { ReviewSection } from "../../components/review/ReviewSection";
 import { useAuthStore } from "../../store/auth";
 import { useNavigate } from "react-router-dom";
 
+
 export function ProductPage() {
   const { t } = useTranslation();
   const params = useParams();
@@ -19,10 +20,11 @@ export function ProductPage() {
   const { token } = useAuthStore();
   const navigate = useNavigate();
   const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
+  const queryClient = useQueryClient();
+  const lastUpdateId = useRef<number>(0); 
+  const [isAddingToCart, setIsAddingToCart] = useState(false); 
 
-
-  // Lấy dữ liệu sản phẩm theo id
-  // Giả định cấu trúc data: {..., title, rating, reviews, sold, price, discount, images: [], description, tags: [], stock, seller: {logo, name, address}}
+  
   const { data } = useQuery({
     queryKey: ["product", params.id],
     queryFn: () => api<any>(`/products/${params.id}`),
@@ -60,19 +62,22 @@ export function ProductPage() {
 
   if (!data) return <div className="p-4 text-center">{t("product.loading")}</div>;
 
-// (Yêu cầu 3) Tính giá sau giảm giá
   const priceToShow = selectedVariant?.price ?? data.price;
   const discountToShow = selectedVariant?.discount ?? data.discount;
-  
+
   const priceAfterDiscount = discountToShow
     ? (priceToShow * (100 - discountToShow)) / 100
     : priceToShow;
 
-  const addToCart = async () => {
+    const addToCart = async () => {
+    if (isAddingToCart) return; 
+    
     if (!token) {
       navigate('/login');
       return;
     }
+    
+    setIsAddingToCart(true);
     
     // Đảm bảo variant_id là null thay vì undefined
     const requestBody = {
@@ -81,13 +86,23 @@ export function ProductPage() {
       quantity 
     };
     
-    console.log('📦 Thông tin gửi lên API:', requestBody);
-    console.log('🔑 Token:', token ? 'Có token' : 'Không có token');
-    console.log('🆔 Product ID:', params.id);
-    console.log('🎨 Variant ID:', selectedVariant?.id);
-    console.log('📊 Quantity:', quantity);
-    
     try {
+
+      const updateId = Date.now(); 
+      lastUpdateId.current = updateId; 
+      
+      queryClient.setQueryData<number>(["cart-count"], (oldCount = 0) => {
+        // Chỉ update nếu đây là update mới nhất (tránh race condition)
+        if (updateId >= lastUpdateId.current) {
+          const newCount = oldCount + quantity;
+          return newCount;
+        }
+        // Nếu có update mới hơn, giữ nguyên
+        console.log(`⏸️  Skip update [${updateId}], newer update exists`);
+        return oldCount;
+      });
+      
+      // 2. Gọi API thêm sản phẩm
       await api(`/cart/items`, {
         method: 'POST',
         headers: { 
@@ -96,11 +111,24 @@ export function ProductPage() {
         },
         body: JSON.stringify(requestBody),
       });
-      alert('Đã thêm vào giỏ hàng');
+      
+      // 3. Refetch để đồng bộ với server
+      await queryClient.refetchQueries({ queryKey: ["cart-count"] });
       
     } catch (err: any) {
+      // 4. Nếu lỗi, ROLLBACK lại state cũ
       console.error('❌ Lỗi khi gọi API:', err);
+      
+      // Rollback atomic
+      queryClient.setQueryData<number>(["cart-count"], (oldCount = 0) => {
+        const newCount = Math.max(0, oldCount - quantity);
+        console.log(`↩️  Rollback: ${oldCount} → ${newCount}`);
+        return newCount;
+      });
+      
       alert(err?.message || 'Lỗi thêm giỏ hàng');
+    } finally {
+      setIsAddingToCart(false); // Mở khóa nút
     }
   };
 
@@ -190,10 +218,10 @@ export function ProductPage() {
 
 
           {/* (Yêu cầu 4) Voucher + vận chuyển */}
-          <div className="border-t border-b py-2 text-sm text-left text-gray-700">
+          {/* <div className="border-t border-b py-2 text-sm text-left text-gray-700">
             <div>{t("product.voucher")}: <span className="text-orange-600">Giảm 2k, 3k</span></div>
             <div>{t("product.shipping")}: <span>Miễn phí đơn từ 50k</span></div>
-          </div>
+          </div> */}
           {/* chọn size */}
           {data.product_variant?.length > 0 && (
             <div className="flex text-xs items-center gap-3 pt-2">
@@ -240,8 +268,13 @@ export function ProductPage() {
 
           {/* Nút hành động */}
           <div className="flex items-center gap-3 pt-3">
-            <button onClick={addToCart} className="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded">
-              {t("product.add_to_cart")}
+            <button onClick={addToCart} 
+      disabled={isAddingToCart}
+      className={`px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded ${
+        isAddingToCart ? 'opacity-50 cursor-not-allowed' : ''
+      }`}
+    >
+      {isAddingToCart ? 'Đang thêm...' : t("product.add_to_cart")}
             </button>
             <button onClick={buyNow} className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded">
               {t("product.buy_now")}
@@ -277,7 +310,6 @@ export function ProductPage() {
         <h2 className="text-lg font-semibold mb-3">{t("product.product_details")}</h2>
         <div className="text-sm text-gray-700 space-y-2">
           <div>• Tags: {data.tags?.join(", ") || t("updating")}</div>
-          <div>• {t("product.stock")}: {data.stock > 0 ? 'Còn hàng' : 'Hết hàng'}</div>
           <div>• {t("product.seller_name")}: {data.seller?.name || t("updating")}</div>
         </div>
       </div>

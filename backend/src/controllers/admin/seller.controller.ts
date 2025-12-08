@@ -55,6 +55,7 @@ export async function getAllSellersController(req: Request, res: Response) {
           rating: true,
           created_at: true,
           updated_at: true,
+          shop_mall: true,
           _count: {
             select: {
               product: true,
@@ -221,6 +222,7 @@ export async function updateSellerController(req: Request, res: Response) {
         address: true,
         created_at: true,
         updated_at: true,
+        shop_mall: true,
       },
     });
 
@@ -247,7 +249,8 @@ export async function deleteSellerController(req: Request, res: Response) {
 
     return res.json({ message: 'Xóa seller thành công' });
   } catch (err: any) {
-    console.error('❌ deleteSellerController error:', err);
+    console.error('❌ deleteUserController error:', err.message);
+  console.error(err);
     return res.status(500).json({ error: 'Lỗi server' });
   }
 }

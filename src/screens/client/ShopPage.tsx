@@ -14,6 +14,7 @@ interface Product {
   id: string;
   title: string;
   price: number;
+  rating: number,
   images: string[];
   category?: { id: string; name: string } | string | null;
   seller_name?: string;
@@ -23,7 +24,8 @@ interface ShopSummary {
   shop_id: string;
   shop_name: string;
   total_products: number;
-  avg_rating: number | null;
+  avg_rating: number  ;
+  avatar?: string; // thêm logo nếu có
 }
 
 export default function ShopPage() {
@@ -54,11 +56,29 @@ export default function ShopPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-
+        
+        console.log(`🔄 Fetching shop: ${seller_id}`);
+  
+        // 1. Shop info
         const shopRes = await api<{ shop: ShopSummary }>(`/shops/${seller_id}`);
+        console.log('🏪 Shop API:', shopRes);
+        console.log('⭐ Shop rating:', shopRes.shop?.avg_rating);
         setShopInfo(shopRes.shop);
-
+  
+        // 2. Products
         const productRes = await api<{ items: Product[] }>(`/shops/${seller_id}/products`);
+        console.log('📦 Products API:', productRes);
+        
+        if (productRes.items?.[0]) {
+          const firstProduct = productRes.items[0];
+          console.log('🔍 First product:', {
+            ...firstProduct,
+            hasRating: 'rating' in firstProduct,
+            ratingValue: firstProduct.rating,
+            hasSold: 'sold' in firstProduct,
+          });
+        }
+        
         const items = productRes.items || [];
         setProducts(items);
 
@@ -159,14 +179,13 @@ const filteredShopVouchers = useMemo(() => {
             shop_id: shopInfo.shop_id,
             shop_name: shopInfo.shop_name,
             total_products: shopInfo.total_products,
-            avg_rating: typeof shopInfo.avg_rating === "number" ? shopInfo.avg_rating : 0,
+            avg_rating:Number(shopInfo.avg_rating) || 0,
+            avatar: shopInfo.avatar || ""  // ✅ Thêm avatar
           }]}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
-          <div className="md:col-span-3 bg-white rounded-lg shadow-sm border p-4">
-            <h3 className="text-lg font-semibold mb-3">🎟️ Voucher của shop</h3>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 bg-white">
             {filteredShopVouchers.length ? (
               filteredShopVouchers.map((v) => {
                 const voucherId = String(v.id);
@@ -200,13 +219,11 @@ const filteredShopVouchers = useMemo(() => {
                   </div>
                 );
               })
-            ) : (
-              <p className="text-gray-500 text-sm">Chưa có voucher nào</p>
-            )}
+            ) : null }
 
             </div>
           </div>
-        </div>
+        
 
         {categories.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-8 mb-6">

@@ -28,7 +28,6 @@ interface CartProduct {
   title?: string;
   images?: string[];
   price: number;
-  stock: number;
 }
 
 interface CartProductVariant {
@@ -40,7 +39,6 @@ interface CartProductVariant {
 
 interface CartItem {
   id: string;
-  product_id: string;
   quantity: number;
   product: CartProduct;
   variant?: CartProductVariant;
@@ -52,6 +50,9 @@ interface ShopInfo {
   phone_number?: string;
   address?: string;
   follower_count?: string;
+  avg_rating?:number;
+  avatar?:string;
+  shop_mall?:string | 'bth';
 }
 
 type PaymentMethod = 'COD' | 'PAYPAL';
@@ -92,11 +93,6 @@ function evaluateVoucher(
 ): { discount: number; base: number } | null {
   const now = Date.now();
   
-  console.log('🔍 Evaluating voucher in Checkout:', voucher.code, {
-    source: voucher.source,
-    seller_id: voucher.seller_id,
-    product_id: voucher.product_id
-  });
 
   if (voucher.status !== 'ACTIVE') return null;
   if (now < new Date(voucher.start_at).getTime() || now > new Date(voucher.end_at).getTime()) {
@@ -104,29 +100,16 @@ function evaluateVoucher(
   }
 
   let applicableItems = [...items];
-  
-  console.log('🛒 Items for evaluation:', applicableItems.map(it => ({
-    product_id: it.product.id,
-    seller_id: it.product.seller_id,
-    title: it.product.title
-  })));
 
-  // Filter by seller if it's a seller voucher
   if (voucher.source !== 'ADMIN') {
-    const beforeSeller = applicableItems.length;
     applicableItems = applicableItems.filter((it) => it.product.seller_id === voucher.seller_id);
-    console.log(`🏪 Seller filter: ${beforeSeller} → ${applicableItems.length}`);
   }
-  
-  // ✅ SỬA: Dùng it.product.id thay vì it.product_id
+
   if (voucher.product_id) {
-    const beforeProduct = applicableItems.length;
     applicableItems = applicableItems.filter((it) => it.product.id === voucher.product_id);
-    console.log(`📦 Product filter: ${beforeProduct} → ${applicableItems.length}`);
   }
   
   if (applicableItems.length === 0) {
-    console.log('❌ No applicable items after filtering');
     return null;
   }
 
@@ -142,29 +125,22 @@ function evaluateVoucher(
 
   const minOrder = Number(voucher.min_order_amount ?? 0);
   if (minOrder > 0 && base < minOrder) {
-    console.log(`❌ Min order not met: ${base} < ${minOrder}`);
     return null;
   }
-
   let discount =
     voucher.discount_type === 'PERCENT'
       ? (base * Number(voucher.discount_value)) / 100
       : Number(voucher.discount_value);
       
-  console.log('🎯 Discount before limits:', discount);
 
   if (voucher.discount_type === 'PERCENT' && voucher.max_discount_amount) {
     discount = Math.min(discount, Number(voucher.max_discount_amount));
-    console.log('📉 Discount after max limit:', discount);
   }
   
   discount = Math.min(discount, base);
   if (discount <= 0) {
-    console.log('❌ Discount <= 0');
     return null;
   }
-  
-  console.log('✅ Voucher applicable, discount:', discount);
   return { discount, base };
 }
 
@@ -180,7 +156,6 @@ export function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [shippingOption, setShippingOption] = useState<string>(SHIPPING_OPTIONS[0].id);
-  const [notes, setNotes] = useState<Record<string, string>>({}); // Store notes per item
   const [shopInfos, setShopInfos] = useState<Record<string, ShopInfo>>({});
   const [voucherEntries, setVoucherEntries] = useState<UserVoucherEntry[]>([]);
   const [fetchingVoucher, setFetchingVoucher] = useState(false);
@@ -277,8 +252,11 @@ export function CheckoutPage() {
   }, [token]);
 
   useEffect(() => {
+    console.log('useEffect chạy, token:', token);
     loadAddresses();
-  }, [loadAddresses]);
+  }, [token]); // Thay vì [loadAddresses]
+  
+  console.log('Component re-render'); // Xem re-render bao nhiêu lần
 
   // Load shop information
   useEffect(() => {
@@ -362,12 +340,6 @@ export function CheckoutPage() {
       try {
         setPlacingOrder(true);
         
-        // Prepare order items with notes
-        const orderItems = items.map(item => ({
-          cart_item_id: item.id,
-          note: notes[item.id] || '',
-        }));
-
         await api('/orders', {
           method: 'POST',
           headers: { 
@@ -379,16 +351,13 @@ export function CheckoutPage() {
             voucher_code: preselectedVoucher || undefined,
             payment_method: paymentMethod,
             shipping_option: shippingOption,
-            notes: notes,
             address_id: defaultAddress.id,
             paypal_order_id: options?.paymentIntent,
           }),
         });
-        alert('Đặt hàng thành công');
         navigate('/user/orders');
       } catch (error: any) {
         console.error('Đặt hàng thất bại:', error);
-        alert(error?.message || 'Đặt hàng thất bại');
       } finally {
         setPlacingOrder(false);
       }
@@ -397,7 +366,6 @@ export function CheckoutPage() {
       cartItemIds,
       defaultAddress,
       navigate,
-      notes,
       paymentMethod,
       preselectedVoucher,
       shippingOption,
@@ -444,13 +412,6 @@ export function CheckoutPage() {
     }
   };
 
-  // Handle note change for individual items
-  const handleNoteChange = (itemId: string, note: string) => {
-    setNotes(prev => ({
-      ...prev,
-      [itemId]: note
-    }));
-  };
 
   // PayPal integration
   const ensurePaypalScript = useCallback(() => {
@@ -650,21 +611,34 @@ export function CheckoutPage() {
                   Khu vực (Tỉnh/Thành phố - Quận/Huyện - Phường/Xã) *
                 </label>
                 <AddressSelector
-                  key="checkout-address-form"
-                  includeStreetInput={false}
-                  showLabels={false}
-                  onAddressChange={(location) => {
-                    setAddressForm((prev) => ({
-                      ...prev,
-                      city: location.provinceName || "",
-                      district: location.districtName || "",
-                      ward: location.wardName || "",
-                      province_id: location.provinceId || undefined,
-                      district_id: location.districtId || undefined,
-                      ward_code: location.wardCode || undefined,
-                    }));
-                  }}
-                />
+  key="checkout-address-form"
+  includeStreetInput={false}
+  showLabels={false}
+  onAddressChange={(location) => {
+    // Chỉ cập nhật nếu giá trị thực sự thay đổi
+    setAddressForm((prev) => {
+      const hasChanged = 
+        prev.city !== location.provinceName ||
+        prev.district !== location.districtName ||
+        prev.ward !== location.wardName ||
+        prev.province_id !== location.provinceId ||
+        prev.district_id !== location.districtId ||
+        prev.ward_code !== location.wardCode;
+      
+      if (!hasChanged) return prev;
+      
+      return {
+        ...prev,
+        city: location.provinceName || "",
+        district: location.districtName || "",
+        ward: location.wardName || "",
+        province_id: location.provinceId || undefined,
+        district_id: location.districtId || undefined,
+        ward_code: location.wardCode || undefined,
+      };
+    });
+  }}
+/>
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -704,7 +678,6 @@ export function CheckoutPage() {
             <div className="col-span-2 text-center">Đơn giá</div>
             <div className="col-span-2 text-center">Số lượng</div>
             <div className="col-span-2 text-center">Thành tiền</div>
-            <div className="col-span-1 text-center">Ghi chú</div>
           </div>
           {loading ? (
             <div className="p-6 text-center text-gray-500">Đang tải sản phẩm...</div>
@@ -735,7 +708,7 @@ export function CheckoutPage() {
                               {item.product.images?.[0] ? (
                                 <img
                                   src={item.product.images[0]}
-                                  alt={item.product.title || item.product_id}
+                                  alt={item.product.title || item.product.id}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -746,16 +719,14 @@ export function CheckoutPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-gray-900 line-clamp-2 font-medium">
-                                {item.product.title || item.product_id}
+                                {item.product.title || item.product.id}
                               </p>
                               {item.variant && (
                                 <p className="text-xs text-gray-500 mt-1">
                                   Phân loại: {item.variant.title}
                                 </p>
                               )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                {item.product.stock > 0 ? '🟢 Còn hàng' : '🔴 Hết hàng'}
-                              </p>
+                              
                             </div>
                           </div>
                           <div className="col-span-2 text-center text-gray-900 font-medium">
@@ -767,16 +738,7 @@ export function CheckoutPage() {
                           <div className="col-span-2 text-center text-orange-500 font-semibold">
                             ₫{itemTotal.toLocaleString('vi-VN')}
                           </div>
-                          <div className="col-span-1 text-center">
-                            <input
-                              type="text"
-                              placeholder="Ghi chú..."
-                              value={notes[item.id] || ''}
-                              onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                              className="w-full border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-                              maxLength={100}
-                            />
-                          </div>
+                          
                         </div>
                       );
                     })}
@@ -905,7 +867,7 @@ export function CheckoutPage() {
                   ref={paypalContainerRef}
                   className="w-full min-h-[48px] border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-xs text-gray-500 bg-gray-50"
                 >
-                  {paypalReady ? 'Đang tải PayPal...' : 'Nút thanh toán PayPal sẽ xuất hiện ở đây'}
+                  {paypalReady ? 'Đang tải PayPal...' : 'Paypal đang xác nhận đơn vui lòng chờ...'}
                 </div>
               )}
               {paypalError && (

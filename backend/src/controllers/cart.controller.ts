@@ -21,6 +21,7 @@ export async function listcart_itemsController(req: Request & { user?: { id: str
             discount: true,
             images: true,
             seller_id: true, // ← THÊM DÒNG NÀY
+            stock: true,
           }
         },
         product_variant: true,
@@ -38,6 +39,7 @@ export async function listcart_itemsController(req: Request & { user?: { id: str
         price: Number(item.product.price),
         discount: Number(item.product.discount || 0),
         images: item.product.images,
+        stock: item.product.stock,
       },
       variant: item.product_variant
         ? {

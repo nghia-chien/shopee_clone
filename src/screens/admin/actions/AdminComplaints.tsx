@@ -55,29 +55,22 @@ export function AdminComplaints() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Quản lý khiếu nại</h1>
-          <p className="text-sm text-gray-500">
-            Tổng quan trạng thái NEW / IN_PROGRESS / RESOLVED / REJECTED.
-          </p>
-        </div>
-        <button
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          Làm mới
-        </button>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-5">
         {overview.map((item) => (
           <div key={item.status} className="rounded-2xl border bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase text-gray-500">{item.status}</p>
             <p className="mt-1 text-3xl font-semibold text-gray-900">{item.total}</p>
           </div>
         ))}
+          
+            <button
+              onClick={() => refetch()}
+              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-2xl font-medium text-blue-700 hover:bg-gray-50"
+            >
+              <RefreshCw className={`h-5 w-5 ${isFetching ? 'animate-spin' : ''}`} />
+              Làm mới
+            </button>
+          
       </div>
 
       <div className="rounded-2xl border bg-white p-4 shadow-sm">

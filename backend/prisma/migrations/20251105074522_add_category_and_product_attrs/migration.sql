@@ -72,7 +72,6 @@ CREATE TABLE "product" (
     "images" TEXT[],
     "seller_id" TEXT NOT NULL,
     "category_id" TEXT,
-    "dimensions" JSONB,
     "discount" DECIMAL(10,2) DEFAULT 0,
     "rating" DOUBLE PRECISION DEFAULT 0,
     "reviews_count" INTEGER DEFAULT 0,

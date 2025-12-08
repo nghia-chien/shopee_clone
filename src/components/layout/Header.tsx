@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../../store/auth";
 import { useSellerAuthStore } from "../../store/SellerAuth";
-import { exchangeSellerToken } from "../../api/sellerapi/seller";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/userapi/client"; // hoặc hàm gọi fetch riêng bạn dùng
 import  SearchBar  from "../home/SearchBar";
+import {  useQueryClient } from '@tanstack/react-query';
+
 
 interface Product {
   id: string;
@@ -44,8 +45,8 @@ export const Header: React.FC = () => {
     window.addEventListener("resize", updateCount);
     return () => window.removeEventListener("resize", updateCount);
   }, []);
-
-// --- Cart count ---
+  const queryClient = useQueryClient();
+  // --- Cart count --- 
   const { data: cartCount = 0 } = useQuery({
       queryKey: ["cart-count"],
       queryFn: async () => {

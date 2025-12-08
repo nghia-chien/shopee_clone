@@ -209,19 +209,17 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-1">
       {/* Header Section */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">
-              Analytics Dashboard
-            </h1>
-            <p className="text-gray-600 mt-2 flex items-center gap-2">
-              <span>Chào mừng, <span className="font-semibold text-blue-600">{admin?.name || "Admin"}</span></span>
-              <span className="text-gray-400">•</span>
-              <span className="text-sm">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <p className="text-gray-600 mt-2 flex items-center gap-2">
+              <span className="text-s">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </p>
+            </h1>
+            
           </div>
           
           {/* Period Toggle */}
@@ -264,13 +262,13 @@ export function AdminDashboard() {
           const colors = colorClasses[stat.color as keyof typeof colorClasses];
           
           return (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 hover:shadow-md transition-shadow">
               
               <p className="text-sm font-medium text-gray-500 mb-1">{stat.title}</p>
               <p className="text-3xl font-bold text-gray-900 mb-4">{stat.value}</p>
               
               {/* Mini Chart */}
-              <div className="flex items-end gap-1 h-12">
+              <div className="flex items-end gap-1 h-2">
                 {[...Array(12)].map((_, i) => {
                   const height = 20 + Math.random() * 80;
                   return (
@@ -298,7 +296,7 @@ export function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Orders Line Chart */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-2">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">Đơn Hàng</h2>
                   <p className="text-sm text-gray-500">Biểu đồ theo {period === 'week' ? 'tuần' : 'tháng'}</p>

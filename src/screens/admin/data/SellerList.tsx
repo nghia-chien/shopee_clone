@@ -7,6 +7,7 @@ export function SellerList() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
+  console.log("🎯 SellerList Component Render - Search:", search);
   const { data: listData, isLoading } = useList({
     resource: "sellers",
     pagination: {
@@ -16,14 +17,26 @@ export function SellerList() {
     filters: search ? [{ field: "q", operator: "contains", value: search }] : [],
   });
 
+  // 2. Log dữ liệu trả về từ API
+  console.log("📊 SellerList API Response:", {
+    listData,
+    isLoading,
+    searchFilter: search ? [{ field: "q", operator: "contains", value: search }] : []
+  });
   const { mutate: deleteSeller } = useDelete();
 
   const handleDelete = (id: string) => {
+    // 3. Log khi xóa seller
+    console.log("🗑️ Delete Seller Clicked - ID:", id);
+    
     if (confirm("Bạn có chắc chắn muốn xóa seller này?")) {
+      console.log("✅ Confirm delete - Calling API for ID:", id);
       deleteSeller({
         resource: "sellers",
         id,
       });
+    } else {
+      console.log("❌ Delete cancelled");
     }
   };
 
@@ -31,6 +44,11 @@ export function SellerList() {
   const sellers = listData?.data || [];
   const total = listData?.total || 0;
 
+  console.log("📋 Processed Sellers Data:", {
+    sellers,
+    total,
+    rawDataStructure: listData ? Object.keys(listData) : 'No data'
+  });
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

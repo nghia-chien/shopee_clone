@@ -8,24 +8,7 @@ const client = axios.create({
 });
 
 // 🔹 Interceptors để log request và response
-client.interceptors.request.use((config) => {
-  console.log('📤 Gửi request:', config.method?.toUpperCase(), config.url);
-  console.log('Dữ liệu gửi:', config.data || config.params || {});
-  return config;
-});
 
-client.interceptors.response.use(
-  (response) => {
-    console.log('📥 Response từ server:', response.status, response.config.url);
-    console.log('Dữ liệu trả về:', response.data);
-    return response;
-  },
-  (error) => {
-    console.error('❌ Lỗi request:', error.config?.url);
-    console.error('Chi tiết lỗi:', error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
 
 export const getProvinces = () => client.get('/provinces');
 

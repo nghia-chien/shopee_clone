@@ -87,8 +87,10 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
         }).catch((err) => console.error('Failed to sync fulfillment status to orders table:', err));
       }
 
-      // 3. Xử lý stock khi đơn hàng được xác nhận (accepted)
-      if (status === 'processing') {
+      // ✅ 3. Xử lý stock khi đơn hàng được xác nhận (accepted) - ĐÃ SỬA TỪ 'processing' THÀNH 'accepted'
+      if (status === 'accepted') {
+        console.log(`🔄 Trừ stock cho đơn hàng ${id} (status: ${status})`);
+        
         for (const item of sellerOrder.orders.order_item) {
           // Kiểm tra xem sản phẩm này có thuộc về seller không
           if (item.product.seller_id !== seller_id) {
@@ -102,7 +104,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
             });
 
             if (!currentVariant || currentVariant.stock < item.quantity) {
-              throw new Error(`Insufficient stock for variant: ${item.product_variant.title}`);
+              throw new Error(`Không đủ hàng cho biến thể: ${item.product_variant.title}`);
             }
 
             // Trừ stock trong variant
@@ -114,6 +116,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
                 }
               }
             });
+            console.log(`   - Trừ ${item.quantity} từ variant: ${item.product_variant.title}`);
             
           } else {
             // Kiểm tra stock trước khi trừ
@@ -122,7 +125,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
             });
 
             if (!currentProduct || currentProduct.stock < item.quantity) {
-              throw new Error(`Insufficient stock for product: ${item.product.title}`);
+              throw new Error(`Không đủ hàng cho sản phẩm: ${item.product.title}`);
             }
 
             // Trừ stock trực tiếp trong product
@@ -134,12 +137,15 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
                 }
               }
             });
+            console.log(`   - Trừ ${item.quantity} từ product: ${item.product.title}`);
           }
         }
       }
 
-      // 4. Cộng lại stock nếu đơn hàng bị hủy và trước đó đã được xác nhận
-      if (status === 'cancelled' && sellerOrder.seller_status === 'processing') {
+      // ✅ 4. Cộng lại stock nếu đơn hàng bị hủy và trước đó đã được xác nhận - ĐÃ SỬA ĐIỀU KIỆN
+      if (status === 'cancelled' && sellerOrder.seller_status === 'accepted') {
+        console.log(`🔄 Cộng lại stock cho đơn hàng bị hủy ${id}`);
+        
         for (const item of sellerOrder.orders.order_item) {
           // Kiểm tra xem sản phẩm này có thuộc về seller không
           if (item.product.seller_id !== seller_id) {
@@ -156,6 +162,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
                 }
               }
             });
+            console.log(`   + Cộng ${item.quantity} vào variant: ${item.product_variant.title}`);
             
           } else {
             // Cộng stock trực tiếp trong product
@@ -167,11 +174,35 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
                 }
               }
             });
+            console.log(`   + Cộng ${item.quantity} vào product: ${item.product.title}`);
           }
         }
       }
 
-      // 5. Xử lý tạo đơn GHN khi seller accepted
+      // ✅ 5. TĂNG SOLD KHI ĐƠN HÀNG HOÀN THÀNH
+      if (status === 'completed' && sellerOrder.seller_status === 'accepted') {
+        console.log(`🔼 Tăng sold cho đơn hàng hoàn thành ${id}`);
+        
+        for (const item of sellerOrder.orders.order_item) {
+          // Kiểm tra xem sản phẩm này có thuộc về seller không
+          if (item.product.seller_id !== seller_id) {
+            continue;
+          }
+
+          // CHỈ tăng sold trong product (variant không có cột sold)
+          await tx.product.update({
+            where: { id: item.product_id },
+            data: {
+              sold: {
+                increment: item.quantity
+              }
+            }
+          });
+          console.log(`   + Tăng sold ${item.quantity} cho product: ${item.product.title}`);
+        }
+      }
+
+      // ✅ 6. Xử lý tạo đơn GHN khi seller accepted
       if (status === 'accepted') {
         const shippingOrder = sellerOrder.shipping_order;
         if (shippingOrder) {
@@ -191,7 +222,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
       return updatedSellerOrder;
     });
 
-    // 6. Gửi email cho buyer
+    // ✅ 7. Gửi email cho buyer
     const buyerEmail = result.orders.user?.email;
     if (buyerEmail) {
       const html = `
@@ -204,7 +235,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
       );
     }
 
-    // 7. Gửi tin nhắn hệ thống trong chat thread
+    // ✅ 8. Gửi tin nhắn hệ thống trong chat thread
     if (result.orders.user_id && ['accepted', 'completed', 'cancelled'].includes(status)) {
       try {
         const thread = await createThreadIfNotExist(
@@ -227,7 +258,7 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
     console.error('updateSellerOrderStatusController error:', error);
     
     // Xử lý lỗi stock không đủ
-    if (error.message?.includes('Insufficient stock')) {
+    if (error.message?.includes('Không đủ hàng') || error.message?.includes('Insufficient stock')) {
       return res.status(400).json({ 
         message: error.message 
       });

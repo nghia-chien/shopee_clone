@@ -13,6 +13,7 @@ interface Product {
   freeShip?: boolean;
   discount?: number;
   status?: string;
+  stock?:number;
 }
 
 interface Props {

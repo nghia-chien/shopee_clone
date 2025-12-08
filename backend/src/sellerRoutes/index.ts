@@ -26,11 +26,8 @@ router.patch('/shipping', requireAuthSeller, updateSellerShippingController);
 router.post('/security/password', requireAuthSeller, updateSellerPasswordController);
 router.use('/product', requireAuthSeller, sellerProductRoutes);
 router.use('/upload', uploadSellerRoutes);
-// ✅ Seller Orders
 router.use('/order', sellerOrderRoutes);
-// ✅ Seller Reviews
 router.use('/', sellerReviewRoutes);
-// ✅ Seller Analytics & Stats
 router.use('/analytics', sellerAnalyticsRoutes);
 // ✅ Seller Settings
 router.use('/settings', sellerSettingsRoutes);

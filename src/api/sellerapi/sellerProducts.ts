@@ -24,9 +24,6 @@ export async function uploadSellerImage(file: File) {
 // Fetch seller products
 export async function fetchSellerProducts(token: string) {
   try {
-    console.log('Fetching products with token:', token ? 'Token exists' : 'No token');
-    console.log('API_URL:', API_URL);
-    
     const res = await fetch(`${API_URL}/seller/product`, {
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -34,16 +31,12 @@ export async function fetchSellerProducts(token: string) {
       },
     });
     
-    console.log('Response status:', res.status);
-    
     if (!res.ok) {
       const errorText = await res.text();
-      console.error('API Error Response:', errorText);
       throw new Error(`HTTP ${res.status}: ${res.statusText}. ${errorText}`);
     }
     
     const data = await res.json();
-    console.log('Products data received:', data);
     return data;
   } catch (error) {
     console.error('Fetch products error:', error);
@@ -54,8 +47,6 @@ export async function fetchSellerProducts(token: string) {
 // Get seller product by ID
 export async function getSellerProductById(token: string, productId: string) {
   try {
-    console.log('Fetching product by ID:', productId);
-    console.log('API_URL:', API_URL);
     
     const res = await fetch(`${API_URL}/seller/product/${productId}`, {
       headers: { 
@@ -64,7 +55,6 @@ export async function getSellerProductById(token: string, productId: string) {
       },
     });
     
-    console.log('Response status:', res.status);
     
     if (!res.ok) {
       const errorText = await res.text();
