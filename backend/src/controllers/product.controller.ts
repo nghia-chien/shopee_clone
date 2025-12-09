@@ -60,7 +60,7 @@ export const getProductController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // 1) Lấy product + seller + variants
+    // 1) Lấy product + seller + variants + category
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -71,27 +71,21 @@ export const getProductController = async (req: Request, res: Response) => {
             avatar: true,
           },
         },
-        product_variant: true, // lấy variants
+        product_variant: true,
+        // ✅ Thêm category relation
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
       },
     });
 
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-
-    // 2) Tổng số lượng đã bán
-    const sold = await prisma.order_item.aggregate({
-      where: {
-        product_id: id,
-        orders: {
-          status: { in: ["paid", "completed"] },
-        },
-      },
-      _sum: {
-        quantity: true,
-      },
-    });
-    const soldCount = sold._sum.quantity ?? 0;
 
     // 3) Review count + rating avg
     const reviewStats = await prisma.product_reviews.aggregate({
@@ -112,10 +106,17 @@ export const getProductController = async (req: Request, res: Response) => {
       images: product.images || [],
       discount: Number(product.discount || 0),
       tags: product.tags || [],
-      soldCount,
+      sold: product.sold || 0,
       reviewCount,
       ratingAvg,
       seller: product.seller,
+      // ✅ Trả về category info
+      category: product.category ? {
+        id: product.category.id,
+        name: product.category.name,
+        slug: product.category.slug,
+      } : null,
+      category_id: product.category_id, // Giữ lại ID để tiện reference
       product_variant: product.product_variant.map(v => ({
         id: v.id,
         title: v.title,

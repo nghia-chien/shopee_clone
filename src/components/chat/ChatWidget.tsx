@@ -23,7 +23,7 @@ import { useChatWidgetStore } from "../../store/chatWidget";
 
 
 export function ChatWidget() {
-  const { open, sellerId, sellerName, closeChat } = useChatWidgetStore();
+  const { open, sellerId, sellerName, closeChat, resetChat } = useChatWidgetStore();
   
   const { t } = useTranslation();
   const { user, token } = useAuthStore();
@@ -52,32 +52,78 @@ export function ChatWidget() {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen, isMinimized]);
-  useEffect(() => {
-      if (isOpen) {
-        setIsOpen(true);
+useEffect(() => {
+    console.log('ChatWidget: open changed to', open);
+    console.log('ChatWidget: sellerId changed to', sellerId);
+    
+    if (open) {
+      console.log('ChatWidget: Opening widget...');
+      setIsOpen(true);
+      setIsMinimized(false);
+      
+      // Reset selectedThreadId khi mở chat mới
+      if (sellerId) {
+        setSelectedThreadId(null);
       }
-    }, [isOpen]);
-  // Auto create/select thread if sellerId is provided
-  useEffect(() => {
-    if (!token) return;
-    if (sellerId && threads.length >= 0) {
-      // If threads loaded, find or create
-      const existing = threads.find((t) => t.seller_id === sellerId);
-      if (existing) {
-        setSelectedThreadId(existing.id);
-      } else {
-        createThread.mutate(
-          sellerId,
-          {
-            onSuccess: (data) => {
-              setSelectedThreadId(data.thread.id);
-            },
-          }
-        );
-      }
+    } else {
+      console.log('ChatWidget: Closing widget...');
+      setIsOpen(false);
+      setIsMinimized(false);
+      setSelectedThreadId(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sellerId, threads, token]);
+  }, [open, sellerId]); 
+
+
+    // FIX: Xử lý khi component unmount
+  useEffect(() => {
+    return () => {
+      // Reset khi component unmount (tùy chọn)
+      resetChat();
+    };
+  }, []);
+// FIX: Hàm đóng widget - GỌI ĐÚNG STORE
+  const handleCloseWidget = () => {
+    console.log('ChatWidget: handleCloseWidget called');
+    setIsOpen(false);
+    setIsMinimized(false);
+    setSelectedThreadId(null);
+    closeChat(); // Gọi store
+  };
+
+ const handleOpenWidget = () => {
+    console.log('ChatWidget: handleOpenWidget called');
+    // Reset store state trước
+    resetChat();
+    // Sau đó mở
+    setIsOpen(true);
+    setIsMinimized(false);
+  };
+
+
+useEffect(() => {
+    if (!token || !sellerId || !isOpen || threads.length === 0) return;
+    
+    console.log('ChatWidget: Looking for thread with seller', sellerId);
+    
+    // Tìm thread hiện có
+    const existing = threads.find((t) => t.seller_id === sellerId);
+    
+    if (existing) {
+      console.log('ChatWidget: Found existing thread', existing.id);
+      setSelectedThreadId(existing.id);
+    } else {
+      console.log('ChatWidget: Creating new thread for', sellerId);
+      createThread.mutate(sellerId, {
+        onSuccess: (data) => {
+          console.log('ChatWidget: Thread created', data.thread.id);
+          setSelectedThreadId(data.thread.id);
+        },
+        onError: (error) => {
+          console.error('ChatWidget: Error creating thread:', error);
+        }
+      });
+    }
+  }, [sellerId, threads, token, createThread, isOpen]); // THÊM isOpen
 
   if (!token || !user) return null;
 
@@ -236,7 +282,7 @@ export function ChatWidget() {
     <>
       {!isOpen && (
         <button
-          onClick={openWidget}
+          onClick={handleOpenWidget} // Dùng hàm đã fix
           title={t('chat.open_chat') as string}
           className="fixed bottom-24 right-6 w-12 h-12 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 transition flex items-center justify-center z-50"
         >
@@ -388,7 +434,7 @@ export function ChatWidget() {
                   {isMinimized ? <Maximize2 className="w-4 h-4 text-gray-600" /> : <Minimize2 className="w-4 h-4 text-gray-600" />}
                 </button>
 
-                <button onClick={closeWidget} className="p-1 rounded hover:bg-gray-100">
+                <button onClick={handleCloseWidget} className="p-1 rounded hover:bg-gray-100">
                   <X className="w-4 h-4 text-gray-600" />
                 </button>
               </div>

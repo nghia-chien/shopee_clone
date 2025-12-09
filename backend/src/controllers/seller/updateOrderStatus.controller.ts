@@ -87,18 +87,23 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
         }).catch((err) => console.error('Failed to sync fulfillment status to orders table:', err));
       }
 
-      // ✅ 3. Xử lý stock khi đơn hàng được xác nhận (accepted) - ĐÃ SỬA TỪ 'processing' THÀNH 'accepted'
-      if (status === 'accepted') {
-        console.log(`🔄 Trừ stock cho đơn hàng ${id} (status: ${status})`);
-        
-        for (const item of sellerOrder.orders.order_item) {
-          // Kiểm tra xem sản phẩm này có thuộc về seller không
-          if (item.product.seller_id !== seller_id) {
-            continue; // Bỏ qua nếu không phải sản phẩm của seller
-          }
+      // ✅ 3. Xử lý stock VÀ sold khi đơn hàng được xác nhận (accepted)
+          if (status === 'accepted') {
+          console.log(`🔍 DEBUG: Vào phần accepted, status = ${status}`);
+          console.log(`🔍 sellerOrder.orders.order_item length:`, sellerOrder.orders.order_item?.length);
+          
+          for (const item of sellerOrder.orders.order_item) {
+            console.log(`🔍 Xử lý item: ${item.product.title}, seller_id: ${item.product.seller_id}, seller_id hiện tại: ${seller_id}`);
+            
+            if (item.product.seller_id !== seller_id) {
+              console.log(`🔍 Bỏ qua item ${item.product.title} - không thuộc seller`);
+              continue;
+            }
+            
+            console.log(`🔍 Item ${item.product.title} thuộc về seller, sẽ cập nhật sold`);
 
           if (item.variant_id && item.product_variant) {
-            // Kiểm tra stock trước khi trừ
+            // Kiểm tra stock variant
             const currentVariant = await tx.product_variant.findUnique({
               where: { id: item.variant_id }
             });
@@ -107,19 +112,15 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
               throw new Error(`Không đủ hàng cho biến thể: ${item.product_variant.title}`);
             }
 
-            // Trừ stock trong variant
+            // Trừ stock variant
             await tx.product_variant.update({
               where: { id: item.variant_id },
-              data: {
-                stock: {
-                  decrement: item.quantity
-                }
-              }
+              data: { stock: { decrement: item.quantity } }
             });
-            console.log(`   - Trừ ${item.quantity} từ variant: ${item.product_variant.title}`);
+            console.log(`   - Trừ ${item.quantity} stock từ variant: ${item.product_variant.title}`);
             
           } else {
-            // Kiểm tra stock trước khi trừ
+            // Kiểm tra stock product
             const currentProduct = await tx.product.findUnique({
               where: { id: item.product_id }
             });
@@ -128,79 +129,57 @@ export async function updateSellerOrderStatusController(req: SellerRequest, res:
               throw new Error(`Không đủ hàng cho sản phẩm: ${item.product.title}`);
             }
 
-            // Trừ stock trực tiếp trong product
+            // Trừ stock product
             await tx.product.update({
               where: { id: item.product_id },
-              data: {
-                stock: {
-                  decrement: item.quantity
-                }
-              }
+              data: { stock: { decrement: item.quantity } }
             });
-            console.log(`   - Trừ ${item.quantity} từ product: ${item.product.title}`);
-          }
-        }
-      }
-
-      // ✅ 4. Cộng lại stock nếu đơn hàng bị hủy và trước đó đã được xác nhận - ĐÃ SỬA ĐIỀU KIỆN
-      if (status === 'cancelled' && sellerOrder.seller_status === 'accepted') {
-        console.log(`🔄 Cộng lại stock cho đơn hàng bị hủy ${id}`);
-        
-        for (const item of sellerOrder.orders.order_item) {
-          // Kiểm tra xem sản phẩm này có thuộc về seller không
-          if (item.product.seller_id !== seller_id) {
-            continue;
+            console.log(`   - Trừ ${item.quantity} stock từ product: ${item.product.title}`);
           }
 
-          if (item.variant_id && item.product_variant) {
-            // Cộng stock trong variant
-            await tx.product_variant.update({
-              where: { id: item.variant_id },
-              data: {
-                stock: {
-                  increment: item.quantity
-                }
-              }
-            });
-            console.log(`   + Cộng ${item.quantity} vào variant: ${item.product_variant.title}`);
-            
-          } else {
-            // Cộng stock trực tiếp trong product
-            await tx.product.update({
-              where: { id: item.product_id },
-              data: {
-                stock: {
-                  increment: item.quantity
-                }
-              }
-            });
-            console.log(`   + Cộng ${item.quantity} vào product: ${item.product.title}`);
-          }
-        }
-      }
-
-      // ✅ 5. TĂNG SOLD KHI ĐƠN HÀNG HOÀN THÀNH
-      if (status === 'completed' && sellerOrder.seller_status === 'accepted') {
-        console.log(`🔼 Tăng sold cho đơn hàng hoàn thành ${id}`);
-        
-        for (const item of sellerOrder.orders.order_item) {
-          // Kiểm tra xem sản phẩm này có thuộc về seller không
-          if (item.product.seller_id !== seller_id) {
-            continue;
-          }
-
+          // ✅ TĂNG SOLD LUÔN KHI ĐƠN HÀNG ĐƯỢC CHẤP NHẬN
           // CHỈ tăng sold trong product (variant không có cột sold)
           await tx.product.update({
             where: { id: item.product_id },
-            data: {
-              sold: {
-                increment: item.quantity
-              }
-            }
+            data: { sold: { increment: item.quantity } }
           });
-          console.log(`   + Tăng sold ${item.quantity} cho product: ${item.product.title}`);
+          console.log(`   + Tăng ${item.quantity} sold cho product: ${item.product.title}`);
         }
       }
+
+      // ✅ 4. Cộng lại stock VÀ giảm sold nếu đơn hàng bị hủy
+      if (status === 'cancelled' && sellerOrder.seller_status === 'accepted') {
+        console.log(`🔄 Cộng lại stock và giảm sold cho đơn hàng bị hủy ${id}`);
+        
+        for (const item of sellerOrder.orders.order_item) {
+          if (item.product.seller_id !== seller_id) continue;
+
+          if (item.variant_id && item.product_variant) {
+            // Cộng stock variant
+            await tx.product_variant.update({
+              where: { id: item.variant_id },
+              data: { stock: { increment: item.quantity } }
+            });
+            console.log(`   + Cộng ${item.quantity} stock vào variant: ${item.product_variant.title}`);
+            
+          } else {
+            // Cộng stock product
+            await tx.product.update({
+              where: { id: item.product_id },
+              data: { stock: { increment: item.quantity } }
+            });
+            console.log(`   + Cộng ${item.quantity} stock vào product: ${item.product.title}`);
+          }
+
+          // ✅ GIẢM SOLD KHI HỦY ĐƠN (vì đã tăng sold khi accepted)
+          await tx.product.update({
+            where: { id: item.product_id },
+            data: { sold: { decrement: item.quantity } }
+          });
+          console.log(`   - Giảm ${item.quantity} sold cho product: ${item.product.title}`);
+        }
+      }
+      
 
       // ✅ 6. Xử lý tạo đơn GHN khi seller accepted
       if (status === 'accepted') {

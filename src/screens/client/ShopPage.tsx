@@ -57,27 +57,12 @@ export default function ShopPage() {
       try {
         setLoading(true);
         
-        console.log(`🔄 Fetching shop: ${seller_id}`);
-  
         // 1. Shop info
         const shopRes = await api<{ shop: ShopSummary }>(`/shops/${seller_id}`);
-        console.log('🏪 Shop API:', shopRes);
-        console.log('⭐ Shop rating:', shopRes.shop?.avg_rating);
         setShopInfo(shopRes.shop);
   
         // 2. Products
         const productRes = await api<{ items: Product[] }>(`/shops/${seller_id}/products`);
-        console.log('📦 Products API:', productRes);
-        
-        if (productRes.items?.[0]) {
-          const firstProduct = productRes.items[0];
-          console.log('🔍 First product:', {
-            ...firstProduct,
-            hasRating: 'rating' in firstProduct,
-            ratingValue: firstProduct.rating,
-            hasSold: 'sold' in firstProduct,
-          });
-        }
         
         const items = productRes.items || [];
         setProducts(items);

@@ -224,7 +224,7 @@ export const Header: React.FC = () => {
                         onClick={() => navigate("/user/profile")}>{t("home.my_account")}
                       </div>
                       <div className="px-3 py-2 text-left hover:bg-gray-100 cursor-pointer"
-                        onClick={() => navigate("/orders")}>{t("home.my_orders")}
+                        onClick={() => navigate("/user/orders")}>{t("home.my_orders")}
                       </div>
                       <div className="px-3 py-2 text-left hover:bg-gray-100 cursor-pointer text-red-600"
                         onClick={handleLogout}>{t("home.logout")}

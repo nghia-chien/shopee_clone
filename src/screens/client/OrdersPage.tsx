@@ -8,6 +8,8 @@ import { ComplaintModal } from '../../components/complaints/ComplaintModal';
 import type { ComplaintDraft } from '../../types/complaints';
 import { useChatWidgetStore } from "../../store/chatWidget";
 import { ChatWidget } from "../../components/chat/ChatWidget";
+import { useReorder } from '../../hooks/useReorder';
+
 interface OrderItem {
   id: string;
   product_id: string;
@@ -15,6 +17,8 @@ interface OrderItem {
   images?: string[];
   price: number;
   quantity: number;
+  variant_id?: string;        // Thêm variant_id
+  variant_title?: string;// Giữ lại field variant cũ để backward compatibility
   variant?: string;
 }
 
@@ -63,21 +67,21 @@ export default function OrdersPage() {
 
   // Handler cho nút "Mua Lại"
   const handleReorder = (orderItems: OrderItem[]) => {
-    // Lưu orderItems vào localStorage
-    const reorderData = {
-      items: orderItems.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        title: item.title,
-        price: item.price,
-        images: item.images,
-      })),
-      timestamp: Date.now(),
-    };
-    localStorage.setItem('reorder_items', JSON.stringify(reorderData));
-    // Chuyển hướng đến cart
-    navigate('/cart');
+  const reorderData = {
+    items: orderItems.map(item => ({
+      product_id: item.product_id,
+      variant_id: item.variant_id || null, // QUAN TRỌNG: Thêm variant_id
+      quantity: item.quantity,
+      title: item.title,
+      price: item.price,
+      images: item.images,
+      variant_title: item.variant_title, // Thêm variant_title nếu cần
+    })),
+    timestamp: Date.now(),
   };
+  localStorage.setItem('reorder_items', JSON.stringify(reorderData));
+  navigate('/cart');
+};
 
   useEffect(() => {
     if (!token) return;
@@ -257,7 +261,7 @@ export default function OrdersPage() {
                     {statusInfo.deliverySuccess && (
                       <>
                         <Truck className="w-4 h-4 text-green-600" />
-                        <span className="text-green-600 text-sm">Giao hàng thành công</span>
+                        <span className="text-green-600 text-sm">Đã giao</span>
 
                         <span className="w-2 h-2 rounded-full bg-gray-300"></span>
                       </>
@@ -266,9 +270,7 @@ export default function OrdersPage() {
                       <span className="text-orange-600 font-medium text-sm uppercase block">
                         {statusInfo.label}
                       </span>
-                      {shippingInfo?.ghn_order_code && (
-                        <span className="text-xs text-gray-500">GHN: {shippingInfo.ghn_order_code}</span>
-                      )}
+                      
                     </div>
                   </div>
                 </div>
@@ -279,7 +281,12 @@ export default function OrdersPage() {
                       <span className="font-medium flex items-center gap-2">
                         <Truck className="w-4 h-4 text-orange-500" />
                         {latestEvent?.note || STATUS_MAP[shippingInfo.internal_status || 'processing']?.label || shippingInfo.error_message ||'Đang xử lý'}
+
+                        {shippingInfo?.ghn_order_code && (
+                        <span className="text-xs text-gray-500  ">Mã đơn : {shippingInfo.ghn_order_code}</span>
+                      )}
                       </span>
+                      
                       <div className="text-xs text-gray-500 flex flex-wrap gap-3">
                         {latestEvent?.happened_at && (
                           <span>Cập nhật: {formatDateTime(latestEvent.happened_at)}</span>
@@ -289,6 +296,7 @@ export default function OrdersPage() {
                         )}
                       </div>
                     </div>
+                      
                   </div>
                 )}
 
@@ -311,9 +319,9 @@ export default function OrdersPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-900 line-clamp-2">{item.title}</p>
-                        {item.variant && (
+                        {item.variant_title && (
                           <p className="text-xs text-gray-500 mt-1">
-                            Phân loại hàng: {item.variant}
+                            Phân loại hàng: {item.variant_title}
                           </p>
                         )}
                         <p className="text-xs text-gray-500 mt-1">x{item.quantity}</p>
@@ -332,29 +340,12 @@ export default function OrdersPage() {
 
                 {/* Footer */}
                 <div className="px-4 py-3 bg-gray-50 border-t">
-                  {order.status === 'completed' && order.rating_deadline && (
-                    <div className="text-xs text-gray-600 mb-2">
-                      Đánh giá sản phẩm trước {order.rating_deadline}
-                      <br />
-                      Đánh giá ngay để nhận {order.rating_reward || 200} Xu
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      {order.status === 'cancelled' ? (
-                        <span>Đã hủy bởi bạn</span>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
+                    <div className="flex items-center gap-4 justify-end">                    
                         <span className="text-sm text-gray-600">Thành tiền: </span>
                         <span className="text-lg font-medium text-orange-600">
                           {order.total.toLocaleString('vi-VN')}₫
                         </span>
-                      </div>
                     </div>
-                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex justify-end gap-2 mt-3">
@@ -365,13 +356,13 @@ export default function OrdersPage() {
                           className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50"
                         >
                           Mua Lại
-                        </button>
-                        <button className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50">
-                          Xem Chi Tiết Hủy Đơn
-                        </button>
-                        <button className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50">
-                          Liên Hệ Người Bán
-                        </button>
+                        </button> 
+                         <button 
+          onClick={() => openChat(order.seller.id, order.seller.name)}
+          className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50"
+        >
+          Liên Hệ Người Bán
+        </button>
                       </>
                     )}
                     
@@ -379,11 +370,10 @@ export default function OrdersPage() {
                       <>
                         {order.items.map(item => (
                           <div key={item.id} className="flex gap-3 py-2 items-center">
-                            <div className="flex-1">
-                              <p>{item.title}</p>
-                            </div>
+                              <p className="truncate max-w-[380px]">{item.title}</p>
+
                             <button
-                              className="px-4 py-1 bg-orange-500 text-white rounded-sm text-sm hover:bg-orange-600"
+                              className="px-6 py-2 bg-orange-600 text-white rounded-sm text-sm hover:bg-orange-700"
                               onClick={() => {
                                 setActiveReviewOrder(order.id);
                                 setActiveReviewProduct(item.product_id); // Sử dụng product_id thay vì id
@@ -430,10 +420,10 @@ export default function OrdersPage() {
 
                     {order.status === 'accepted' && (
                       <>
-                        <button className="px-6 py-2 bg-orange-600 text-white rounded-sm text-sm hover:bg-orange-700">
-                          Đánh Giá
-                        </button>
-                        <button className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50">
+                         <button 
+                          onClick={() => openChat(order.seller.id, order.seller.name)}
+                          className="px-6 py-2 border border-gray-300 rounded-sm text-sm hover:bg-gray-50"
+                        >
                           Liên Hệ Người Bán
                         </button>
                         <button

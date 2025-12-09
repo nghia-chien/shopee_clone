@@ -252,11 +252,9 @@ export function CheckoutPage() {
   }, [token]);
 
   useEffect(() => {
-    console.log('useEffect chạy, token:', token);
     loadAddresses();
   }, [token]); // Thay vì [loadAddresses]
-  
-  console.log('Component re-render'); // Xem re-render bao nhiêu lần
+
 
   // Load shop information
   useEffect(() => {

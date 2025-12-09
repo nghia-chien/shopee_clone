@@ -47,6 +47,7 @@ export async function listcart_itemsController(req: Request & { user?: { id: str
             title: item.product_variant.title,
             price: Number(item.product_variant.price),
             image: item.product_variant.image,
+            stock: item.product_variant.stock,
           }
         : null,
     }));

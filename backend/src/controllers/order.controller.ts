@@ -296,7 +296,7 @@ export async function listOrdersController(req: AuthenticatedRequest, res: Respo
             order_item: {
               include: { 
                 product: true,
-                product_variant: true // THÊM: Include variant information
+                product_variant: true 
               }
             }
           }

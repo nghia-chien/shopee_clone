@@ -222,7 +222,7 @@ export const SellerOrders = () => {
             <div key={order.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Đơn hàng #{order.id.slice(0, 8)}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Đơn hàng #{order.id}</h3>
                   <p className="text-sm text-gray-500 mt-1">{new Date(order.created_at).toLocaleString("vi-VN")}</p>
                   {order.user && <p className="text-sm text-gray-600 mt-1">Khách hàng: {order.user.name || order.user.email}</p>}
                 </div>
