@@ -328,7 +328,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email hacphichie@gmail.com or create an issue in the repository.
+For support, email hacphichien@gmail.com or create an issue in the repository.
 
 ---
 
