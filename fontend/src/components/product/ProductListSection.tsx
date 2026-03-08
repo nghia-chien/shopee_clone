@@ -21,6 +21,7 @@ interface Props {
   products: Product[];
   horizontal?: boolean; 
   lazyLoad?: boolean;   
+  showLoadMoreButton?: boolean; // Thêm prop để bật/tắt nút
 }
 
 export function ProductListSection({
@@ -28,6 +29,7 @@ export function ProductListSection({
   products,
   horizontal = false,
   lazyLoad = false,
+  showLoadMoreButton = true, // Mặc định bật nút
 }: Props) {
   const navigate = useNavigate();
   
@@ -47,9 +49,18 @@ export function ProductListSection({
     return () => window.removeEventListener("scroll", onScroll);
   }, [lazyLoad, activeProducts.length]);
 
+  // Hàm xử lý khi nhấn nút "Xem thêm"
+  const handleLoadMore = () => {
+    // Tăng thêm 30 sản phẩm mỗi lần nhấn
+    setVisibleCount(prev => Math.min(prev + 30, activeProducts.length));
+  };
+
   const displayedProducts = horizontal
     ? activeProducts.slice(0, 10)
     : activeProducts.slice(0, visibleCount);
+
+  // Kiểm tra còn sản phẩm để hiển thị không
+  const hasMoreProducts = visibleCount < activeProducts.length;
 
   // Kiểm tra activeProducts thay vì products
   if (!activeProducts || activeProducts.length === 0)
@@ -66,6 +77,12 @@ export function ProductListSection({
     <section className="rounded-lg p-6 w-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-gray-600 text-lg uppercase font-bold">{title}</h2>
+        {/* Hiển thị số lượng sản phẩm đang xem */}
+        {!horizontal && (
+          <span className="text-sm text-gray-500">
+            Hiển thị {displayedProducts.length} / {activeProducts.length} sản phẩm
+          </span>
+        )}
       </div>
 
       {/* --- Layout chính --- */}
@@ -82,17 +99,65 @@ export function ProductListSection({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
-          {displayedProducts.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
-              onClick={() => navigate(`/products/${product.id}`)}
-            >
-              <ProductCard product={product} />
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
+            {displayedProducts.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white rounded-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
+                onClick={() => navigate(`/products/${product.id}`)}
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+
+          {/* Nút "Xem thêm" cho chế độ grid */}
+          {showLoadMoreButton && hasMoreProducts && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={handleLoadMore}
+                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 
+                         text-white font-medium rounded-lg hover:from-orange-600 
+                         hover:to-orange-700 transition-all duration-300 focus:outline-none 
+                         focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 
+                         shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg 
+                    className="w-5 h-5" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6" 
+                    />
+                  </svg>
+                  <span>Xem thêm sản phẩm</span>
+                </div>
+              </button>
+              <p className="text-gray-500 text-sm mt-3">
+                Hiển thị {displayedProducts.length} trên {activeProducts.length} sản phẩm
+              </p>
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Hiển thị thông báo đã xem hết sản phẩm */}
+          {!hasMoreProducts && activeProducts.length > 0 && (
+            <div className="mt-8 text-center">
+              <p className="text-gray-500 font-medium">
+                Đã hiển thị tất cả {activeProducts.length} sản phẩm
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Không còn sản phẩm nào để hiển thị
+              </p>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

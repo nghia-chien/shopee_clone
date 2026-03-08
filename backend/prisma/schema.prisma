@@ -112,61 +112,25 @@ model product {
 }
 
 model seller {
-  id                          String                        @id @default(dbgenerated("gen_random_uuid()"))
-  name                        String
-  email                       String                        @unique
-  phone_number                String?                       @unique @db.VarChar(20)
-  address                     Json?
-  rating                      Float?                        @default(0)
-  status                      String                        @default("active")
-  created_at                  DateTime                      @default(now())
-  updated_at                  DateTime                      @updatedAt
-  password                    String
-  avatar                      String?
-  shop_mall                   shop_status?                  @default(normal)
-  chat_threads                chat_threads[]
-  complaints                  complaints[]
-  messages                    messages[]
-  product                     product[]
-  review_replies              review_replies[]
-  seller_order                seller_order[]
-  seller_payout_settings      seller_payout_settings[]
-  seller_shipping_preferences seller_shipping_preferences[]
-  vouchers                    vouchers[]
-}
-
-model seller_payout_settings {
-  id                String   @id @default(dbgenerated("gen_random_uuid()"))
-  seller_id         String
-  payout_method     String
-  account_number    String
-  bank_name         String?
-  currency          String   @default("VND")
-  min_payout_amount Decimal  @default(0) @db.Decimal(10, 2)
-  payout_frequency  String   @default("weekly")
-  status            String   @default("active")
-  created_at        DateTime @default(now())
-  updated_at        DateTime @default(now())
-  seller            seller   @relation(fields: [seller_id], references: [id])
-
-  @@index([seller_id], map: "idx_seller_payout_settings_seller_id")
-}
-
-model seller_shipping_preferences {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()"))
-  seller_id               String
-  shipping_methods        Json
-  shipping_rates          Json
-  free_shipping_threshold Decimal  @default(0) @db.Decimal(10, 2)
-  default_warehouse       String?
-  regions_covered         Json?
-  status                  String   @default("active")
-  is_default              Boolean  @default(true)
-  created_at              DateTime @default(now())
-  updated_at              DateTime @default(now())
-  seller                  seller   @relation(fields: [seller_id], references: [id])
-
-  @@index([seller_id], map: "idx_seller_shipping_preferences_seller_id")
+  id             String           @id @default(dbgenerated("gen_random_uuid()"))
+  name           String
+  email          String           @unique
+  phone_number   String?          @unique @db.VarChar(20)
+  address        Json?
+  rating         Float?           @default(0)
+  status         String           @default("active")
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  password       String
+  avatar         String?
+  shop_mall      shop_status?     @default(normal)
+  chat_threads   chat_threads[]
+  complaints     complaints[]
+  messages       messages[]
+  product        product[]
+  review_replies review_replies[]
+  seller_order   seller_order[]
+  vouchers       vouchers[]
 }
 
 model user {

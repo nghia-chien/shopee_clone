@@ -2,11 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/userapi/client";
 import { HomeLayout } from "../../components/layout/HomeLayout";
 import { ProductListSection } from "../../components/product/ProductListSection";
-import { useAuthStore } from "../../store/auth";
 
 export function HomePage() {
-  const { user } = useAuthStore();
-
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["products"],
     queryFn: () =>

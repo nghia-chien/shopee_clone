@@ -3,14 +3,13 @@ import type { FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
-import { AddressSelector } from '../../components/shipping/AddressSelector';
+import { AddressDialog } from '../../components/shipping/AddressDialog'; // Import AddressDialog
 import { useAuthStore } from '../../store/auth';
 import { api } from '../../api/userapi/client';
 import { getUserVouchers } from '../../api/userapi/vouchers';
 import type { UserVoucherEntry, Voucher } from '../../api/userapi/vouchers';
 import {
   type Address,
-  createAddress,
   getAddresses,
 } from '../../api/userapi/account';
 
@@ -162,21 +161,9 @@ export function CheckoutPage() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressLoading, setAddressLoading] = useState(true);
-  const [addressError, setAddressError] = useState<string | null>(null);
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [addressForm, setAddressForm] = useState({
-    full_name: user?.name || '',
-    phone: user?.phone_number || '',
-    address_line: '',
-    city: '',
-    district: '',
-    ward: '',
-    province_id: undefined as number | undefined,
-    district_id: undefined as number | undefined,
-    ward_code: undefined as string | undefined,
-    is_default: true,
-  });
-  const [savingAddress, setSavingAddress] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const paypalContainerRef = useRef<HTMLDivElement | null>(null);
   const [paypalError, setPaypalError] = useState<string | null>(null);
   const [paypalReady, setPaypalReady] = useState(false);
@@ -233,19 +220,22 @@ export function CheckoutPage() {
     fetchVoucher();
   }, [token]);
 
-  // Load user addresses
+  // Load user addresses và chọn địa chỉ mặc định
   const loadAddresses = useCallback(async () => {
     if (!token) return;
     try {
       setAddressLoading(true);
       const data = await getAddresses();
-      setAddresses(data.addresses || []);
-      if ((data.addresses || []).length === 0) {
-        setShowAddressForm(true);
+      const addressList = data.addresses || [];
+      setAddresses(addressList);
+      
+      // Tìm địa chỉ mặc định hoặc đầu tiên
+      const defaultAddr = addressList.find(addr => addr.is_default) || addressList[0];
+      if (defaultAddr) {
+        setSelectedAddress(defaultAddr);
       }
     } catch (error: any) {
       console.error('Không thể tải địa chỉ:', error);
-      setAddressError(error?.message || 'Không thể tải địa chỉ');
     } finally {
       setAddressLoading(false);
     }
@@ -253,8 +243,7 @@ export function CheckoutPage() {
 
   useEffect(() => {
     loadAddresses();
-  }, [token]); // Thay vì [loadAddresses]
-
+  }, [token]);
 
   // Load shop information
   useEffect(() => {
@@ -282,12 +271,6 @@ export function CheckoutPage() {
     if (!entry) return null;
     return evaluateVoucher(entry.voucher, items);
   }, [preselectedVoucher, voucherEntries, items]);
-
-  // Get default address
-  const defaultAddress = useMemo(() => {
-    if (!addresses.length) return null;
-    return addresses.find((addr) => addr.is_default) ?? addresses[0];
-  }, [addresses]);
 
   // Calculate prices
   const subtotal = useMemo(
@@ -320,6 +303,12 @@ export function CheckoutPage() {
     return Array.from(map.entries());
   }, [items]);
 
+  // Xử lý chọn địa chỉ từ dialog
+  const handleAddressSelect = (address: Address) => {
+    setSelectedAddress(address);
+    setAddressDialogOpen(false);
+  };
+
   // Finalize order function
   const finalizeOrder = useCallback(
     async (options?: { paymentIntent?: string }) => {
@@ -327,14 +316,33 @@ export function CheckoutPage() {
         navigate('/login');
         return;
       }
+      
+      // Reset error
+      setOrderError(null);
+      
+      // Kiểm tra đơn giản: có địa chỉ không
+      if (!selectedAddress) {
+        setOrderError('Địa chỉ hoặc  không đúng');
+        return;
+      }
+      
+      // Kiểm tra đơn giản: số điện thoại không trống
+      if (!selectedAddress.phone || selectedAddress.phone.trim().length < 10) {
+        setOrderError(' số điện thoại không đúng');
+        return;
+      }
+      
+      // Kiểm tra địa chỉ có đủ thông tin
+      if (!selectedAddress.address_line || !selectedAddress.city || !selectedAddress.district || !selectedAddress.ward) {
+        setOrderError('Địa chỉ hoặc không đúng');
+        return;
+      }
+      
       if (!cartItemIds.length) {
-        alert('Không có sản phẩm để đặt hàng');
+        setOrderError('Không có sản phẩm để đặt hàng');
         return;
       }
-      if (!defaultAddress) {
-        alert('Vui lòng thêm địa chỉ giao hàng trước khi đặt hàng');
-        return;
-      }
+      
       try {
         setPlacingOrder(true);
         
@@ -349,26 +357,36 @@ export function CheckoutPage() {
             voucher_code: preselectedVoucher || undefined,
             payment_method: paymentMethod,
             shipping_option: shippingOption,
-            address_id: defaultAddress.id,
+            address_id: selectedAddress.id,
             paypal_order_id: options?.paymentIntent,
           }),
         });
+        
         navigate('/user/orders');
       } catch (error: any) {
         console.error('Đặt hàng thất bại:', error);
+        // Nếu server trả lỗi về địa chỉ/số điện thoại
+        const errorMessage = error?.response?.data?.message || '';
+        if (errorMessage.toLowerCase().includes('address') || 
+            errorMessage.toLowerCase().includes('phone') ||
+            errorMessage.toLowerCase().includes('địa chỉ') ||
+            errorMessage.toLowerCase().includes('số điện thoại')) {
+          setOrderError(errorMessage + ' không đúng');
+        } else {
+          setOrderError('Đặt hàng thất bại. Vui lòng thử lại sau.');
+        }
       } finally {
         setPlacingOrder(false);
       }
     },
     [
       cartItemIds,
-      defaultAddress,
+      selectedAddress,
       navigate,
       paymentMethod,
       preselectedVoucher,
       shippingOption,
       token,
-      items,
     ]
   );
 
@@ -378,38 +396,10 @@ export function CheckoutPage() {
       alert('Vui lòng sử dụng nút PayPal để hoàn tất thanh toán.');
       return;
     }
+    
+    setOrderError(null);
     await finalizeOrder();
   };
-
-  // Handle address form submission
-  const handleAddressFormSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-    try {
-      setSavingAddress(true);
-      setAddressError(null);
-      await createAddress(addressForm);
-      await loadAddresses();
-      setShowAddressForm(false);
-      setAddressForm({
-        full_name: user?.name || '',
-        phone: user?.phone_number || '',
-        address_line: '',
-        city: '',
-        district: '',
-        ward: '',
-        province_id: undefined,
-        district_id: undefined,
-        ward_code: undefined,
-        is_default: false,
-      });
-    } catch (error: any) {
-      setAddressError(error?.message || 'Không thể lưu địa chỉ');
-    } finally {
-      setSavingAddress(false);
-    }
-  };
-
 
   // PayPal integration
   const ensurePaypalScript = useCallback(() => {
@@ -541,23 +531,23 @@ export function CheckoutPage() {
           <span className="text-gray-900 font-medium">Thanh toán</span>
         </div>
 
-        {/* Shipping Address */}
+        {/* Shipping Address với AddressDialog */}
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm uppercase font-semibold mb-2">Địa chỉ nhận hàng</p>
               {addressLoading ? (
                 <p className="text-gray-500 text-sm">Đang tải địa chỉ...</p>
-              ) : defaultAddress ? (
+              ) : selectedAddress ? (
                 <>
                   <p className="text-gray-900 font-medium">
-                    {defaultAddress.full_name} | {defaultAddress.phone}
+                    {selectedAddress.full_name} | {selectedAddress.phone}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    {defaultAddress.address_line}, {defaultAddress.ward}, {defaultAddress.district},{' '}
-                    {defaultAddress.city}
+                    {selectedAddress.address_line}, {selectedAddress.ward}, {selectedAddress.district},{' '}
+                    {selectedAddress.city}
                   </p>
-                  {defaultAddress.is_default && (
+                  {selectedAddress.is_default && (
                     <span className="inline-block mt-2 px-2 py-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded">
                       Địa chỉ mặc định
                     </span>
@@ -569,104 +559,11 @@ export function CheckoutPage() {
             </div>
             <button
               className="text-sm text-orange-500 font-medium hover:text-orange-600"
-              onClick={() => setShowAddressForm((prev) => !prev)}
+              onClick={() => setAddressDialogOpen(true)}
             >
-              {defaultAddress ? 'Thêm địa chỉ mới' : 'Thêm địa chỉ'}
+              {selectedAddress ? 'Thay đổi' : 'Thêm địa chỉ'}
             </button>
           </div>
-          
-          {addressError && (
-            <div className="text-sm text-red-500 bg-red-50 border border-red-100 rounded p-3">
-              {addressError}
-            </div>
-          )}
-          
-          {showAddressForm && (
-            <form className="grid md:grid-cols-2 gap-4 pt-4 border-t" onSubmit={handleAddressFormSubmit}>
-              <input
-                required
-                placeholder="Họ và tên"
-                value={addressForm.full_name}
-                onChange={(e) => setAddressForm((prev) => ({ ...prev, full_name: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <input
-                required
-                placeholder="Số điện thoại"
-                value={addressForm.phone}
-                onChange={(e) => setAddressForm((prev) => ({ ...prev, phone: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <input
-                required
-                placeholder="Địa chỉ cụ thể"
-                value={addressForm.address_line}
-                onChange={(e) => setAddressForm((prev) => ({ ...prev, address_line: e.target.value }))}
-                className="border rounded-lg px-3 py-2 text-sm md:col-span-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-              <div className="md:col-span-2 space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Khu vực (Tỉnh/Thành phố - Quận/Huyện - Phường/Xã) *
-                </label>
-                <AddressSelector
-  key="checkout-address-form"
-  includeStreetInput={false}
-  showLabels={false}
-  onAddressChange={(location) => {
-    // Chỉ cập nhật nếu giá trị thực sự thay đổi
-    setAddressForm((prev) => {
-      const hasChanged = 
-        prev.city !== location.provinceName ||
-        prev.district !== location.districtName ||
-        prev.ward !== location.wardName ||
-        prev.province_id !== location.provinceId ||
-        prev.district_id !== location.districtId ||
-        prev.ward_code !== location.wardCode;
-      
-      if (!hasChanged) return prev;
-      
-      return {
-        ...prev,
-        city: location.provinceName || "",
-        district: location.districtName || "",
-        ward: location.wardName || "",
-        province_id: location.provinceId || undefined,
-        district_id: location.districtId || undefined,
-        ward_code: location.wardCode || undefined,
-      };
-    });
-  }}
-/>
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={addressForm.is_default}
-                  onChange={(e) =>
-                    setAddressForm((prev) => ({ ...prev, is_default: e.target.checked }))
-                  }
-                  className="rounded focus:ring-orange-500"
-                />
-                Đặt làm địa chỉ mặc định
-              </label>
-              <div className="md:col-span-2 flex items-center gap-3">
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600 disabled:opacity-50 transition-colors"
-                  disabled={savingAddress}
-                >
-                  {savingAddress ? 'Đang lưu...' : 'Lưu địa chỉ'}
-                </button>
-                <button
-                  type="button"
-                  className="text-sm text-gray-600 hover:text-gray-800"
-                  onClick={() => setShowAddressForm(false)}
-                >
-                  Hủy
-                </button>
-              </div>
-            </form>
-          )}
         </div>
 
         {/* Products List */}
@@ -906,11 +803,15 @@ export function CheckoutPage() {
               <span>₫{payableTotal.toLocaleString('vi-VN')}</span>
             </div>
           </div>
-
+          {orderError && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-sm text-red-600 text-center">
+              {orderError}
+            </div>
+          )}
           <div className="text-right pt-4">
             <button
               onClick={handlePlaceOrder}
-              disabled={placingOrder || loading || !defaultAddress}
+              disabled={placingOrder || loading || !selectedAddress}
               className="px-8 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {placingOrder ? 'Đang xử lý...' : paymentMethod === 'PAYPAL' ? 'Tiếp tục với PayPal' : 'Đặt hàng'}
@@ -924,6 +825,14 @@ export function CheckoutPage() {
         </div>
       </div>
       <Footer />
+      
+      {/* Address Dialog */}
+      <AddressDialog
+        open={addressDialogOpen}
+        onClose={() => setAddressDialogOpen(false)}
+        onSelect={handleAddressSelect}
+        currentAddressId={selectedAddress?.id}
+      />
     </div>
   );
 }
